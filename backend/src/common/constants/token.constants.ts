@@ -1,0 +1,1 @@
+export const RESET_PASSWORD_TOKEN_EXPIRY = 15 * 60 * 1000;
