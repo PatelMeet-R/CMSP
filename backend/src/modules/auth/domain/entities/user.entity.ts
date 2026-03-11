@@ -1,4 +1,5 @@
 import { BaseEntity } from 'src/core/base.entity';
+import { Branch } from 'src/modules/branch/domain/entities/branch.entity';
 import { EnumValue } from 'src/modules/enums/domain/entities/enumValue.entity';
 
 import { Column, Entity, Index, ManyToOne } from 'typeorm';
@@ -23,4 +24,7 @@ export class User extends BaseEntity {
 
   @Column({ type: 'timestamp', nullable: true })
   resetPasswordExpires: Date | null;
+
+  @ManyToOne(() => Branch, { nullable: true })
+  branch: Branch;
 }

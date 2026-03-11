@@ -7,3 +7,8 @@ npm i @nestjs/jwt passport passport-jwt bcrypt @types/passport-jwt @types/bcrypt
 
 npm install -D ts-node tsconfig-paths
 npm install handlebars //for the email templates
+
+
+//doctumention
+
+npm install --save @nestjs/swagger

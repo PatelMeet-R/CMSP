@@ -51,6 +51,7 @@ export class JwtTokenService {
       email: user.email,
       sub: user.id,
       role: user.role.key,
+      branchId: user.branch?.id ?? null,
     };
     return this.jwtService.sign(payload, {
       secret: this.configService.get('JWT_ACCESS_SECRET'),

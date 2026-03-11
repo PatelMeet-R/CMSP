@@ -1,6 +1,7 @@
 import { ConflictException } from '@nestjs/common';
 import { hash } from 'bcrypt';
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
+import { ROLES } from 'src/common/constants/roles.constant';
 import { User } from 'src/modules/auth/domain/entities/user.entity';
 import { EnumValue } from 'src/modules/enums/domain/entities/enumValue.entity';
 import { DataSource } from 'typeorm';
@@ -19,7 +20,7 @@ export async function seedUsers(dataSource: DataSource) {
   const hashedPassword = await hash('admin123', 10);
   const role = await enumRepo.findOne({
     where: {
-      key: 'SUPER_ADMIN',
+      key: ROLES.SUPER_ADMIN,
     },
     relations: ['type'],
   });

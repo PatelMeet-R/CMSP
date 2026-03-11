@@ -5,11 +5,13 @@ export class UserResponseDto {
   readonly email: string;
   readonly role: string;
   readonly isEmailVerified: boolean;
+  readonly branchId: number | null;
 
   constructor(user: User) {
     this.id = user.id;
     this.email = user.email;
     this.role = user.role?.key;
     this.isEmailVerified = user.isEmailVerified;
+    this.branchId = user.branch.id ?? null;
   }
 }

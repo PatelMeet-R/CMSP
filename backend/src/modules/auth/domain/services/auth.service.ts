@@ -6,7 +6,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 // import * as crypto from 'crypto';
-import { User } from '../entities/user.entity';
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
 import { MailService } from 'src/modules/mail/domain/mail.service';
@@ -26,6 +25,8 @@ import { CryptoService } from 'src/common/utils/crypto/crypto.service';
 import { RESET_PASSWORD_TOKEN_EXPIRY } from 'src/common/constants/token.constants';
 import { UserMapper } from '../../data/mappers/user.mapper';
 import { AuthMapper } from '../../data/mappers/auth.mapper';
+import { ENUM_TYPES } from 'src/common/constants/enum-types.constant';
+import { ROLES } from 'src/common/constants/roles.constant';
 
 @Injectable()
 export class AuthService {
@@ -46,8 +47,8 @@ export class AuthService {
     }
     const hashedPassword = await this.bcryptService.hashPassword(dto.password);
     const role = await this.enumService.getMeEnumValueIfExist(
-      'USER_ROLE',
-      'STUDENT',
+      ENUM_TYPES.ROLE,
+      ROLES.STUDENT,
     );
     const newlyCreatedUser = await this.usersRepository.createAndSave({
       email: dto.email,
@@ -94,8 +95,13 @@ export class AuthService {
     return UserMapper.toResponseDto(user);
   }
   // send the mail with token for verify purpose
-  async sendVerifyEmailLink(user: User) {
+  async sendVerifyEmailLink(userId: number) {
     try {
+      const user = await this.usersRepository.findById(userId);
+
+      if (!user) {
+        throw new UnauthorizedException(ERRORMESSAGE.USERNOTEXIST);
+      }
       const token = this.JwtTokenService.generateEmailVerificationToken(user);
 
       const verifyUrl = `${this.appConfigService.appUrl}/auth/verify-email?token=${token}`;

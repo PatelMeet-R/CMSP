@@ -59,8 +59,8 @@ export class AuthController {
   @Post('send-verification-mail')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
-  async sendVerificationMail(@CurrentUser() user: any) {
-    return await this.authService.sendVerifyEmailLink(user);
+  async sendVerificationMail(@CurrentUser() user: { sub: number }) {
+    return await this.authService.sendVerifyEmailLink(user.sub);
   }
 
   @Get('verify-email')
@@ -93,10 +93,4 @@ export class AuthController {
   getProfile(@CurrentUser() user: UserResponseDto) {
     return { data: user };
   }
-
-  // create hod,Professors
-  // @Post('register-hod')
-  // @Roles(SUPER_ADMIN)
-  // @UseGuards(JwtAuthGuard,RolesGuard)
-  // registerHod(@Body() )
 }

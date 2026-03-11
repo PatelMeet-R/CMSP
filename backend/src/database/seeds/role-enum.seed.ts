@@ -2,7 +2,7 @@ import { EnumType } from 'src/modules/enums/domain/entities/enumType.entity';
 import { EnumValue } from 'src/modules/enums/domain/entities/enumValue.entity';
 import { DataSource } from 'typeorm';
 
-export async function seedEnums(dataSource: DataSource) {
+export async function seedUserRoleEnums(dataSource: DataSource) {
   const enumTypeRepo = dataSource.getRepository(EnumType);
   const enumValueRepo = dataSource.getRepository(EnumValue);
 

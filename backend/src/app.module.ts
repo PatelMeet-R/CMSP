@@ -4,10 +4,12 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './modules/auth/auth.module';
+import { BranchModule } from './modules/branch/branch.module';
 
 @Module({
   imports: [
     AuthModule,
+    BranchModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
