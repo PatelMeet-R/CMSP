@@ -10,9 +10,10 @@ import { AuthController } from './presentation/controller/auth.controller';
 import { JwtStrategy } from 'src/core/strategies/jwt.strategies';
 import { CommonModule } from 'src/common/common.module';
 import { EnumsModule } from '../enums/enums.module';
-import { UserRepository } from './data/repository';
+import { AuthRepository } from './data/repository';
 import { AppConfigService } from './data/services/app-config.service';
-import { Branch } from '../branch/domain/entities/branch.entity';
+import { PersonalInfo } from '../users/domain/entities/personal-info.entity';
+import { BranchModule } from '../branch/branch.module';
 
 @Module({
   imports: [
@@ -20,14 +21,15 @@ import { Branch } from '../branch/domain/entities/branch.entity';
     MailModule,
     EnumsModule,
     CommonModule,
+    BranchModule,
     PassportModule,
-    TypeOrmModule.forFeature([User, Branch]),
+    TypeOrmModule.forFeature([User, PersonalInfo]),
   ],
   providers: [
     AuthService,
     JwtStrategy,
     RolesGuard,
-    UserRepository,
+    AuthRepository,
     AppConfigService,
   ],
   controllers: [AuthController],

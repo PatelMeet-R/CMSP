@@ -29,4 +29,16 @@ export class EnumRepository {
 
     // Fetch a specific EnumValue by key that belongs to a given EnumType
   }
+  async findEnumById(id: number) {
+    return this.enumValueRepo.findOne({
+      where: { id },
+      relations: ['type'],
+    });
+  }
+  async findEnumValueByName(name: string) {
+    return this.enumValueRepo.findOne({
+      where: { value: name },
+      relations: ['type'],
+    });
+  }
 }

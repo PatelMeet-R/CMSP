@@ -9,7 +9,7 @@ import {
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
 import { MailService } from 'src/modules/mail/domain/mail.service';
-import { UserRepository } from '../../data/repository';
+import { AuthRepository } from '../../data/repository';
 import { ForgetPassMailReq } from '../../presentation/dto/request/forget-password.dto';
 import { LoginDto } from '../../presentation/dto/request/login.dto';
 import { RegisterDto } from '../../presentation/dto/request/register.dto';
@@ -17,7 +17,6 @@ import { ResetPasswordDto } from '../../presentation/dto/request/reset-password.
 
 import { AppConfigService } from '../../data/services/app-config.service';
 import { BcyptService } from '../../../../common/utils/bcypt/bcypt.service';
-import { EnumService } from 'src/modules/enums/domain/service/enums.service';
 import { JwtTokenService } from 'src/common/utils/jwt/jwt.service';
 import { MessageResponseDto } from '../../presentation/dto/response/verify-email-message.response.dto';
 import { RefreshTokenResponseDto } from '../../presentation/dto/response/refreshToken.response.dto';
@@ -27,12 +26,13 @@ import { UserMapper } from '../../data/mappers/user.mapper';
 import { AuthMapper } from '../../data/mappers/auth.mapper';
 import { ENUM_TYPES } from 'src/common/constants/enum-types.constant';
 import { ROLES } from 'src/common/constants/roles.constant';
+import { EnumService } from 'src/modules/enums/domain/enums.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly cryptoService: CryptoService,
-    private readonly usersRepository: UserRepository,
+    private readonly usersRepository: AuthRepository,
     private readonly mailService: MailService,
     private readonly JwtTokenService: JwtTokenService,
     private readonly appConfigService: AppConfigService,
@@ -70,7 +70,6 @@ export class AuthService {
 
     const { accessToken, refreshToken } =
       this.JwtTokenService.generateToken(user);
-
     return AuthMapper.toAuthResponse(user, accessToken, refreshToken);
   }
 
@@ -84,7 +83,14 @@ export class AuthService {
 
     return new RefreshTokenResponseDto({ accessToken });
   }
-
+  async getUserByIdWithPersonalInfo(userId: number) {
+    const user =
+      await this.usersRepository.findByIdWithPersonalInfoRelation(userId);
+    if (!user) {
+      throw new UnauthorizedException(ERRORMESSAGE.USERNOTEXIST);
+    }
+    return user;
+  }
   // find the current user by id
   // only role extract perpose for jwt Strategy
   async getUserById(userId: number) {
@@ -92,7 +98,7 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException(ERRORMESSAGE.USERNOTEXIST);
     }
-    return UserMapper.toResponseDto(user);
+    return user;
   }
   // send the mail with token for verify purpose
   async sendVerifyEmailLink(userId: number) {

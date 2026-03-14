@@ -7,7 +7,7 @@ export class UserMapper {
       id: user.id,
       email: user.email,
       role: user.role?.key,
-      branchId: user.branch?.id,
+      branchId: user.personalInfo?.branch?.id ?? null,
       isEmailVerified: user.isEmailVerified,
     };
   }

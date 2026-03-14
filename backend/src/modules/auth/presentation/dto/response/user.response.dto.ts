@@ -12,6 +12,6 @@ export class UserResponseDto {
     this.email = user.email;
     this.role = user.role?.key;
     this.isEmailVerified = user.isEmailVerified;
-    this.branchId = user.branch.id ?? null;
+    this.branchId = user.personalInfo.branch.id ?? null;
   }
 }

@@ -10,6 +10,9 @@ import { seedBranches } from './seeds/branch.seed';
 import { Branch } from 'src/modules/branch/domain/entities/branch.entity';
 import { seedSubjects } from './seeds/subject.seed';
 import { Subject } from 'src/modules/subject/domain/entities/subject.entity';
+import { seedAcademicYearEnums } from './seeds/academic-year-enum.seed';
+import { seedGenderEnums } from './seeds/gender.seed';
+import { seedUserAccountStatusEnums } from './seeds/user-account-status.seed';
 
 const AppDataSource = new DataSource({
   type: 'postgres',
@@ -26,6 +29,12 @@ async function runSeed() {
   // await seedSemsEnum(AppDataSource);
   // await seedBranches(AppDataSource);
   // await seedSubjects(AppDataSource);
+  // await seedAcademicYearEnums(AppDataSource);
+  // await seedGenderEnums(AppDataSource);
+  // await seedUserAccountStatusEnums(AppDataSource);
+  console.log('----------------------------');
+  console.log('Seeding completed');
+  console.log('----------------------------');
   await AppDataSource.destroy();
 }
 runSeed();

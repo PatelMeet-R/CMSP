@@ -1,4 +1,5 @@
 import {
+  Column,
   CreateDateColumn,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -12,4 +13,11 @@ export abstract class BaseEntity {
 
   @UpdateDateColumn()
   updatedAt: Date;
+}
+export abstract class AuditableEntity extends BaseEntity {
+  @Column({ nullable: true })
+  createdBy: number;
+
+  @Column({ nullable: true })
+  updatedBy: number;
 }

@@ -1,9 +1,12 @@
 import { IsNotEmpty, MinLength } from 'class-validator';
+import { AUTH_DTO_MESSAGE } from 'src/common/constants/dto/auth.dto.message';
 
 export class ResetPasswordDto {
-  @IsNotEmpty({ message: 'password is required! Please provide password' })
-  @MinLength(6, { message: 'Password Must be at least 6 character long' })
+  @IsNotEmpty({ message: AUTH_DTO_MESSAGE.PASSWORD.REQUIRED })
+  @MinLength(6, { message: AUTH_DTO_MESSAGE.PASSWORD.MIN_LENGTH(6) })
   password: string;
-  @IsNotEmpty()
+
+  @IsNotEmpty({ message: AUTH_DTO_MESSAGE.PASSWORD.REQUIRED })
+  @MinLength(6, { message: AUTH_DTO_MESSAGE.PASSWORD.MIN_LENGTH(6) })
   confirmPassword: string;
 }

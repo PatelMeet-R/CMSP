@@ -20,6 +20,12 @@ export const ERRORMESSAGE = {
   SUBJECT_ALREADY_EXISTS:
     'Your Provided Subject Already Exist! Correct Your Subject Code Field ! ',
   SUBJECT_NOT_FOUND: 'Your Provided Subject Not Exist!',
-  SUBJECT_CHANGE_NOT_AUTORIZED:
+  SUBJECT_CHANGE_NOT_AUTHORIZED:
     'You are not allowed to modify subjects of another branch',
+  SUBJECT_ALREADY_ASSIGNED: 'Subject already assigned!',
+  INVALID_REQUEST: 'Invalid data Provided! Checkout or Try Few minute later',
+  EMAIL_VERIFY_NEEDED: 'Email is not verified. Access denied.',
+  NOT_FOUND: 'Data Not Available!',
+  INVALID_YEAR_ENTRY:
+    'Expected graduation year cannot be earlier than joined year',
 };

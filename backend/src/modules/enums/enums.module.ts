@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { EnumService } from './domain/service/enums.service';
-import { EnumController } from './presentation/controller/enums.controller';
 import { EnumType } from './domain/entities/enumType.entity';
 import { EnumValue } from './domain/entities/enumValue.entity';
 import { EnumRepository } from './data/repositories/repository';
+import { EnumService } from './domain/enums.service';
+import { EnumController } from './presentation/enums.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([EnumType, EnumValue])],

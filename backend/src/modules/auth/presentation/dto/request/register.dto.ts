@@ -5,18 +5,20 @@ import {
   MinLength,
   MaxLength,
 } from 'class-validator';
+import { AUTH_DTO_MESSAGE } from 'src/common/constants/dto/auth.dto.message';
 
 export class RegisterDto {
-  @IsEmail({}, { message: 'Please Provide Valid email' })
+  @IsNotEmpty({ message: AUTH_DTO_MESSAGE.EMAIL.REQUIRED })
+  @IsEmail({}, { message: AUTH_DTO_MESSAGE.EMAIL.INVALID })
   email: string;
 
-  @IsNotEmpty({ message: 'Name is required! Please provide name' })
-  @IsString({ message: 'Name Must be String ' })
-  @MinLength(3, { message: 'Name Must be at least 3 character long' })
-  @MaxLength(50, { message: 'Name can not be longer than 50 characters' })
+  @IsNotEmpty({ message: AUTH_DTO_MESSAGE.NAME.REQUIRED })
+  @IsString({ message: AUTH_DTO_MESSAGE.NAME.MUST_BE_STRING })
+  @MinLength(3, { message: AUTH_DTO_MESSAGE.NAME.MIN_LENGTH(3) })
+  @MaxLength(50, { message: AUTH_DTO_MESSAGE.NAME.MAX_LENGTH(50) })
   name: string;
 
-  @IsNotEmpty({ message: 'password is required! Please provide password' })
-  @MinLength(6, { message: 'Password Must be at least 6 character long' })
+  @IsNotEmpty({ message: AUTH_DTO_MESSAGE.PASSWORD.REQUIRED })
+  @MinLength(6, { message: AUTH_DTO_MESSAGE.PASSWORD.MIN_LENGTH(6) })
   password: string;
 }

@@ -4,17 +4,21 @@ import { User } from '../domain/entities/user.entity';
 import { MoreThan, Repository } from 'typeorm';
 
 @Injectable()
-export class UserRepository {
+export class AuthRepository {
   constructor(
     @InjectRepository(User)
     private readonly repo: Repository<User>,
   ) {}
   async findByEmail(email: string): Promise<User | null> {
-    return this.repo.findOne({ where: { email } });
+    return this.repo.findOne({
+      where: { email },
+      relations: ['personalInfo', 'personalInfo.branch'],
+    });
   }
   async findById(id: number): Promise<User | null> {
     return this.repo.findOne({
       where: { id },
+      relations: ['personalInfo', 'personalInfo.branch'],
     });
   }
 
@@ -31,6 +35,12 @@ export class UserRepository {
         resetPasswordToken: tokenHash,
         resetPasswordExpires: MoreThan(new Date()), // used greater than because expiry must be in future
       },
+    });
+  }
+  async findByIdWithPersonalInfoRelation(id: number) {
+    return this.repo.findOne({
+      where: { id: id },
+      relations: ['personalInfo'],
     });
   }
 }
