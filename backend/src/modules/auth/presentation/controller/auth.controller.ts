@@ -12,12 +12,16 @@ import {
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
 import { AuthService } from '../../domain/services/auth.service';
-import { RegisterDto } from '../dto/request/register.dto';
+import { RegisterStudentDto } from '../dto/request/register.dto';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
 import { LoginDto } from '../dto/request/login.dto';
 import { ForgetPassMailReq } from '../dto/request/forget-password.dto';
 import { ResetPasswordDto } from '../dto/request/reset-password.dto';
 import { UserResponseDto } from '../dto/response/user.response.dto';
+import { RolesGuard } from 'src/core/guards/roles-guard';
+import { Roles } from 'src/core/decorators/roles.decorators';
+import { ROLES } from 'src/common/constants/roles.constant';
+import { RegisterSpecificUserDto } from '../dto/request/register-specific-user.request.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -31,9 +35,9 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  async register(@Body() dto: RegisterDto) {
+  async register(@Body() dto: RegisterStudentDto) {
     return {
-      message: SUCCESSMSG.SIGNUP_SUCCESS,
+      message: SUCCESSMSG.AUTH.SIGNUP_SUCCESS,
       data: await this.authService.register(dto),
     };
   }
@@ -42,7 +46,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(@Body() dto: LoginDto) {
     return {
-      message: SUCCESSMSG.LOGIN_SUCCESS,
+      message: SUCCESSMSG.AUTH.LOGIN_SUCCESS,
       data: await this.authService.login(dto),
     };
   }
@@ -92,5 +96,43 @@ export class AuthController {
   @Get('profile')
   getProfile(@CurrentUser() user: UserResponseDto) {
     return { data: user };
+  }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.SUPER_ADMIN)
+  @HttpCode(HttpStatus.CREATED)
+  @Post('register/hod')
+  async registerHod(
+    @Body() dto: RegisterSpecificUserDto,
+    @CurrentUser() user: UserResponseDto,
+  ) {
+    const RoleName = ROLES.HOD;
+    const res = await this.authService.registerSpecificUser(
+      dto,
+      RoleName,
+      user.id,
+    );
+    return {
+      message: SUCCESSMSG.AUTH.REGISTERED,
+      data: res,
+    };
+  }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
+  @HttpCode(HttpStatus.CREATED)
+  @Post('register/professor')
+  async registerProfessor(
+    @Body() dto: RegisterSpecificUserDto,
+    @CurrentUser() user: UserResponseDto,
+  ) {
+    const RoleName = ROLES.PROFESSOR;
+    const res = await this.authService.registerSpecificUser(
+      dto,
+      RoleName,
+      user.id,
+    );
+    return {
+      message: SUCCESSMSG.AUTH.REGISTERED,
+      data: res,
+    };
   }
 }

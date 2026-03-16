@@ -19,6 +19,7 @@ import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user
 import { EmailVerifiedGuard } from 'src/core/guards/email-verified.guard';
 import { UpdateByUserPersonalInfoDto } from '../dto/request/user-pi-update.request.dto';
 import { AdminUpdatePersonalInfoDto } from '../dto/request/admin-pi-update.request.dto';
+import { SUCCESSMSG } from 'src/common/constants/success.message';
 
 @Controller('personal-info')
 @UseGuards(JwtAuthGuard, RolesGuard, EmailVerifiedGuard)
@@ -37,11 +38,13 @@ export class PersonalInfoController {
       user.id,
     );
     return {
+      message: SUCCESSMSG.PERSONAL_INFO.REGISTERED,
       data: res,
     };
   }
+
   @Patch('update/:personalInfoId')
-  @HttpCode(HttpStatus.CREATED)
+  @HttpCode(HttpStatus.OK)
   @Roles(ROLES.STUDENT)
   async updatePersonalInfoByUser(
     @Param('personalInfoId', ParseIntPipe) personalInfoId: number,
@@ -54,12 +57,13 @@ export class PersonalInfoController {
       user.id,
     );
     return {
+      Message: SUCCESSMSG.PERSONAL_INFO.UPDATED,
       data: res,
     };
   }
 
   @Patch('update/admin/:personalInfoId')
-  @HttpCode(HttpStatus.CREATED)
+  @HttpCode(HttpStatus.OK)
   @Roles(ROLES.HOD, ROLES.SUPER_ADMIN)
   async updatePersonalInfoByAdmin(
     @Param('personalInfoId', ParseIntPipe) personalInfoId: number,
@@ -72,6 +76,7 @@ export class PersonalInfoController {
       user.id,
     );
     return {
+      message: SUCCESSMSG.PERSONAL_INFO.UPDATED,
       data: res,
     };
   }

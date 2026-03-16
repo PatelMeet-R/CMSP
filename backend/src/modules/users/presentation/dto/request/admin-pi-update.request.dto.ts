@@ -7,6 +7,10 @@ export class AdminUpdatePersonalInfoDto {
   firstName?: string;
 
   @IsOptional()
+  @IsString({ message: PI_DTO_MESSAGE.FIRST_NAME.STRING })
+  enrollmentNumber?: string;
+
+  @IsOptional()
   @IsString({ message: PI_DTO_MESSAGE.LAST_NAME.STRING })
   lastName?: string;
 

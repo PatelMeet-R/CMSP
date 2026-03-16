@@ -3,8 +3,7 @@
 
 import { User } from '../../domain/entities/user.entity';
 import { AuthResponseDto } from '../../presentation/dto/response/auth.response.dto';
-import { UserMapper } from './user.mapper';
-
+import { UserMapper } from './user.response.mapper';
 
 export class AuthMapper {
   static toAuthResponse(

@@ -14,6 +14,7 @@ import { AuthRepository } from './data/repository';
 import { AppConfigService } from './data/services/app-config.service';
 import { PersonalInfo } from '../users/domain/entities/personal-info.entity';
 import { BranchModule } from '../branch/branch.module';
+import { Branch } from '../branch/domain/entities/branch.entity';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { BranchModule } from '../branch/branch.module';
     CommonModule,
     BranchModule,
     PassportModule,
-    TypeOrmModule.forFeature([User, PersonalInfo]),
+    TypeOrmModule.forFeature([User, PersonalInfo, Branch]),
   ],
   providers: [
     AuthService,

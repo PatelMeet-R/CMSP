@@ -12,7 +12,7 @@ export class MailService {
 
   constructor(private configService: ConfigService) {
     if (!this.configService.get<string>('SMTP_HOST')) {
-      throw new Error(ERRORMESSAGE.SMTPCONNFAILED);
+      throw new Error(ERRORMESSAGE.SMTP_CONNECTION_FAILED);
     }
     this.transporter = nodemailer.createTransport({
       host: this.configService.get<string>('SMTP_HOST'),
@@ -24,6 +24,7 @@ export class MailService {
       },
     });
   }
+
   private compileTemplate(templateName: string, context: any) {
     const filePath = path.join(
       process.cwd(),
@@ -48,12 +49,43 @@ export class MailService {
       html,
     });
   }
-  async sendVerficationEmail(email: string, link: string) {
+  async sendVerificationEmail(email: string, link: string) {
     return this.sendMail(email, 'Verify Email', 'verify-email', { link });
   }
   async sendResetPassword(email: string, resetUrl: string) {
     return this.sendMail(email, 'Reset Password', 'reset-password', {
       resetUrl,
     });
+  }
+  async sendRegisterUserInfo(
+    email: string,
+    userData: {
+      email: string;
+      password: string;
+      role: string;
+      branch: string;
+      createdBy: string;
+      fullName: string;
+    },
+  ) {
+    const loginUrl = this.configService.get<string>('FRONTEND_URL');
+    // Prepare template context
+    const context = {
+      email: userData.email,
+      password: userData.password,
+      role: userData.role,
+      branch: userData.branch,
+      createdBy: userData.createdBy,
+      fullName: userData.fullName,
+      loginUrl: loginUrl,
+    };
+
+    // Send email using existing sendMail method
+    await this.sendMail(
+      email,
+      'Your Account Has Been Created',
+      'register-user-info',
+      context,
+    );
   }
 }

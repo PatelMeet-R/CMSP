@@ -2,6 +2,7 @@ export class PersonalInfoResponseDto {
   id: number;
   firstName: string;
   lastName: string;
+  enrollmentNumber: string;
   gender: string;
   joinedAcademicYear: string;
   expectedGraduateYear: string;

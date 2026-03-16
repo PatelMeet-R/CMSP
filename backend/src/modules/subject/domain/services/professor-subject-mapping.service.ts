@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ProfessorSubMappingRepository } from '../../data/repositories/professor-subject-mapping-repository';
@@ -10,6 +11,9 @@ import { ERRORMESSAGE } from 'src/common/constants/error.message';
 import { SubjectService } from './subject.service';
 import { AuthService } from 'src/modules/auth/domain/services/auth.service';
 import { EnumService } from 'src/modules/enums/domain/enums.service';
+import { UpdateAssignSubjectDto } from '../../presentation/dto/request/professor-subjects-update.request.dto';
+import { SubjectMapperResponse } from '../../data/mappers/subject-assign.response.mapper';
+import { UpdateSubjectMapper } from '../../data/mappers/subject-assign-update.mapper';
 
 @Injectable()
 export class ProfessorSubMappingService {
@@ -20,7 +24,7 @@ export class ProfessorSubMappingService {
     private professorSubjectRepo: ProfessorSubMappingRepository,
   ) {}
 
-  async assignSubject(dto: AssignSubjectDto, assignedById: number) {
+  async saveAssignedSubject(dto: AssignSubjectDto, assignedById: number) {
     const [professor, subject, semester, academicYear, assignedBy] =
       await Promise.all([
         this.authService.getUserByIdWithPersonalInfo(dto.professorId),
@@ -53,21 +57,95 @@ export class ProfessorSubMappingService {
 
     const entity = AssignSubjectMapper.toEntity(dto, assignedBy);
 
-    const saved = await this.professorSubjectRepo.assignSubject(entity);
-    const result = await this.professorSubjectRepo.findSubjectByIdWithRelations(
-      saved.id,
-    );
-    return AssignSubjectMapper.toResponse(result!);
+    const saved = await this.professorSubjectRepo.saveAssignedSubject(entity);
+    const result =
+      await this.professorSubjectRepo.findAssignSubjectByIdWithRelations(
+        saved.id,
+      );
+    return SubjectMapperResponse.toResponse(result!);
   }
 
   async getSubjectsByProfessor(professorId: number) {
     const data =
-      await this.professorSubjectRepo.findSubjectByProfessorId(professorId);
+      await this.professorSubjectRepo.findAssignSubjectByProfessorId(
+        professorId,
+      );
 
-    return data.map((d) => AssignSubjectMapper.toResponseProfessorSubjects(d));
+    return data.map((d) =>
+      SubjectMapperResponse.toResponseProfessorSubjects(d),
+    );
   }
   async getAllAssignSubjectDetails() {
     const data = await this.professorSubjectRepo.findAllAssignSubjectDetails();
-    return data.map((d) => AssignSubjectMapper.toResponseProfessorSubjects(d));
+    return data.map((d) =>
+      SubjectMapperResponse.toResponseProfessorSubjects(d),
+    );
+  }
+
+  async updateAssignSubject(
+    professorSubMappingId: number,
+    dto: UpdateAssignSubjectDto,
+    updatedById: number,
+  ) {
+    const existingProfessorSubMapping =
+      await this.professorSubjectRepo.findAssignSubjectByIdWithRelations(
+        professorSubMappingId,
+      );
+    if (!existingProfessorSubMapping) {
+      throw new NotFoundException(ERRORMESSAGE.NOT_FOUND);
+    }
+    const updateBy = await this.authService.getUserById(updatedById);
+    if (!updateBy) {
+      throw new UnauthorizedException(ERRORMESSAGE.INVALID_REQUEST);
+    }
+
+    let professor, subject, semester, academicYear;
+    if (dto.professorId) {
+      professor = await this.authService.getUserByIdWithPersonalInfo(
+        dto.professorId,
+      );
+      if (!professor) {
+        throw new NotFoundException(
+          ERRORMESSAGE.DATA_NOT_FOUND('Professor Name'),
+        );
+      }
+    }
+    if (dto.subjectId) {
+      subject = await this.subjectService.getSubjectById(dto.subjectId);
+      if (!subject) {
+        throw new NotFoundException(ERRORMESSAGE.DATA_NOT_FOUND('Subject'));
+      }
+    }
+    if (dto.semesterId) {
+      semester = await this.enumService.getEnumValueById(dto.semesterId);
+      if (!semester)
+        throw new NotFoundException(ERRORMESSAGE.DATA_NOT_FOUND('semester'));
+    }
+    if (dto.academicYearId) {
+      academicYear = await this.enumService.getEnumValueById(
+        dto.academicYearId,
+      );
+      if (!academicYear)
+        throw new NotFoundException(
+          ERRORMESSAGE.DATA_NOT_FOUND('Academic Year'),
+        );
+    }
+
+    const updateEntity = UpdateSubjectMapper.toUpdateAssignSubjectEntity(
+      existingProfessorSubMapping,
+      professor,
+      subject,
+      semester,
+      academicYear,
+    );
+    updateEntity.updatedBy = updateBy.id;
+    const saved =
+      await this.professorSubjectRepo.saveAssignedSubject(updateEntity);
+
+    const result =
+      await this.professorSubjectRepo.findAssignSubjectByIdWithRelations(
+        saved.id,
+      );
+    return SubjectMapperResponse.toResponse(result!);
   }
 }

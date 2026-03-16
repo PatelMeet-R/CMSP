@@ -3,6 +3,11 @@ export const PI_DTO_MESSAGE = {
     REQUIRED: 'First name is required',
     STRING: 'First name must be a string',
   },
+  ENROLLMENT_NUMBER: {
+    REQUIRED: 'Enrollment number is required',
+    STRING: 'Enrollment Number must be a string',
+    LENGTH: (n: number) => `Enrollment Number Length must be ${n}`,
+  },
   LAST_NAME: {
     REQUIRED: 'Last name is required',
     STRING: 'Last name must be a string',

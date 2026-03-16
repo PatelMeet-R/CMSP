@@ -36,7 +36,7 @@ export class SubjectController {
   ) {
     const updated = await this.subjectService.updateSubject(id, dto, user);
     return {
-      message: SUCCESSMSG.SUBJECT_UPDATED,
+      message: SUCCESSMSG.SUBJECT.UPDATED,
       data: updated,
     };
   }
@@ -53,7 +53,7 @@ export class SubjectController {
       User,
     );
     return {
-      message: SUCCESSMSG.SUBJECT_CREATED,
+      message: SUCCESSMSG.SUBJECT.CREATED,
       data: newlyCreatedSubject,
     };
   }
@@ -67,7 +67,7 @@ export class SubjectController {
         : await this.subjectService.getSubjectsByBranch(user.branchId!);
 
     return {
-      message: SUCCESSMSG.SUBJECT_FETCHED,
+      message: SUCCESSMSG.SUBJECT.FETCHED,
       data: subjects,
     };
   }
@@ -77,7 +77,7 @@ export class SubjectController {
     const subject = await this.subjectService.getSubjectById(id);
 
     return {
-      message: SUCCESSMSG.SUBJECT_FETCHED,
+      message: SUCCESSMSG.SUBJECT.FETCHED,
       data: subject,
     };
   }

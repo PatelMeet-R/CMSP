@@ -10,13 +10,13 @@ export class PersonalInfo extends AuditableEntity {
   @JoinColumn()
   user: User;
 
-  @Column({ unique: true })
+  @Column({ unique: true, nullable: true })
   enrollmentNumber: string;
 
-  @Column()
+  @Column({ length: 2 })
   firstName: string;
 
-  @Column()
+  @Column({ length: 2 })
   lastName: string;
 
   @ManyToOne(() => EnumValue, { eager: true })

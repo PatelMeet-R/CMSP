@@ -3,6 +3,7 @@ import { PersonalInfo } from '../../domain/entities/personal-info.entity';
 import { UpdateByUserPersonalInfoDto } from '../../presentation/dto/request/user-pi-update.request.dto';
 import { AdminUpdatePersonalInfoDto } from '../../presentation/dto/request/admin-pi-update.request.dto';
 import { Branch } from 'src/modules/branch/domain/entities/branch.entity';
+import { unwatchFile } from 'fs';
 
 export class UpdatePersonalInfoMapper {
   static toPersonalInfoUpdateEntity(
@@ -34,12 +35,15 @@ export class UpdatePersonalInfoMapper {
     expectedGraduateYear?: EnumValue,
     branch?: Branch,
   ) {
-    if (dto.firstName) entity.firstName = dto.firstName;
-    if (dto.lastName) entity.lastName = dto.lastName;
-    if (branch) entity.branch = branch;
-    if (expectedGraduateYear)
+    if (dto.enrollmentNumber !== undefined)
+      entity.enrollmentNumber = dto.enrollmentNumber;
+    if (dto.firstName !== undefined) entity.firstName = dto.firstName;
+    if (dto.lastName !== undefined) entity.lastName = dto.lastName;
+    if (branch !== undefined) entity.branch = branch;
+    if (expectedGraduateYear !== undefined)
       entity.expectedGraduateYear = expectedGraduateYear;
-    if (userAccountStatus) entity.userAccountStatus = userAccountStatus;
+    if (userAccountStatus !== undefined)
+      entity.userAccountStatus = userAccountStatus;
     return entity;
   }
 }

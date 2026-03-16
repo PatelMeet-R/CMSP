@@ -9,7 +9,7 @@ export class ProfessorSubMappingRepository {
     @InjectRepository(ProfessorSubMapping)
     private readonly repo: Repository<ProfessorSubMapping>,
   ) {}
-  async assignSubject(data: ProfessorSubMapping) {
+  async saveAssignedSubject(data: ProfessorSubMapping) {
     return this.repo.save(data);
   }
   async findExisting(
@@ -27,7 +27,7 @@ export class ProfessorSubMappingRepository {
       },
     });
   }
-  async findSubjectByIdWithRelations(id: number) {
+  async findAssignSubjectByIdWithRelations(id: number) {
     return this.repo.findOne({
       where: { id },
       relations: [
@@ -41,7 +41,7 @@ export class ProfessorSubMappingRepository {
       ],
     });
   }
-  async findSubjectByProfessorId(professorId: number) {
+  async findAssignSubjectByProfessorId(professorId: number) {
     return this.repo
       .createQueryBuilder('mapping')
       .leftJoinAndSelect('mapping.subject', 'subject')

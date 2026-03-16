@@ -45,7 +45,7 @@ export class BranchController {
   async register(@Body() dto: BranchRegisterDto) {
     const newlyCreatedBranch = await this.branchService.registerBranch(dto);
     return {
-      message: SUCCESSMSG.BRANCH_REGISTERED,
+      message: SUCCESSMSG.BRANCH.REGISTERED,
       data: newlyCreatedBranch,
     };
   }
@@ -58,7 +58,7 @@ export class BranchController {
   ) {
     const updatedBranch = await this.branchService.updateBranch(id, dto);
     return {
-      message: SUCCESSMSG.BRANCH_UPDATED,
+      message: SUCCESSMSG.BRANCH.UPDATED,
       data: updatedBranch,
     };
   }

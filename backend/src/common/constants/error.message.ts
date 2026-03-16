@@ -5,13 +5,12 @@ export const ERRORMESSAGE = {
   INVALID_TOKEN: 'Invalid token or Expired Token',
   USER_NOT_AUTHENTICATED: 'User not authenticated',
   INSUFFICIENT_PERMISSION: ' Insufficient permission',
-  SMTPCONNFAILED: 'SMTP not configured! SMTP connection Failed due to Host',
+  SMTP_CONNECTION_FAILED:
+    'SMTP not configured! SMTP connection Failed due to Host',
   SERVER_ERROR: 'Internal Server Error',
-  IFEXISTTHENSENDMAIL:
-    'If an account with this email exists, we will send you a reset link',
   MAIL_SERVER_ISSUE:
     'mail server not working at time ! verify after few minutes',
-  PASSWORD_NOT_MATCHS: 'Passwords do not match',
+  PASSWORD_NOT_MATCHES: 'Passwords do not match',
   ENUMTYPE_ALREADY_EXISTS:
     'Enum Type Already Exists! Change the Name Of Your Enum Type',
   BRANCH_ALREADY_EXISTS: 'Branch already Exists!',
@@ -28,4 +27,5 @@ export const ERRORMESSAGE = {
   NOT_FOUND: 'Data Not Available!',
   INVALID_YEAR_ENTRY:
     'Expected graduation year cannot be earlier than joined year',
+  DATA_NOT_FOUND: (data: string) => `${data} Not Found`,
 };

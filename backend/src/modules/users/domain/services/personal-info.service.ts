@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { PersonalInfoRepository } from '../../data/repository/personal-info-repository';
 import { CreatePersonalInfoDto } from '../../presentation/dto/request/pi-create.request.dto';
-import { PersonalInfoMapper } from '../../data/mapper/personal-info.mapper';
+import { CreatePersonalInfoMapper } from '../../data/mapper/personal-info-create.mapper';
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
 import { EnumService } from 'src/modules/enums/domain/enums.service';
 import {
@@ -18,6 +18,7 @@ import { UpdateByUserPersonalInfoDto } from '../../presentation/dto/request/user
 import { UpdatePersonalInfoMapper } from '../../data/mapper/personal-info-update.mapper';
 import { AdminUpdatePersonalInfoDto } from '../../presentation/dto/request/admin-pi-update.request.dto';
 import { Branch } from 'src/modules/branch/domain/entities/branch.entity';
+import { PersonalInfoMapperResponse } from '../../data/mapper/personal-info-response.mapper';
 
 @Injectable()
 export class PersonalInfoService {
@@ -68,7 +69,7 @@ export class PersonalInfoService {
     if (expectedYear > joinedYear + 6) {
       throw new ConflictException(ERRORMESSAGE.INVALID_YEAR_ENTRY);
     }
-    const entity = PersonalInfoMapper.toCreateEntity(
+    const entity = CreatePersonalInfoMapper.toCreateEntity(
       dto,
       user, // User
       gender, // EnumValue
@@ -79,7 +80,7 @@ export class PersonalInfoService {
     );
     const saved = await this.personalInfoRepo.saveInfo(entity);
 
-    return PersonalInfoMapper.toResponse(saved);
+    return PersonalInfoMapperResponse.toResponse(saved);
   }
   async updatedByUserPersonalInfo(
     personalInfoId: number,
@@ -109,7 +110,7 @@ export class PersonalInfoService {
     entity.updatedBy = userId;
 
     const saved = await this.personalInfoRepo.saveInfo(entity);
-    return PersonalInfoMapper.toResponse(saved);
+    return PersonalInfoMapperResponse.toResponse(saved);
   }
   async updatedByAdminUserPersonalInfo(
     personalInfoId: number,
@@ -160,6 +161,6 @@ export class PersonalInfoService {
     );
     entity.updatedBy = userId;
     const saved = await this.personalInfoRepo.saveInfo(entity);
-    return PersonalInfoMapper.toResponse(saved);
+    return PersonalInfoMapperResponse.toResponse(saved);
   }
 }
