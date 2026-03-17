@@ -110,7 +110,7 @@ export class AuthService {
   }
   // find the current user by id
   // only role extract purpose for jwt Strategy
-  async getUserById(userId: number) {
+  async findUserEntityById(userId: number) {
     const user = await this.authRepository.findById(userId);
     if (!user) {
       throw new UnauthorizedException(ERRORMESSAGE.USERNOTEXIST);

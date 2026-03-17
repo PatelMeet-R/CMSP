@@ -14,6 +14,7 @@ export class RegisterStudentDto {
   @IsNotEmpty({ message: AUTH_DTO_MESSAGE.EMAIL.REQUIRED })
   @IsEmail({}, { message: AUTH_DTO_MESSAGE.EMAIL.INVALID })
   email: string;
+  
   @MinLength(2, { message: AUTH_DTO_MESSAGE.NAME.MIN_LENGTH('first', 2) })
   @MaxLength(50, { message: AUTH_DTO_MESSAGE.NAME.MAX_LENGTH('first', 50) })
   @IsNotEmpty({ message: PI_DTO_MESSAGE.FIRST_NAME.REQUIRED })

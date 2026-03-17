@@ -12,3 +12,11 @@ npm install handlebars //for the email templates
 //doctumention
 
 npm install --save @nestjs/swagger
+
+
+//upload feature 
+npm i @nestjs/platform-express cloudinary multer streamifier
+
+npm i cloudinary multer @nestjs/config
+npm install --save-dev @types/multer
+npm i @nestjs/platform-express

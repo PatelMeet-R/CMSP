@@ -15,6 +15,9 @@ import { AppConfigService } from './data/services/app-config.service';
 import { PersonalInfo } from '../users/domain/entities/personal-info.entity';
 import { BranchModule } from '../branch/branch.module';
 import { Branch } from '../branch/domain/entities/branch.entity';
+import { LoginThrottlerGuard } from 'src/core/guards/login-throttler.guard';
+import { Reflector } from '@nestjs/core';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -24,12 +27,15 @@ import { Branch } from '../branch/domain/entities/branch.entity';
     CommonModule,
     BranchModule,
     PassportModule,
+    ThrottlerModule,
     TypeOrmModule.forFeature([User, PersonalInfo, Branch]),
   ],
   providers: [
     AuthService,
     JwtStrategy,
     RolesGuard,
+    Reflector,
+    LoginThrottlerGuard,
     AuthRepository,
     AppConfigService,
   ],

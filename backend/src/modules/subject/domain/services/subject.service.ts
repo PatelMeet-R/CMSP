@@ -118,7 +118,7 @@ export class SubjectService {
       throw new NotFoundException(ERRORMESSAGE.SUBJECT_NOT_FOUND);
     }
 
-    return SubjectMapper.toResponse(subject);
+    return subject;
   }
   //hod selection option menu bar
   async getSubjectsByBranch(branchId: number) {

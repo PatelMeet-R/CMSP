@@ -28,4 +28,6 @@ export const ERRORMESSAGE = {
   INVALID_YEAR_ENTRY:
     'Expected graduation year cannot be earlier than joined year',
   DATA_NOT_FOUND: (data: string) => `${data} Not Found`,
+  MANY_ATTEMPTS: (n: number) =>
+    `too many attemps.please try again after ${n} min`,
 };

@@ -22,6 +22,8 @@ import { RolesGuard } from 'src/core/guards/roles-guard';
 import { Roles } from 'src/core/decorators/roles.decorators';
 import { ROLES } from 'src/common/constants/roles.constant';
 import { RegisterSpecificUserDto } from '../dto/request/register-specific-user.request.dto';
+import { LoginThrottlerGuard } from 'src/core/guards/login-throttler.guard';
+import { ERRORMESSAGE } from 'src/common/constants/error.message';
 
 @Controller('auth')
 export class AuthController {
@@ -41,7 +43,7 @@ export class AuthController {
       data: await this.authService.register(dto),
     };
   }
-
+  @UseGuards(LoginThrottlerGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() dto: LoginDto) {
@@ -85,7 +87,7 @@ export class AuthController {
     @Body() dto: ResetPasswordDto,
   ) {
     if (!token) {
-      throw new BadRequestException('Token missing');
+      throw new BadRequestException(ERRORMESSAGE.INVALID_TOKEN);
     }
     return await this.authService.resetPassword(token, dto);
   }

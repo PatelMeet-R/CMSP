@@ -45,7 +45,7 @@ export class PersonalInfoService {
         ENUM_TYPES.USER_ACC_STATUS,
         ENUM_VALUES.USER_ACC_STATUS.ACTIVE,
       ),
-      this.userService.getUserById(userId),
+      this.userService.findUserEntityById(userId),
       this.branchService.getBranchEntityById(dto.branchId),
     ]);
     if (

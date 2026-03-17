@@ -57,7 +57,7 @@ export class FileUploadController {
   async allFile() {
     const res = await this.fileUploadService.findAllFile();
     return {
-      data: FileResponse.toResponseDtoArray(res),
+      data: res,
     };
   }
   @Delete(':id')

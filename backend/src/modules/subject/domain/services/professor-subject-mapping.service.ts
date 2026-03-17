@@ -94,7 +94,7 @@ export class ProfessorSubMappingService {
     if (!existingProfessorSubMapping) {
       throw new NotFoundException(ERRORMESSAGE.NOT_FOUND);
     }
-    const updateBy = await this.authService.getUserById(updatedById);
+    const updateBy = await this.authService.findUserEntityById(updatedById);
     if (!updateBy) {
       throw new UnauthorizedException(ERRORMESSAGE.INVALID_REQUEST);
     }

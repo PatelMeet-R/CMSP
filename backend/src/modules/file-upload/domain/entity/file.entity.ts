@@ -1,5 +1,5 @@
 import { AuditableEntity } from 'src/core/base.entity';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity } from 'typeorm';
 
 @Entity('file')
 export class File extends AuditableEntity {
@@ -14,3 +14,4 @@ export class File extends AuditableEntity {
   @Column()
   publicId: string;
 }
+  

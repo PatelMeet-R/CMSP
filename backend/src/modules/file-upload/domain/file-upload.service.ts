@@ -4,11 +4,12 @@ import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
 import { FileRepository } from '../data/repository';
 import { FileCreateMapper } from '../data/mapper/file-create.mapper';
+import { FileResponseDto } from '../presentation/dto/response/file-response.dto';
+import { FileResponse } from '../data/mapper/file.response';
 
 @Injectable()
 export class FileUploadService {
   constructor(
-    // private readonly fileRepository: Repository<File>,
     private readonly fileRepository: FileRepository,
 
     private readonly CloudinaryService: CloudinaryService,
@@ -37,7 +38,15 @@ export class FileUploadService {
 
     await this.fileRepository.RemoveFileEntity(fileToBeDeleted);
   }
-  async findAllFile(): Promise<File[]> {
-    return await this.fileRepository.findAll();
+  async findAllFile(): Promise<FileResponseDto[]> {
+    const fileDetails: File[] = await this.fileRepository.findAll();
+    if (!fileDetails.length) {
+      throw new NotFoundException(ERRORMESSAGE.DATA_NOT_FOUND('files'));
+    }
+    return FileResponse.toResponseDtoArray(fileDetails);
+  }
+  async findFileEntityById(id: number): Promise<File | undefined> {
+    const file = await this.fileRepository.findFileById(id);
+    return file ?? undefined;
   }
 }

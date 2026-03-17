@@ -7,24 +7,18 @@ import { MulterModule } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { FileUploadController } from './presentation/file-upload.controller';
 import { FileRepository } from './data/repository';
-import { CloudinaryProvider } from './cloudinary/cloudinary.provider';
-import { CloudinaryService } from './cloudinary/cloudinary.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([File]),
+    CloudinaryModule,
     CloudinaryModule,
     MulterModule.register({
       storage: memoryStorage,
     }),
   ],
   controllers: [FileUploadController],
-  providers: [
-    FileUploadService,
-    CloudinaryProvider,
-    CloudinaryService,
-    FileRepository,
-  ],
-  exports: [TypeOrmModule, FileRepository],
+  providers: [FileUploadService, FileRepository],
+  exports: [FileUploadService],
 })
 export class FileUploadModule {}

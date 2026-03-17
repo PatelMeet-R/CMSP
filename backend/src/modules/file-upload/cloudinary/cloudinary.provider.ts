@@ -3,11 +3,13 @@ import { v2 as cloudinary } from 'cloudinary';
 
 export const CloudinaryProvider = {
   provide: 'CLOUDINARY',
-  useFactory: (config: ConfigService) => {
+  useFactory: (configService: ConfigService) => {
+    const config = configService.get('cloudinary');
+
     cloudinary.config({
-      cloud_name: config.get<string>('CLOUDINARY_CLOUD_NAME'),
-      api_key: config.get<string>('CLOUDINARY_API_KEY'),
-      api_secret: config.get<string>('CLOUDINARY_API_SECRET'),
+      cloud_name: config.cloudName,
+      api_key: config.apiKey,
+      api_secret: config.apiSecret,
     });
 
     //return configured cloudinary instance
