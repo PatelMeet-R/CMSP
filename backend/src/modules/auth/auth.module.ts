@@ -11,7 +11,6 @@ import { JwtStrategy } from 'src/core/strategies/jwt.strategies';
 import { CommonModule } from 'src/common/common.module';
 import { EnumsModule } from '../enums/enums.module';
 import { AuthRepository } from './data/repository';
-import { AppConfigService } from './data/services/app-config.service';
 import { PersonalInfo } from '../users/domain/entities/personal-info.entity';
 import { BranchModule } from '../branch/branch.module';
 import { Branch } from '../branch/domain/entities/branch.entity';
@@ -37,7 +36,13 @@ import { ThrottlerModule } from '@nestjs/throttler';
     Reflector,
     LoginThrottlerGuard,
     AuthRepository,
-    AppConfigService,
+    {
+      provide: 'APP_CONFIG',
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        return configService.get('app');
+      },
+    },
   ],
   controllers: [AuthController],
   exports: [AuthService],
