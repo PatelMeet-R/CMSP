@@ -15,7 +15,6 @@ import { AppConfigService } from './data/services/app-config.service';
 import { PersonalInfo } from '../users/domain/entities/personal-info.entity';
 import { BranchModule } from '../branch/branch.module';
 import { Branch } from '../branch/domain/entities/branch.entity';
-import { LoginThrottlerGuard } from 'src/core/guards/login-throttler.guard';
 import { Reflector } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 
@@ -35,7 +34,6 @@ import { ThrottlerModule } from '@nestjs/throttler';
     JwtStrategy,
     RolesGuard,
     Reflector,
-    LoginThrottlerGuard,
     AuthRepository,
     AppConfigService,
   ],
