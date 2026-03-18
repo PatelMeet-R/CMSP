@@ -20,12 +20,15 @@ import { AssignmentRepository } from './data/repository';
     BranchModule,
     EnumsModule,
     AuthModule,
-    JwtAuthGuard,
-    RolesGuard,
     TypeOrmModule.forFeature([Subject, Assignment, File]),
   ],
   controllers: [AssignmentController],
-  providers: [AssignmentService, AssignmentRepository],
+  providers: [
+    AssignmentService,
+    AssignmentRepository,
+    JwtAuthGuard,
+    RolesGuard,
+  ],
   exports: [AssignmentService],
 })
 export class AssignmentModule {}

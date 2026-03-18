@@ -27,4 +27,9 @@ export const SUCCESSMSG = {
     REGISTERED: 'Your personal information has been registered successfully',
     UPDATED: 'Your personal information has been updated successfully',
   },
+  ASSIGNMENT: {
+    CREATED: 'Assignment registered successfully',
+    UPDATED: 'Assignment updated successfully',
+    DELETED: 'Assignment deleted successfully',
+  },
 };

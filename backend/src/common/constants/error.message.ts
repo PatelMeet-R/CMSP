@@ -30,4 +30,19 @@ export const ERRORMESSAGE = {
   DATA_NOT_FOUND: (data: string) => `${data} Not Found`,
   MANY_ATTEMPTS: (n: number) =>
     `too many attemps.please try again after ${n} min`,
+  ASSIGNMENT_MESSAGE: {
+    NOT_FOUND: (id: number) => `Assignment with ID ${id} not found`,
+    INVALID_RELATION: 'Invalid subject, branch, semester, or academic year',
+
+    FORBIDDEN: {
+      NOT_OWNER: 'You can only edit your own assignments.',
+      DELETE_NOT_OWNER: 'Professors can only delete their own assignments.',
+      NOT_AUTHORIZED_SUBJECT:
+        'You are not assigned to this subject for the selected semester and academic year.',
+      HOD_BRANCH_MISMATCH:
+        'HODs can only delete assignments of their own branch.',
+      BRANCH_MISSING: 'Branch configuration missing. Cannot authorize action.',
+      NO_PERMISSION: 'You do not have permission to perform this action.',
+    },
+  },
 };
