@@ -10,7 +10,8 @@ import { EnumsModule } from './modules/enums/enums.module';
 import { UsersModule } from './modules/users/users.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
-import cloudinaryConfig from './config/cloudinary.config';
+import mailConfig from './config/mail.config';
+import appConfig from './config/app.config';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import cloudinaryConfig from './config/cloudinary.config';
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [cloudinaryConfig],
+      load: [mailConfig, appConfig],
     }),
     ThrottlerModule.forRoot({
       throttlers: [

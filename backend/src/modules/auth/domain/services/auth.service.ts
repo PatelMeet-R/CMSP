@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -15,7 +16,6 @@ import { LoginDto } from '../../presentation/dto/request/login.dto';
 import { RegisterStudentDto } from '../../presentation/dto/request/register.dto';
 import { ResetPasswordDto } from '../../presentation/dto/request/reset-password.dto';
 
-import { AppConfigService } from '../../data/services/app-config.service';
 import { BcyptService } from '../../../../common/utils/bcypt/bcypt.service';
 import { JwtTokenService } from 'src/common/utils/jwt/jwt.service';
 import { MessageResponseDto } from '../../presentation/dto/response/verify-email-message.response.dto';
@@ -32,15 +32,16 @@ import { BranchService } from 'src/modules/branch/domain/branch.service';
 import { RegisterSpecificUserDto } from '../../presentation/dto/request/register-specific-user.request.dto';
 import { UserRegisterMapper } from '../../data/mappers/user-register.mapper';
 import { RegisterSpecificUserMapper } from '../../data/mappers/register-specific-user.mapper';
+import type { App } from 'src/config/app.config';
 
 @Injectable()
 export class AuthService {
   constructor(
+    @Inject('APP_CONFIG') private readonly appConfig: App,
     private readonly cryptoService: CryptoService,
     private readonly authRepository: AuthRepository,
     private readonly mailService: MailService,
     private readonly JwtTokenService: JwtTokenService,
-    private readonly appConfigService: AppConfigService,
     private readonly bcryptService: BcyptService,
     private readonly enumService: EnumService,
     private readonly branchService: BranchService,
@@ -127,7 +128,7 @@ export class AuthService {
       }
       const token = this.JwtTokenService.generateEmailVerificationToken(user);
 
-      const verifyUrl = `${this.appConfigService.appUrl}/auth/verify-email?token=${token}`;
+      const verifyUrl = `${this.appConfig.frontendUrl}/auth/verify-email?token=${token}`;
 
       await this.mailService.sendVerificationEmail(user.email, verifyUrl);
       return new MessageResponseDto(SUCCESSMSG.AUTH.VERIFICATION_EMAIL_SENT);
@@ -165,7 +166,7 @@ export class AuthService {
           Date.now() + RESET_PASSWORD_TOKEN_EXPIRY,
         ); //15min
         await this.authRepository.save(user);
-        const resetUrl = `${this.appConfigService.appUrl}/auth/reset-password?token=${rawToken}`;
+        const resetUrl = `${this.appConfig.frontendUrl}/auth/reset-password?token=${rawToken}`;
         await this.mailService.sendResetPassword(user.email, resetUrl);
       }
       return new MessageResponseDto(

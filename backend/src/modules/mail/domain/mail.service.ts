@@ -1,28 +1,49 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as handlebars from 'handlebars';
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
+import type { MailModuleOptions } from 'src/config/mail.config';
+import type { App } from 'src/config/app.config';
 
 @Injectable()
 export class MailService {
-  private transporter;
+  private transporter: nodemailer.Transporter;
 
-  constructor(private configService: ConfigService) {
-    if (!this.configService.get<string>('SMTP_HOST')) {
+  constructor(
+    private readonly configService: ConfigService,
+    @Inject('APP_CONFIG') private readonly appConfig: App,
+    @Inject('MAIL_OPTIONS') private readonly options: MailModuleOptions,
+  ) {
+    const mailConfig = this.configService.get('mail');
+
+    if (!this.options.host) {
       throw new Error(ERRORMESSAGE.SMTP_CONNECTION_FAILED);
     }
     this.transporter = nodemailer.createTransport({
-      host: this.configService.get<string>('SMTP_HOST'),
-      port: Number(this.configService.get<string>('SMTP_PORT')),
+      host: this.options.host,
+      port: this.options.port,
       secure: false,
       auth: {
-        user: this.configService.get<string>('SMTP_USER'),
-        pass: this.configService.get<string>('SMTP_PASS'),
+        user: this.options.user,
+        pass: this.options.pass,
       },
     });
+
+    // if (!this.configService.get<string>('SMTP_HOST')) {
+    //   throw new Error(ERRORMESSAGE.SMTP_CONNECTION_FAILED);
+    // }
+    // this.transporter = nodemailer.createTransport({
+    //   host: this.configService.get<string>('SMTP_HOST'),
+    //   port: Number(this.configService.get<string>('SMTP_PORT')),
+    //   secure: false,
+    //   auth: {
+    //     user: this.configService.get<string>('SMTP_USER'),
+    //     pass: this.configService.get<string>('SMTP_PASS'),
+    //   },
+    // });
   }
 
   private compileTemplate(templateName: string, context: any) {
@@ -41,9 +62,10 @@ export class MailService {
     return template(context);
   }
   async sendMail(to: string, subject: string, template: string, context: any) {
+    const fromAddress = `<${this.options.from}>`;
     const html = this.compileTemplate(template, context);
     await this.transporter.sendMail({
-      from: `<${this.configService.get('EMAIL_FROM')}>`,
+      from: fromAddress,
       to,
       subject,
       html,
@@ -68,8 +90,8 @@ export class MailService {
       fullName: string;
     },
   ) {
-    const loginUrl = this.configService.get<string>('FRONTEND_URL');
     // Prepare template context
+    const loginUrl = this.appConfig.frontendUrl;
     const context = {
       email: userData.email,
       password: userData.password,

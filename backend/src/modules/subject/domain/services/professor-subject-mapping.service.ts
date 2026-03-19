@@ -57,7 +57,16 @@ export class ProfessorSubMappingService {
 
     const entity = AssignSubjectMapper.toEntity(dto, assignedBy);
 
-    const saved = await this.professorSubjectRepo.saveAssignedSubject(entity);
+    let saved;
+    try {
+      saved = await this.professorSubjectRepo.saveAssignedSubject(entity);
+    } catch (error) {
+      if (error.code === '23505') {
+        throw new ConflictException(ERRORMESSAGE.SUBJECT_ALREADY_ASSIGNED);
+      }
+      throw error;
+    }
+
     const result =
       await this.professorSubjectRepo.findAssignSubjectByIdWithRelations(
         saved.id,
@@ -147,5 +156,22 @@ export class ProfessorSubMappingService {
         saved.id,
       );
     return SubjectMapperResponse.toResponse(result!);
+  }
+
+  async isProfessorAssignedToSubject(
+    professorId: number,
+    subjectId: number,
+    semesterId: number,
+    academicYearId: number,
+  ): Promise<boolean> {
+    const existing = await this.professorSubjectRepo.findExisting(
+      professorId,
+      subjectId,
+      semesterId,
+      academicYearId,
+    );
+
+    // Returns true if the mapping exists, false if it doesn't
+    return !!existing;
   }
 }
