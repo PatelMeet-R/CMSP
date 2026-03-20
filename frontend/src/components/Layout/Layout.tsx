@@ -1,9 +1,6 @@
-// import { AppSidebar } from "@/components/AppSidebar";
-// import Footer from "@/components/Footer";
-// import Topbar from "@/components/Topbar";
-import { AppSidebar } from "@/components/AppSidebar";
-import Footer from "@/components/Footer";
-import Topbar from "@/components/Topbar";
+import { AppSidebar } from "@/components/Layout/AppSidebar";
+import Footer from "@/components/Layout/Footer";
+import Topbar from "@/components/Layout/Topbar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Outlet } from "react-router-dom";
 const Layout = () => {
@@ -11,7 +8,7 @@ const Layout = () => {
     <SidebarProvider>
       <Topbar />
       <AppSidebar></AppSidebar>
-      <main className="border border-green-600 w-full">
+      <main className="border w-full">
         <div className="w-full min-h-[calc(100vh-46px)]">
           <Outlet />
         </div>

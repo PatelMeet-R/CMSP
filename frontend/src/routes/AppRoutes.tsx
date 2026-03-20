@@ -1,14 +1,12 @@
 import Layout from "@/components/Layout/Layout";
-import Index from "@/modules/dashboard/view/Index";
+import { ROUTENAME } from "@/core/Constants/RouteName";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Layout></Layout>}>
-          <Route index element={<Index />}></Route>
-        </Route>
+        <Route path={ROUTENAME.DASHBOARD} element={<Layout />}></Route>
       </Routes>
     </BrowserRouter>
   );

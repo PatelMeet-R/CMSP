@@ -2,7 +2,7 @@ import logo from "@/assets/01.png";
 import { LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import SearchBox from "@/components/SearchBox";
+import SearchBox from "@/components/Layout/SearchBox";
 
 const Topbar = () => {
   return (
