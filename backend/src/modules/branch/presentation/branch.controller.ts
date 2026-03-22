@@ -19,7 +19,6 @@ import { Roles } from 'src/core/decorators/roles.decorators';
 import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
 import { ROLES } from 'src/common/constants/roles.constant';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('branch')
 export class BranchController {
   constructor(private branchService: BranchService) {}
@@ -51,6 +50,7 @@ export class BranchController {
   }
   @Patch(':id')
   @Roles(ROLES.SUPER_ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @HttpCode(HttpStatus.OK)
   async update(
     @Body() dto: BranchUpdateDto,
