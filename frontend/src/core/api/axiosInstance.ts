@@ -1,5 +1,6 @@
 import axios from "axios";
 import { toast } from "react-toastify";
+import Cookies from "js-cookie";
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -8,14 +9,22 @@ const axiosInstance = axios.create({
     "Content-Type": "application/json",
   },
 });
-axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+axiosInstance.interceptors.request.use(
+  (config) => {
+    // Grab the token from the cookie
+    const token = Cookies.get("accessToken");
 
+    // If the token exists, attach it to the Authorization header
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config; // Let the request continue
+  },
+  (error) => {
+    return Promise.reject(error);
+  },
+);
 //  Global response interceptor
 axiosInstance.interceptors.response.use(
   (response) => response,
