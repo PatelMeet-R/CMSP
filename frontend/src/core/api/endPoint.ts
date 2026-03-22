@@ -14,4 +14,9 @@ export const API_ENDPOINT = {
       PROFESSOR: "auth/register/professor",
     },
   },
+  BRANCH: {
+    VIEW: "branch/all",
+    REGISTER: "branch/register",
+    UPDATE: "branch",
+  },
 } as const;
