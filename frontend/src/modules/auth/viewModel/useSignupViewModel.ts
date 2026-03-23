@@ -1,20 +1,18 @@
-import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
+import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
   SignupInputSchema,
   type SignupInput,
-} from "@/modules/auth/types/signupSchema";
+} from "@/modules/auth/types/auth.schemas";
 import { registerUser } from "@/modules/auth/model/authService";
+import { useBranchViewModel } from "@/modules/branch/viewModel/useBranchViewModel";
+import { toastService } from "@/core/toast/toastService";
+import { getAxiosErrorMessage } from "@/core/helper/errorMessage";
 
 export function useSignupViewModel() {
   const navigate = useNavigate();
-
-  // State to hold the branches for the dropdown
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [isLoadingBranches, setIsLoadingBranches] = useState(true);
 
   const form = useForm<SignupInput>({
     resolver: zodResolver(SignupInputSchema),
@@ -24,32 +22,25 @@ export function useSignupViewModel() {
       lastName: "",
       enrollmentNumber: "",
       password: "",
+      branchId: 0,
     },
   });
 
-  // Fetch branches as soon as the component mounts
-  useEffect(() => {
-    const fetchBranches = async () => {
-      try {
-        const data = await getBranches();
-        setBranches(data);
-      } catch (error) {
-        console.error("Failed to load branches", error);
-      } finally {
-        setIsLoadingBranches(false);
-      }
-    };
-    fetchBranches();
-  }, []);
+  const { branches, isLoading: isLoadingBranches } = useBranchViewModel();
 
-  const onSubmit = async (data: SignupInput) => {
-    try {
-      await registerUser(data);
-      console.log("Signup successful!");
+  const signupMutation = useMutation({
+    mutationFn: registerUser,
+    onSuccess: (response) => {
+      toastService.success(response.message);
       navigate("/");
-    } catch (error) {
-      console.error("Signup failed", error);
-    }
+    },
+    onError: (error) => {
+      toastService.error(getAxiosErrorMessage(error));
+    },
+  });
+
+  const onSubmit = (data: SignupInput) => {
+    signupMutation.mutate(data);
   };
 
   return {
@@ -57,5 +48,6 @@ export function useSignupViewModel() {
     onSubmit,
     branches,
     isLoadingBranches,
+    isSubmitting: signupMutation.isPending,
   };
 }

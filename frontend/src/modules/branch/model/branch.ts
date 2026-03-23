@@ -4,7 +4,8 @@ import type { Branch } from "@/modules/branch/types/branch";
 
 export const getBranches = async (): Promise<Branch[]> => {
   const response = await axiosInstance.get(API_ENDPOINT.BRANCH.VIEW); // Adjust URL to your API
-  console.log(response.data + " this is the response.data");
+
+  console.log("response:", response.data);
 
   return response.data.data;
 };

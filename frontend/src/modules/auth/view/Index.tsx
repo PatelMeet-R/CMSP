@@ -5,18 +5,19 @@ import Signin from "@/modules/auth/view/Signin";
 export function Index() {
   return (
     <div className="flex justify-center items-center h-screen w-screen">
-      {/* <Tabs defaultValue="login" className="w-[400px]"> */}
-      <Tabs defaultValue="login" className="w-100">
+      <Tabs defaultValue="login">
         <TabsList>
-          <TabsTrigger value="login">LogIn</TabsTrigger>
-          <TabsTrigger value="singin">singin</TabsTrigger>
+          <TabsTrigger value="login">Login</TabsTrigger>
+          <TabsTrigger value="singin">Signin</TabsTrigger>
         </TabsList>
-        <TabsContent value="login">
-          <Login />
-        </TabsContent>
-        <TabsContent value="singin">
-          <Signin />
-        </TabsContent>
+        <div className="max-w-md mx-auto p-6 border rounded-lg shadow-sm">
+          <TabsContent value="login">
+            <Login />
+          </TabsContent>
+          <TabsContent value="singin">
+            <Signin />
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   );

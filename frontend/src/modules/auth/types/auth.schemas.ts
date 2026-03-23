@@ -5,7 +5,15 @@ export const LoginInputSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
-export type LoginInput = z.infer<typeof LoginInputSchema>;
+
+export const SignupInputSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  firstName: z.string().min(2, "first name is too short"),
+  lastName: z.string().min(2, "last name is too short"),
+  enrollmentNumber: z.string().min(5, "Enrollment number is required"),
+  branchId: z.number().int().positive("please select a branch"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
 
 export const UserSchema = z.object({
   id: z.number(),
@@ -24,6 +32,8 @@ export const LoginResponseSchema = z.object({
   }),
 });
 
-// 3. Export the TypeScript types
+//  Export the TypeScript types
 export type User = z.infer<typeof UserSchema>;
 export type LoginResponse = z.infer<typeof LoginResponseSchema>;
+export type LoginInput = z.infer<typeof LoginInputSchema>;
+export type SignupInput = z.infer<typeof SignupInputSchema>;

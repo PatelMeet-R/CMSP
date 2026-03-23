@@ -3,8 +3,9 @@ import { API_ENDPOINT } from "@/core/api/endPoint";
 import type {
   LoginInput,
   LoginResponse,
-} from "@/modules/auth/types/loginSchema";
-import type { SignupInput } from "@/modules/auth/types/signupSchema";
+  SignupInput,
+} from "@/modules/auth/types/auth.schemas";
+
 import Cookies from "js-cookie";
 
 export const loginUser = async (
@@ -14,7 +15,7 @@ export const loginUser = async (
     API_ENDPOINT.AUTH.LOGIN,
     credentials,
   );
-  const data = response.data.data;
+  const data = response.data;
 
   Cookies.set("accessToken", data.accessToken, { expires: 1, secure: true });
   Cookies.set("refreshToken", data.refreshToken, { expires: 7, secure: true });

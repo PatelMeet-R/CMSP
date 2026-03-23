@@ -1,5 +1,5 @@
+import { toastService } from "@/core/toast/toastService";
 import axios from "axios";
-import { toast } from "react-toastify";
 import Cookies from "js-cookie";
 
 const axiosInstance = axios.create({
@@ -31,7 +31,7 @@ axiosInstance.interceptors.response.use(
 
   (error) => {
     if (!error.response) {
-      toast.error("Server not reachable");
+      toastService.error("Server not reachable");
       return Promise.reject(error);
     }
 
@@ -39,19 +39,20 @@ axiosInstance.interceptors.response.use(
     const message = error.response.data?.message || "Something went wrong";
 
     if (status === 401) {
-      toast.error("Session expired. Please login again");
+      toastService.error("Session expired. Please login again");
 
       // optional redirect
-      window.location.href = "/login";
+      window.location.href = "/servererror";
     } else if (status === 403) {
-      toast.error("Access denied");
+      toastService.error("Access denied");
     } else if (status === 500) {
-      toast.error("Server error");
+      toastService.error("Server error");
     } else {
-      toast.error(message);
+      toastService.error(message);
     }
 
     return Promise.reject(error);
   },
 );
+
 export default axiosInstance;

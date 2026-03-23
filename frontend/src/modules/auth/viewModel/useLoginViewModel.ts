@@ -1,14 +1,20 @@
+import { getAxiosErrorMessage } from "@/core/helper/errorMessage";
+import { toastService } from "@/core/toast/toastService";
 import { loginUser } from "@/modules/auth/model/authService";
 import {
   LoginInputSchema,
   type LoginInput,
-} from "@/modules/auth/types/loginSchema";
+} from "@/modules/auth/types/auth.schemas";
+import { setCredentials } from "@/store/features/auth.slice";
+import { useAppDispatch } from "@/store/hook";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 
 export function useLoginViewModel() {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const form = useForm<LoginInput>({
     resolver: zodResolver(LoginInputSchema),
     defaultValues: {
@@ -16,18 +22,26 @@ export function useLoginViewModel() {
       password: "",
     },
   });
-
-  const onSubmit = async (data: LoginInput) => {
-    try {
-      await loginUser(data);
+  const loginMutation = useMutation({
+    mutationFn: loginUser,
+    onSuccess: (response) => {
+      dispatch(setCredentials(response.data.user));
+      toastService.success("welcome bhai bhai");
       navigate("/dashboard");
-    } catch (error) {
-      console.error("Login failed", error);
-    }
+    },
+    onError: (error) => {
+      console.log(error);
+      toastService.error(getAxiosErrorMessage(error));
+    },
+  });
+
+  const onSubmit = (data: LoginInput) => {
+    loginMutation.mutate(data);
   };
 
   return {
     form,
     onSubmit,
+    isSubmitting: loginMutation.isPending,
   };
 }
