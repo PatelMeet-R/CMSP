@@ -1,5 +1,6 @@
+import { toastService } from "@/core/toast/toastService";
 import axios from "axios";
-import { toast } from "react-toastify";
+import Cookies from "js-cookie";
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -8,21 +9,29 @@ const axiosInstance = axios.create({
     "Content-Type": "application/json",
   },
 });
-axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+axiosInstance.interceptors.request.use(
+  (config) => {
+    // Grab the token from the cookie
+    const token = Cookies.get("accessToken");
 
+    // If the token exists, attach it to the Authorization header
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config; // Let the request continue
+  },
+  (error) => {
+    return Promise.reject(error);
+  },
+);
 //  Global response interceptor
 axiosInstance.interceptors.response.use(
   (response) => response,
 
   (error) => {
     if (!error.response) {
-      toast.error("Server not reachable");
+      toastService.error("Server not reachable");
       return Promise.reject(error);
     }
 
@@ -30,19 +39,20 @@ axiosInstance.interceptors.response.use(
     const message = error.response.data?.message || "Something went wrong";
 
     if (status === 401) {
-      toast.error("Session expired. Please login again");
+      toastService.error("Session expired. Please login again");
 
       // optional redirect
-      window.location.href = "/login";
+      window.location.href = "/servererror";
     } else if (status === 403) {
-      toast.error("Access denied");
+      toastService.error("Access denied");
     } else if (status === 500) {
-      toast.error("Server error");
+      toastService.error("Server error");
     } else {
-      toast.error(message);
+      toastService.error(message);
     }
 
     return Promise.reject(error);
   },
 );
+
 export default axiosInstance;
