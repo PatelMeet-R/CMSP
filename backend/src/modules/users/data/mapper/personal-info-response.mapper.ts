@@ -23,7 +23,7 @@ export class PersonalInfoMapperResponse {
 
     dto.primaryMobileNumber = entity.primaryMobileNumber;
 
-    dto.secondaryMobileNumber = entity.secondaryMobileNumber;
+    dto.secondaryMobileNumber = entity.secondaryMobileNumber ?? undefined;
 
     dto.city = entity.city;
     dto.state = entity.state;

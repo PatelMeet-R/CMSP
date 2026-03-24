@@ -30,4 +30,6 @@ export const ERRORMESSAGE = {
   DATA_NOT_FOUND: (data: string) => `${data} Not Found`,
   MANY_ATTEMPTS: (n: number) =>
     `too many attemps.please try again after ${n} min`,
+  ENROLLMENT_TAKEN: (enrollmentNumber: String) =>
+    `The enrollment number ${enrollmentNumber} is already registered to another student.`,
 };
