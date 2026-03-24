@@ -1,4 +1,10 @@
-import { IsOptional, IsString, IsNumber, Length } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  Length,
+  IsNotEmpty,
+} from 'class-validator';
 import { PI_DTO_MESSAGE } from 'src/common/constants/dto/users-dto/personal-info.dto.message';
 
 export class UpdateByUserPersonalInfoDto {
@@ -40,4 +46,17 @@ export class UpdateByUserPersonalInfoDto {
   @IsString({ message: PI_DTO_MESSAGE.POSTAL_CODE.STRING })
   @Length(6, 6, { message: PI_DTO_MESSAGE.POSTAL_CODE.LENGTH })
   postalCode?: string;
+
+  //year
+  @IsNotEmpty({
+    message: PI_DTO_MESSAGE.JOINED_ACADEMIC_YEAR_ID.REQUIRED,
+  })
+  @IsNumber({}, { message: PI_DTO_MESSAGE.JOINED_ACADEMIC_YEAR_ID.NUMBER })
+  joinedAcademicYearId: number;
+
+  @IsNotEmpty({
+    message: PI_DTO_MESSAGE.EXPECTED_GRADUATE_YEAR_ID.REQUIRED,
+  })
+  @IsNumber({}, { message: PI_DTO_MESSAGE.EXPECTED_GRADUATE_YEAR_ID.NUMBER })
+  expectedGraduateYearId: number;
 }

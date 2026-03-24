@@ -22,12 +22,12 @@ export class UserRegisterMapper {
     pi.lastName = dto.lastName;
     pi.enrollmentNumber = dto.enrollmentNumber;
     // THE BYPASS: Hardcode empty strings for everything the DB demands
-    pi.primaryMobileNumber = 'Not Provided';
-    pi.secondaryMobileNumber = 'Not Provided';
-    pi.city = 'Not Provided';
-    pi.state = 'Not Provided';
-    pi.country = 'Not Provided';
-    pi.postalCode = 'Not Provided';
+    pi.primaryMobileNumber = '0000000000';
+    pi.secondaryMobileNumber = undefined;
+    pi.city = 'Unknown';
+    pi.state = 'Unknown';
+    pi.country = 'Unknown';
+    pi.postalCode = '000000';
     user.personalInfo = pi;
     return user;
   }

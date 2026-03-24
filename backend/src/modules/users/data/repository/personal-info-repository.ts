@@ -33,4 +33,15 @@ export class PersonalInfoRepository {
   async saveMany(data: PersonalInfo[]): Promise<PersonalInfo[]> {
     return this.repo.save(data);
   }
+
+  async isUserExistWithEnrollment(enrollmentNumber: string): Promise<boolean> {
+    const exists = await this.repo
+      .createQueryBuilder('personalInfo')
+      .where('personalInfo.enrollmentNumber = :enrollmentNumber', {
+        enrollmentNumber,
+      })
+      .getExists();
+
+    return exists;
+  }
 }

@@ -3,27 +3,30 @@ import { PersonalInfo } from '../../domain/entities/personal-info.entity';
 import { UpdateByUserPersonalInfoDto } from '../../presentation/dto/request/user-pi-update.request.dto';
 import { AdminUpdatePersonalInfoDto } from '../../presentation/dto/request/admin-pi-update.request.dto';
 import { Branch } from 'src/modules/branch/domain/entities/branch.entity';
-import { unwatchFile } from 'fs';
 
 export class UpdatePersonalInfoMapper {
   static toPersonalInfoUpdateEntity(
     entity: PersonalInfo,
     dto: UpdateByUserPersonalInfoDto,
+    joinedAcademicYear: EnumValue,
+    expectedGraduateYear: EnumValue,
     gender?: EnumValue,
   ) {
-    if (gender) entity.gender = gender;
+    entity.joinedAcademicYear = joinedAcademicYear;
+    entity.expectedGraduateYear = expectedGraduateYear;
+    if (gender !== undefined) entity.gender = gender;
 
-    if (dto.primaryMobileNumber) {
+    if (dto.primaryMobileNumber !== undefined) {
       entity.primaryMobileNumber = dto.primaryMobileNumber;
     }
 
-    if (dto.secondaryMobileNumber) {
+    if (dto.secondaryMobileNumber !== undefined) {
       entity.secondaryMobileNumber = dto.secondaryMobileNumber;
     }
 
-    if (dto.city) entity.city = dto.city;
-    if (dto.state) entity.state = dto.state;
-    if (dto.country) entity.country = dto.country;
+    if (dto.city !== undefined) entity.city = dto.city;
+    if (dto.state !== undefined) entity.state = dto.state;
+    if (dto.country !== undefined) entity.country = dto.country;
     if (dto.postalCode) entity.postalCode = dto.postalCode;
 
     return entity;
