@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { AuthService } from './domain/services/auth.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './domain/entities/user.entity';
@@ -17,6 +17,7 @@ import { Branch } from '../branch/domain/entities/branch.entity';
 import { LoginThrottlerGuard } from 'src/core/guards/login-throttler.guard';
 import { Reflector } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { UsersModule } from 'src/modules/users/users.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     BranchModule,
     PassportModule,
     ThrottlerModule,
+    UsersModule,
     TypeOrmModule.forFeature([User, PersonalInfo, Branch]),
   ],
   providers: [

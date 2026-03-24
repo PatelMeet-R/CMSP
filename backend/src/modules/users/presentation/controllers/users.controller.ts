@@ -5,7 +5,6 @@ import {
   Param,
   ParseIntPipe,
   Patch,
-  Post,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
@@ -13,7 +12,6 @@ import { RolesGuard } from 'src/core/guards/roles-guard';
 import { PersonalInfoService } from '../../domain/services/personal-info.service';
 import { Roles } from 'src/core/decorators/roles.decorators';
 import { ROLES } from 'src/common/constants/roles.constant';
-import { CreatePersonalInfoDto } from '../dto/request/pi-create.request.dto';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 import { EmailVerifiedGuard } from 'src/core/guards/email-verified.guard';
@@ -25,23 +23,6 @@ import { SUCCESSMSG } from 'src/common/constants/success.message';
 @UseGuards(JwtAuthGuard, RolesGuard, EmailVerifiedGuard)
 export class PersonalInfoController {
   constructor(private readonly personalInfoService: PersonalInfoService) {}
-
-  @Post('register')
-  @HttpCode(HttpStatus.CREATED)
-  @Roles(ROLES.STUDENT)
-  async registerPersonalInfoDetails(
-    dto: CreatePersonalInfoDto,
-    @CurrentUser() user: UserResponseDto,
-  ) {
-    const res = await this.personalInfoService.registerPersonalInfo(
-      dto,
-      user.id,
-    );
-    return {
-      message: SUCCESSMSG.PERSONAL_INFO.REGISTERED,
-      data: res,
-    };
-  }
 
   @Patch('update/:personalInfoId')
   @HttpCode(HttpStatus.OK)

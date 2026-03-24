@@ -137,4 +137,10 @@ export class AuthController {
       data: res,
     };
   }
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async logout() {
+    return { message: 'Logout successful' };
+  }
 }

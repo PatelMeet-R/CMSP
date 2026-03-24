@@ -38,8 +38,8 @@ export class PersonalInfo extends AuditableEntity {
   @Column({ length: 10 }) //max lenght is 10
   primaryMobileNumber: string;
 
-  @Column({ nullable: true, length: 10 }) //optional one
-  secondaryMobileNumber?: string;
+  @Column({ type: 'varchar', nullable: true, length: 10 }) //optional one
+  secondaryMobileNumber?: string | null;
 
   // account status
   @ManyToOne(() => EnumValue, { eager: true })

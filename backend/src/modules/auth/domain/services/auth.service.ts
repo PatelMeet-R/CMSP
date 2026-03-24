@@ -33,6 +33,7 @@ import { RegisterSpecificUserDto } from '../../presentation/dto/request/register
 import { UserRegisterMapper } from '../../data/mappers/user-register.mapper';
 import { RegisterSpecificUserMapper } from '../../data/mappers/register-specific-user.mapper';
 import type { App } from 'src/config/app.config';
+import { PersonalInfoRepository } from 'src/modules/users/data/repository/personal-info-repository';
 
 @Injectable()
 export class AuthService {
@@ -40,6 +41,7 @@ export class AuthService {
     @Inject('APP_CONFIG') private readonly appConfig: App,
     private readonly cryptoService: CryptoService,
     private readonly authRepository: AuthRepository,
+    private readonly personalInfoRespository: PersonalInfoRepository,
     private readonly mailService: MailService,
     private readonly JwtTokenService: JwtTokenService,
     private readonly bcryptService: BcyptService,
@@ -63,6 +65,14 @@ export class AuthService {
     const branch = await this.branchService.getBranchEntityById(dto.branchId);
     if (!branch) {
       throw new NotFoundException(ERRORMESSAGE.DATA_NOT_FOUND('branch'));
+    }
+    const isEnrollmentNumbertaken =
+      await this.personalInfoRespository.isUserExistWithEnrollment(
+        dto.enrollmentNumber,
+      );
+
+    if (isEnrollmentNumbertaken) {
+      throw new ConflictException(ERRORMESSAGE.ENROLLMENT_TAKEN);
     }
     const entity = UserRegisterMapper.toRegisterStudentEntity(
       dto,
