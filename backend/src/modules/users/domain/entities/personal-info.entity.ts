@@ -49,13 +49,16 @@ export class PersonalInfo extends AuditableEntity {
   //address
   @Column()
   city: string;
+
   @Column()
   state: string;
+
   @Column()
   country: string;
+
   @Column({ length: 6 })
   postalCode: string;
-  entity: EnumValue;
+
   get fullName(): string {
     return `${this.firstName} ${this.lastName}`;
   }
