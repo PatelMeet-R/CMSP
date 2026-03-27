@@ -1,5 +1,7 @@
 import {
+  Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
@@ -15,47 +17,36 @@ import { ROLES } from 'src/common/constants/roles.constant';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 import { EmailVerifiedGuard } from 'src/core/guards/email-verified.guard';
-import { UpdateByUserPersonalInfoDto } from '../dto/request/user-pi-update.request.dto';
-import { AdminUpdatePersonalInfoDto } from '../dto/request/admin-pi-update.request.dto';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
+import type { UpdatePersonalInfoDto } from 'src/modules/users/presentation/dto/request/update-personal-info.dto';
 
 @Controller('personal-info')
-@UseGuards(JwtAuthGuard, RolesGuard, EmailVerifiedGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class PersonalInfoController {
   constructor(private readonly personalInfoService: PersonalInfoService) {}
-
-  @Patch('update/:personalInfoId')
-  @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.STUDENT)
-  async updatePersonalInfoByUser(
-    @Param('personalInfoId', ParseIntPipe) personalInfoId: number,
-    dto: UpdateByUserPersonalInfoDto,
-    @CurrentUser() user: UserResponseDto,
-  ) {
-    const res = this.personalInfoService.updatedByUserPersonalInfo(
-      personalInfoId,
-      dto,
-      user.id,
-    );
+  @Get('profile')
+  async profile(@CurrentUser() user: UserResponseDto) {
+    const res = this.personalInfoService.getPersonalProfileByAuthId(user.id);
     return {
-      Message: SUCCESSMSG.PERSONAL_INFO.UPDATED,
       data: res,
     };
   }
 
-  @Patch('update/admin/:personalInfoId')
+  @Patch('update/:personalInfoId')
+  @UseGuards(EmailVerifiedGuard)
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.HOD, ROLES.SUPER_ADMIN)
-  async updatePersonalInfoByAdmin(
-    @Param('personalInfoId', ParseIntPipe) personalInfoId: number,
-    dto: AdminUpdatePersonalInfoDto,
-    @CurrentUser() user: UserResponseDto,
+  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR, ROLES.STUDENT)
+  async updatePersonalInfo(
+    @Param('personalInfoId', ParseIntPipe) targetProfileId: number,
+    @Body() dto: UpdatePersonalInfoDto,
+    @CurrentUser() currentUser: UserResponseDto,
   ) {
-    const res = this.personalInfoService.updatedByAdminUserPersonalInfo(
-      personalInfoId,
+    const res = await this.personalInfoService.updateSmartProfile(
+      targetProfileId,
       dto,
-      user.id,
+      currentUser,
     );
+
     return {
       message: SUCCESSMSG.PERSONAL_INFO.UPDATED,
       data: res,

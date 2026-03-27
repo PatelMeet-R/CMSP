@@ -44,4 +44,32 @@ export class PersonalInfoRepository {
 
     return exists;
   }
+  async getPersonalProfileByAuthId(userId: number) {
+    const profile = await this.repo
+      .createQueryBuilder('profile')
+      .leftJoin('profile.user', 'user')
+      .leftJoin('profile.gender', 'gender')
+      .leftJoin('profile.branch', 'branch')
+      .leftJoin('profile.joinedAcademicYear', 'joinedYear')
+      .leftJoin('profile.expectedGraduateYear', 'gradYear')
+      .leftJoin('profile.userAccountStatus', 'status')
+      .select([
+        'profile.id',
+        'profile.firstName',
+        'profile.lastName',
+        'profile.enrollmentNumber',
+        'profile.city',
+        'profile.state',
+        'profile.country',
+        // -----------------------
+        'gender.key',
+        'branch.name',
+        'joinedYear.key',
+        'gradYear.key',
+        'status.key',
+      ])
+      .where('user.id = :id', { id: userId })
+      .getOneOrFail();
+    return profile;
+  }
 }
