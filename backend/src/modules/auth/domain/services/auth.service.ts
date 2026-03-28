@@ -138,7 +138,7 @@ export class AuthService {
       }
       const token = this.JwtTokenService.generateEmailVerificationToken(user);
 
-      const verifyUrl = `${this.appConfig.frontendUrl}/auth/verify-email?token=${token}`;
+      const verifyUrl = `${this.appConfig.frontendUrl}/verify-email?token=${token}`;
 
       await this.mailService.sendVerificationEmail(user.email, verifyUrl);
       return new MessageResponseDto(SUCCESSMSG.AUTH.VERIFICATION_EMAIL_SENT);
@@ -176,7 +176,7 @@ export class AuthService {
           Date.now() + RESET_PASSWORD_TOKEN_EXPIRY,
         ); //15min
         await this.authRepository.save(user);
-        const resetUrl = `${this.appConfig.frontendUrl}/auth/reset-password?token=${rawToken}`;
+        const resetUrl = `${this.appConfig.frontendUrl}/reset-password?token=${rawToken}`;
         await this.mailService.sendResetPassword(user.email, resetUrl);
       }
       return new MessageResponseDto(

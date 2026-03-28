@@ -12,9 +12,11 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import mailConfig from './config/mail.config';
 import appConfig from './config/app.config';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
+    CacheModule.register(),
     AuthModule,
     BranchModule,
     EnumsModule,
