@@ -7,7 +7,6 @@ import {
   type SignupInput,
 } from "@/modules/auth/types/auth.schemas";
 import { registerUser } from "@/modules/auth/model/authService";
-import { useBranchViewModel } from "@/modules/branch/viewModel/useBranchViewModel";
 import { toastService } from "@/core/toast/toastService";
 import { getAxiosErrorMessage } from "@/core/helper/errorMessage";
 
@@ -25,8 +24,6 @@ export function useSignupViewModel() {
       branchId: 0,
     },
   });
-
-  const { branches, isLoading: isLoadingBranches } = useBranchViewModel();
 
   const signupMutation = useMutation({
     mutationFn: registerUser,
@@ -46,8 +43,6 @@ export function useSignupViewModel() {
   return {
     form,
     onSubmit,
-    branches,
-    isLoadingBranches,
     isSubmitting: signupMutation.isPending,
   };
 }

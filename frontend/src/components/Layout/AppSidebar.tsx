@@ -1,46 +1,12 @@
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { Link } from "react-router-dom";
-// import logo from "@/assets/01.png";
-import { House } from "lucide-react";
+import { DashboardSideBarDetails } from "@/components/Layout/SidebarDetails";
+import { Sidebar, SidebarContent, SidebarGroup } from "@/components/ui/sidebar";
 
 export function AppSidebar() {
   return (
-    <Sidebar className="mt-5">
-      <SidebarHeader className="my-5">
-        {/* <img src={logo} width={90} /> */}
-      </SidebarHeader>
+    <Sidebar className="top-20 h-[calc(100svh-4rem)]!">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>View</SidebarGroupLabel>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton>
-                <House />
-                <Link to="">Home</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton>
-                <House />
-                <Link to="">Home</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton>
-                <House />
-                <Link to="">Home</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
+          <DashboardSideBarDetails />
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>

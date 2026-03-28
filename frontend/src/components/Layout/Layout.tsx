@@ -7,9 +7,9 @@ const Layout = () => {
   return (
     <SidebarProvider>
       <Topbar />
-      <AppSidebar></AppSidebar>
-      <main className="border w-full">
-        <div className="w-full min-h-[calc(100vh-46px)]">
+      <AppSidebar />
+      <main className="w-full pt-16 flex flex-col min-h-screen">
+        <div className="flex-1 p-6">
           <Outlet />
         </div>
         <Footer />

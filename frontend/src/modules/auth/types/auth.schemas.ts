@@ -14,6 +14,22 @@ export const SignupInputSchema = z.object({
   branchId: z.number().int().positive("please select a branch"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
+export const ForgetPasswordInputSchema = z.object({
+  email: z.string().email("Invalid email address"),
+});
+
+export const resetPasswordInputSchema = z
+  .object({
+    password: z.string().min(6, "Password must be at least 6 characters"),
+
+    confirmPassword: z
+      .string()
+      .min(6, "Confirm password must be at least 6 characters"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 export const UserSchema = z.object({
   id: z.number(),
@@ -37,3 +53,5 @@ export type User = z.infer<typeof UserSchema>;
 export type LoginResponse = z.infer<typeof LoginResponseSchema>;
 export type LoginInput = z.infer<typeof LoginInputSchema>;
 export type SignupInput = z.infer<typeof SignupInputSchema>;
+export type ForgetPasswordInput = z.infer<typeof ForgetPasswordInputSchema>;
+export type resetPasswordInput = z.infer<typeof resetPasswordInputSchema>;
