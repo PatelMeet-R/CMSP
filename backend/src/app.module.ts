@@ -12,11 +12,16 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import mailConfig from './config/mail.config';
 import appConfig from './config/app.config';
+<<<<<<< HEAD
 import { AssignmentModule } from './modules/assignment/assignment.module';
 import cloudinaryConfig from './config/cloudinary.config';
+=======
+import { CacheModule } from '@nestjs/cache-manager';
+>>>>>>> b7e8b35 (refactor(auth): forget-password rename and change the reset link and verification routename)
 
 @Module({
   imports: [
+    CacheModule.register(),
     AuthModule,
     BranchModule,
     EnumsModule,

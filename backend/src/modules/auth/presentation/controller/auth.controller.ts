@@ -75,7 +75,7 @@ export class AuthController {
     return await this.authService.verifyEmail(token);
   }
 
-  @Post('forget-Password')
+  @Post('forget-password')
   @HttpCode(HttpStatus.OK)
   async forgetPassword(@Body() dto: ForgetPassMailReq) {
     return await this.authService.forgetPassword(dto);
