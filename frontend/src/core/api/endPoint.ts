@@ -2,7 +2,7 @@ export const API_ENDPOINT = {
   INDEX: "/",
   AUTH: {
     LOGIN: "auth/login",
-    LOGOUT:'auth/logout',
+    LOGOUT: "auth/logout",
     REFRESH_TOKEN: "auth/refresh",
     VERIFY_EMAIL: "auth/verfiy-email",
     PASSWORD: {
@@ -20,5 +20,9 @@ export const API_ENDPOINT = {
     VIEW: "branch/all",
     REGISTER: "branch/register",
     UPDATE: "branch",
+  },
+  PROFILE: {
+    MY_PROFILE: "personal-info/profile",
+    UPDATE: (profileId: number) => `personal-info/update/${profileId}`,
   },
 } as const;

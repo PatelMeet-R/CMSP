@@ -17,7 +17,7 @@ export const loginUser = async (
     API_ENDPOINT.AUTH.LOGIN,
     credentials,
   );
-  const data = response.data;
+  const data = response.data.data;
 
   Cookies.set("accessToken", data.accessToken, { expires: 1, secure: true });
   Cookies.set("refreshToken", data.refreshToken, { expires: 7, secure: true });

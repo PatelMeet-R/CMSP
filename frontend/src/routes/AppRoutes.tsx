@@ -4,7 +4,6 @@ import ForgetPassword from "@/modules/auth/view/ForgetPassword";
 import Login from "@/modules/auth/view/Login";
 import ResetPassword from "@/modules/auth/view/ResetPassword";
 import Signup from "@/modules/auth/view/Signin";
-// import ForgetPassword from '@/modules/auth/view/'
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 const AppRoutes = () => {
@@ -67,7 +66,7 @@ const AppRoutes = () => {
           />
 
           {/* Profile Routes */}
-          <Route path={ROUTENAME.PROFILE} element={<div>Profile Page</div>} />
+          <Route path={ROUTENAME.PROFILE} element={<>profile page</>} />
           <Route
             path={ROUTENAME.RESET_PASSWORD}
             element={<div>Reset Password</div>}

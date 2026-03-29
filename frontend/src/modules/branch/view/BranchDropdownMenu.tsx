@@ -21,6 +21,7 @@ interface BranchDropdownMenuProps<T extends FieldValues> {
   control: Control<T>;
   name: Path<T>; // This forces the name to match a real field in your form!
   label?: string;
+  disabled?: boolean;
 }
 
 // 3. Add the Generic <T> to your component definition
@@ -28,6 +29,7 @@ export const BranchDropdownMenu = <T extends FieldValues>({
   control,
   name,
   label = "Branch",
+  disabled = false,
 }: BranchDropdownMenuProps<T>) => {
   const { branches, isLoading: isLoadingBranches } = useBranchViewModel();
 
@@ -43,7 +45,7 @@ export const BranchDropdownMenu = <T extends FieldValues>({
               field.onChange(parseInt(value, 10));
             }}
             value={field.value ? field.value.toString() : ""}
-            disabled={isLoadingBranches}
+            disabled={isLoadingBranches || disabled}
           >
             <SelectTrigger className="h-11 text-sm px-3">
               <SelectValue
