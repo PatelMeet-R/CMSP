@@ -10,12 +10,19 @@ export class PersonalProfileResponseMapper {
       firstName: profile.firstName,
       lastName: profile.lastName,
       enrollmentNumber: profile.enrollmentNumber,
+      primaryMobileNumber: profile.primaryMobileNumber,
 
-      gender: profile.gender?.key || null,
       branch: profile.branch?.name || null,
+      gender: profile.gender?.key || null,
       joinedYear: profile.joinedAcademicYear?.key || null,
       expectedGraduationYear: profile.expectedGraduateYear?.key || null,
       accountStatus: profile.userAccountStatus?.key || null,
+
+      branchId: profile.branch?.id || null,
+      genderId: profile.gender?.id || null,
+      joinedYearId: profile.joinedAcademicYear?.id || null,
+      expectedGraduationYearId: profile.expectedGraduateYear?.id || null,
+      accountStatusId: profile.userAccountStatus?.id || null,
 
       address: {
         city: profile.city,
