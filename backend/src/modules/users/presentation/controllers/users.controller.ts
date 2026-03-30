@@ -25,8 +25,11 @@ import type { UpdatePersonalInfoDto } from 'src/modules/users/presentation/dto/r
 export class PersonalInfoController {
   constructor(private readonly personalInfoService: PersonalInfoService) {}
   @Get('profile')
+  @Roles(ROLES.STUDENT, ROLES.PROFESSOR, ROLES.HOD, ROLES.SUPER_ADMIN)
   async profile(@CurrentUser() user: UserResponseDto) {
-    const res = this.personalInfoService.getPersonalProfileByAuthId(user.id);
+    const res = await this.personalInfoService.getPersonalProfileByAuthId(
+      user.id,
+    );
     return {
       data: res,
     };

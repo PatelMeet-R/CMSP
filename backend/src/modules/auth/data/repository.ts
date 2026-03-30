@@ -43,4 +43,7 @@ export class AuthRepository {
       relations: ['personalInfo'],
     });
   }
+  async update(id: number, partialEntity: Partial<User>) {
+    return this.repo.update(id, partialEntity);
+  }
 }

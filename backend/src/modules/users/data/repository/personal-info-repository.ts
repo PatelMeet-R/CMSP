@@ -58,14 +58,20 @@ export class PersonalInfoRepository {
         'profile.firstName',
         'profile.lastName',
         'profile.enrollmentNumber',
+        'profile.primaryMobileNumber',
         'profile.city',
         'profile.state',
         'profile.country',
         // -----------------------
+        'gender.id',
         'gender.key',
+        'branch.id',
         'branch.name',
+        'joinedYear.id',
         'joinedYear.key',
+        'gradYear.id',
         'gradYear.key',
+        'status.id',
         'status.key',
       ])
       .where('user.id = :id', { id: userId })

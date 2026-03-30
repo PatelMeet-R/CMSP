@@ -34,6 +34,7 @@ import { UserRegisterMapper } from '../../data/mappers/user-register.mapper';
 import { RegisterSpecificUserMapper } from '../../data/mappers/register-specific-user.mapper';
 import type { App } from 'src/config/app.config';
 import { PersonalInfoRepository } from 'src/modules/users/data/repository/personal-info-repository';
+import type { User } from 'src/modules/auth/domain/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -132,6 +133,7 @@ export class AuthService {
   async sendVerifyEmailLink(userId: number) {
     try {
       const user = await this.authRepository.findById(userId);
+      console.log(user);
 
       if (!user) {
         throw new UnauthorizedException(ERRORMESSAGE.USERNOTEXIST);
@@ -158,8 +160,11 @@ export class AuthService {
       if (user.isEmailVerified) {
         return new MessageResponseDto(SUCCESSMSG.AUTH.EMAIL_ALREADY_VERIFIED);
       }
-      user.isEmailVerified = true;
-      await this.authRepository.save(user);
+
+      await this.authRepository.update(user.id, {
+        isEmailVerified: true,
+      });
+
       return new MessageResponseDto(SUCCESSMSG.AUTH.EMAIL_VERIFIED_SUCCESS);
     } catch (e) {
       throw new BadRequestException(ERRORMESSAGE.INVALID_TOKEN);

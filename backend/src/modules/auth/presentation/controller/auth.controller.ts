@@ -65,8 +65,8 @@ export class AuthController {
   @Post('send-verification-mail')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
-  async sendVerificationMail(@CurrentUser() user: { sub: number }) {
-    return await this.authService.sendVerifyEmailLink(user.sub);
+  async sendVerificationMail(@CurrentUser() user: UserResponseDto) {
+    return await this.authService.sendVerifyEmailLink(user.id);
   }
 
   @Get('verify-email')
