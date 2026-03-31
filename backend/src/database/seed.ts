@@ -13,12 +13,14 @@ import { Subject } from 'src/modules/subject/domain/entities/subject.entity';
 import { seedAcademicYearEnums } from './seeds/academic-year-enum.seed';
 import { seedGenderEnums } from './seeds/gender.seed';
 import { seedUserAccountStatusEnums } from './seeds/user-account-status.seed';
+import { seedAdminUser } from 'src/database/seeds/updated-super-admin.seed';
+import { PersonalInfo } from 'src/modules/users/domain/entities/personal-info.entity';
 
 const AppDataSource = new DataSource({
   type: 'postgres',
   url: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
-  entities: [User, EnumValue, EnumType, Branch, Subject],
+  entities: [User, EnumValue, EnumType, Branch, Subject, PersonalInfo],
   synchronize: true,
 });
 
@@ -32,6 +34,7 @@ async function runSeed() {
   // await seedAcademicYearEnums(AppDataSource);
   // await seedGenderEnums(AppDataSource);
   // await seedUserAccountStatusEnums(AppDataSource);
+  // await seedAdminUser(AppDataSource);
   console.log('----------------------------');
   console.log('Seeding completed');
   console.log('----------------------------');

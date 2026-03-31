@@ -133,7 +133,6 @@ export class AuthService {
   async sendVerifyEmailLink(userId: number) {
     try {
       const user = await this.authRepository.findById(userId);
-      console.log(user);
 
       if (!user) {
         throw new UnauthorizedException(ERRORMESSAGE.USERNOTEXIST);

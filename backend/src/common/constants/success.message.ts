@@ -4,6 +4,8 @@ export const SUCCESSMSG = {
     LOGIN_SUCCESS: 'Login successful!',
     EMAIL_ALREADY_VERIFIED: 'Email already verified.',
     EMAIL_VERIFIED_SUCCESS: 'Email verified successfully.',
+    VERIFICATION_THROTTLE_MSG:
+      'Please wait 60 seconds before requesting another verification link.',
     RESET_LINK_IF_ACCOUNT_EXISTS:
       'If an account with this email exists, we will send you a reset link.',
     PASSWORD_RESET_SUCCESS: 'Password reset successful.',

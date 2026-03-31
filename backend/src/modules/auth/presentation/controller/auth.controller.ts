@@ -24,6 +24,7 @@ import { ROLES } from 'src/common/constants/roles.constant';
 import { RegisterSpecificUserDto } from '../dto/request/register-specific-user.request.dto';
 import { LoginThrottlerGuard } from 'src/core/guards/login-throttler.guard';
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
+import { VerificationEmailThrottlerGuard } from 'src/core/guards/verification-email-throttler.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -64,7 +65,7 @@ export class AuthController {
 
   @Post('send-verification-mail')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, VerificationEmailThrottlerGuard)
   async sendVerificationMail(@CurrentUser() user: UserResponseDto) {
     return await this.authService.sendVerifyEmailLink(user.id);
   }

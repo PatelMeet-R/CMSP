@@ -41,7 +41,7 @@ export class PersonalInfoService {
     if (!targetProfile) throw new NotFoundException(ERRORMESSAGE.NOT_FOUND);
 
     // 2. Determine permissions
-    const isSelf = targetProfile.user.id === currentUser.id;
+    const isSelf = targetProfile.user?.id === currentUser.id;
     const isAdmin =
       currentUser.role === ROLES.SUPER_ADMIN || currentUser.role === ROLES.HOD;
 
@@ -56,7 +56,7 @@ export class PersonalInfoService {
     if (
       currentUser.role === ROLES.HOD &&
       !isSelf &&
-      targetProfile.branch.id !== currentUser.branchId
+      targetProfile.branch?.id !== currentUser.branchId
     ) {
       throw new ForbiddenException(
         'HODs can only edit profiles within their own branch.',

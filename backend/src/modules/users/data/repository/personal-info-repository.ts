@@ -15,7 +15,15 @@ export class PersonalInfoRepository {
   async findPersonalInfoById(
     personalInfoId: number,
   ): Promise<PersonalInfo | null> {
-    return this.repo.findOne({ where: { id: personalInfoId } });
+    return this.repo.findOne({
+      where: { id: personalInfoId },
+      relations: [
+        'user',
+        'branch',
+        'joinedAcademicYear',
+        'expectedGraduateYear',
+      ],
+    });
   }
   async findAllPersonalInfo(): Promise<PersonalInfo[]> {
     const data = await this.repo.find({

@@ -23,7 +23,7 @@ export class PersonalInfo extends AuditableEntity {
   @JoinColumn({ name: 'genderId' })
   gender: EnumValue;
 
-  @ManyToOne(() => Branch, { nullable: false })
+  @ManyToOne(() => Branch, { nullable: true })
   @JoinColumn({ name: 'branchId' })
   branch: Branch;
 
