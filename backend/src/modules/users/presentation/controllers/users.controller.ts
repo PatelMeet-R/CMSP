@@ -18,7 +18,7 @@ import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 import { EmailVerifiedGuard } from 'src/core/guards/email-verified.guard';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
-import type { UpdatePersonalInfoDto } from 'src/modules/users/presentation/dto/request/update-personal-info.dto';
+import { UpdatePersonalInfoDto } from 'src/modules/users/presentation/dto/request/update-personal-info.dto';
 
 @Controller('personal-info')
 @UseGuards(JwtAuthGuard, RolesGuard)
