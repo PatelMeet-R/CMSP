@@ -11,6 +11,7 @@ export class EnumController {
   async getEnums(@Param('type') type: string): Promise<EnumResponseDto[]> {
     const enums = await this.enumService.getMeAllEnumValues(type);
     return enums.map((e) => ({
+      id: e.id,
       key: e.key,
       value: e.value,
     }));
