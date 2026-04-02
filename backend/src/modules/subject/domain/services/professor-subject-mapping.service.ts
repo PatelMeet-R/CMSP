@@ -6,14 +6,15 @@ import {
 } from '@nestjs/common';
 import { ProfessorSubMappingRepository } from '../../data/repositories/professor-subject-mapping-repository';
 import { AssignSubjectDto } from '../../presentation/dto/request/professor-subjects.request.dto';
-import { AssignSubjectMapper } from '../../data/mappers/subject-assign.mapper';
+import { AssignSubjectMapper } from '../../data/mappers/subject-mapping/subject-assign.mapper';
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
 import { SubjectService } from './subject.service';
 import { AuthService } from 'src/modules/auth/domain/services/auth.service';
 import { EnumService } from 'src/modules/enums/domain/enums.service';
 import { UpdateAssignSubjectDto } from '../../presentation/dto/request/professor-subjects-update.request.dto';
-import { SubjectMapperResponse } from '../../data/mappers/subject-assign.response.mapper';
-import { UpdateSubjectMapper } from '../../data/mappers/subject-assign-update.mapper';
+import { UpdateSubjectMapper } from '../../data/mappers/subject-mapping/subject-assign-update.mapper';
+import type { FindSubjectMappingQueryDto } from 'src/common/pagination/dto/find-subject-mapping-query.dto';
+import { ProfessorMappingResponseMapper } from 'src/modules/subject/data/mappers/subject-mapping/subject-mapping-response';
 
 @Injectable()
 export class ProfessorSubMappingService {
@@ -71,7 +72,7 @@ export class ProfessorSubMappingService {
       await this.professorSubjectRepo.findAssignSubjectByIdWithRelations(
         saved.id,
       );
-    return SubjectMapperResponse.toResponse(result!);
+    return ProfessorMappingResponseMapper.toResponse(result!);
   }
 
   async getSubjectsByProfessor(professorId: number) {
@@ -80,15 +81,24 @@ export class ProfessorSubMappingService {
         professorId,
       );
 
-    return data.map((d) =>
-      SubjectMapperResponse.toResponseProfessorSubjects(d),
-    );
+    return ProfessorMappingResponseMapper.toPaginatedResponse(data);
   }
-  async getAllAssignSubjectDetails() {
-    const data = await this.professorSubjectRepo.findAllAssignSubjectDetails();
-    return data.map((d) =>
-      SubjectMapperResponse.toResponseProfessorSubjects(d),
+  async getAllAssignSubjectDetails(
+    query: FindSubjectMappingQueryDto,
+    currentUserId,
+    currentUserRole?,
+    currentUserBranchId?,
+  ) {
+    const rawData = await this.professorSubjectRepo.findAllAssignSubjectDetails(
+      query,
+      currentUserId,
+      currentUserRole,
+      currentUserBranchId,
     );
+    return {
+      items: ProfessorMappingResponseMapper.toPaginatedResponse(rawData.items),
+      meta: rawData.meta,
+    };
   }
 
   async updateAssignSubject(
@@ -155,7 +165,7 @@ export class ProfessorSubMappingService {
       await this.professorSubjectRepo.findAssignSubjectByIdWithRelations(
         saved.id,
       );
-    return SubjectMapperResponse.toResponse(result!);
+    return ProfessorMappingResponseMapper.toResponse(result!);
   }
 
   async isProfessorAssignedToSubject(

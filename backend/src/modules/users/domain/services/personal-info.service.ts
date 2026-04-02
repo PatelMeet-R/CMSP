@@ -12,9 +12,10 @@ import { BranchService } from 'src/modules/branch/domain/branch.service';
 
 import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 import { ROLES } from 'src/common/constants/roles.constant';
-import { UpdatePersonalInfoMapper } from 'src/modules/users/data/mapper/update-personal-info.mapper';
+import { UpdatePersonalInfoMapper } from 'src/modules/users/data/mapper/users.request,mapper';
 import type { UpdatePersonalInfoDto } from 'src/modules/users/presentation/dto/request/update-personal-info.dto';
-import { PersonalProfileResponseMapper } from 'src/modules/users/data/mapper/get-personal-info.mapper';
+import { PersonalInfoResponseMapper } from 'src/modules/users/data/mapper/users-response.mapper';
+import type { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-query.dto';
 
 @Injectable()
 export class PersonalInfoService {
@@ -27,7 +28,7 @@ export class PersonalInfoService {
   async getPersonalProfileByAuthId(userId: number) {
     const profile =
       await this.personalInfoRepo.getPersonalProfileByAuthId(userId);
-    return PersonalProfileResponseMapper.toResponse(profile);
+    return PersonalInfoResponseMapper.toResponse(profile);
   }
 
   async updateSmartProfile(
@@ -119,6 +120,18 @@ export class PersonalInfoService {
     updatedEntity.updatedBy = currentUser.id;
 
     const saved = await this.personalInfoRepo.saveInfo(updatedEntity);
-    return PersonalProfileResponseMapper.toResponse(saved);
+    return PersonalInfoResponseMapper.toResponse(saved);
+  }
+
+  async findAll(
+    query: FindSubjectQueryDto,
+    currentUserRole,
+    currentUserBranchId,
+  ) {
+    return this.personalInfoRepo.FindAll(
+      query,
+      currentUserRole,
+      currentUserBranchId,
+    );
   }
 }

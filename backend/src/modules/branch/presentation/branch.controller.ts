@@ -22,12 +22,6 @@ import { ROLES } from 'src/common/constants/roles.constant';
 @Controller('branch')
 export class BranchController {
   constructor(private branchService: BranchService) {}
-  @Get('health')
-  health() {
-    return {
-      message: ' branch controller working fine',
-    };
-  }
 
   @Get('all')
   @HttpCode(HttpStatus.OK)

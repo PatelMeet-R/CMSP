@@ -29,12 +29,6 @@ import { VerificationEmailThrottlerGuard } from 'src/core/guards/verification-em
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
-  @Get('health')
-  health() {
-    return {
-      message: ' auth controller working fine',
-    };
-  }
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)

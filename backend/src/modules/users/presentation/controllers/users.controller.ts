@@ -7,6 +7,7 @@ import {
   Param,
   ParseIntPipe,
   Patch,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
@@ -19,6 +20,9 @@ import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user
 import { EmailVerifiedGuard } from 'src/core/guards/email-verified.guard';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
 import { UpdatePersonalInfoDto } from 'src/modules/users/presentation/dto/request/update-personal-info.dto';
+import type { FindUsersPersonalInfoQueryDto } from 'src/common/pagination/dto/find-users-personal-query.dto';
+import type { PaginatedResponse } from 'src/common/pagination/interface/paginated-response.interface';
+import type { PersonalInfo } from 'src/modules/users/domain/entities/personal-info.entity';
 
 @Controller('personal-info')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -54,5 +58,14 @@ export class PersonalInfoController {
       message: SUCCESSMSG.PERSONAL_INFO.UPDATED,
       data: res,
     };
+  }
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  @Roles(ROLES.PROFESSOR, ROLES.HOD, ROLES.SUPER_ADMIN)
+  async findAll(
+    @Query() query: FindUsersPersonalInfoQueryDto,
+    @CurrentUser() user: UserResponseDto,
+  ): Promise<PaginatedResponse<PersonalInfo>> {
+    return this.personalInfoService.findAll(query, user.role, user.branchId);
   }
 }

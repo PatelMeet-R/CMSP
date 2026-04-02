@@ -1,6 +1,6 @@
 import { EnumValue } from 'src/modules/enums/domain/entities/enumValue.entity';
-import { ProfessorSubMapping } from '../../domain/entities/professors-subject.entity';
-import { Subject } from '../../domain/entities/subject.entity';
+import { ProfessorSubMapping } from '../../../domain/entities/professors-subject.entity';
+import { Subject } from '../../../domain/entities/subject.entity';
 import { User } from 'src/modules/auth/domain/entities/user.entity';
 
 export class UpdateSubjectMapper {

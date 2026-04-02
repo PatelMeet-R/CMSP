@@ -8,6 +8,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ProfessorSubMappingService } from '../../domain/services/professor-subject-mapping.service';
@@ -20,6 +21,7 @@ import { ROLES } from 'src/common/constants/roles.constant';
 import { Roles } from 'src/core/decorators/roles.decorators';
 import { UpdateAssignSubjectDto } from '../dto/request/professor-subjects-update.request.dto';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
+import type { FindSubjectMappingQueryDto } from 'src/common/pagination/dto/find-subject-mapping-query.dto';
 
 @Controller('professor-subject')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -61,22 +63,25 @@ export class ProfessorSubMappingController {
       data: res,
     };
   }
-  @Get('all')
-  @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
-  async findAllAssignSubjectDetails() {
-    const res =
-      await this.professorSubMappingService.getAllAssignSubjectDetails;
-    return { data: res };
-  }
 
-  @Get('my-subject')
+  @Get()
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.PROFESSOR)
-  async findMySubject(@CurrentUser() user: UserResponseDto) {
-    const res = await this.professorSubMappingService.getSubjectsByProfessor(
-      user.id,
-    );
-    return { data: res };
+  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR)
+  async getAssignedSubjects(
+    @Query() query: FindSubjectMappingQueryDto,
+    @CurrentUser() user: UserResponseDto,
+  ) {
+    const res =
+      await this.professorSubMappingService.getAllAssignSubjectDetails(
+        query,
+        user.id,
+        user.role,
+        user.branchId,
+      );
+
+    return {
+      message: SUCCESSMSG.SUBJECT.FETCHED,
+      data: res,
+    };
   }
 }

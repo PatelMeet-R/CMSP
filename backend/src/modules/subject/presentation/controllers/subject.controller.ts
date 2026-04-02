@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -9,6 +8,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
@@ -21,12 +21,14 @@ import { CreateSubjectDto } from '../dto/request/subject-register.request.dto';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
 import { ROLES } from 'src/common/constants/roles.constant';
 import { SubjectService } from '../../domain/services/subject.service';
+import type { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-query.dto';
 
 @Controller('subject')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class SubjectController {
   constructor(private readonly subjectService: SubjectService) {}
-  @Patch('update/:id')
+
+  @Patch(':id')
   @HttpCode(HttpStatus.OK)
   @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
   async updateSubject(
@@ -58,22 +60,9 @@ export class SubjectController {
     };
   }
 
-  @Get('all-subject')
-  @HttpCode(HttpStatus.OK)
-  async getSubjects(@CurrentUser() user: UserResponseDto) {
-    const subjects =
-      user.role === ROLES.SUPER_ADMIN
-        ? await this.subjectService.getAllSubjects()
-        : await this.subjectService.getSubjectsByBranch(user.branchId!);
-
-    return {
-      message: SUCCESSMSG.SUBJECT.FETCHED,
-      data: subjects,
-    };
-  }
   @Get(':id')
   @HttpCode(HttpStatus.OK)
-  async getSubjectById(@Param('id', ParseIntPipe) id: number) {
+  async getSubject(@Param('id', ParseIntPipe) id: number) {
     const subject = await this.subjectService.getSubjectById(id);
 
     return {
@@ -81,12 +70,18 @@ export class SubjectController {
       data: subject,
     };
   }
-  @Get('all-subject/:semesterKey') //SEM01
+
+  @Get()
   @HttpCode(HttpStatus.OK)
-  async getSubjectsBySemester(
-    @Param('semesterKey') Key: string,
+  @Roles(ROLES.PROFESSOR, ROLES.HOD, ROLES.SUPER_ADMIN, ROLES.STUDENT)
+  async getSubjects(
+    @Query() query: FindSubjectQueryDto,
     @CurrentUser() user: UserResponseDto,
   ) {
-    return await this.subjectService.getSubjectsBySemester(user.branchId!, Key);
+    return await this.subjectService.getAllSubject(
+      query,
+      user.role,
+      user.branchId,
+    );
   }
 }

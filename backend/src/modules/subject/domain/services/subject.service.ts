@@ -10,10 +10,12 @@ import { ROLES } from 'src/common/constants/roles.constant';
 import { ENUM_TYPES } from 'src/common/constants/enum-types.constant';
 import { SubjectRepository } from '../../data/repositories/repository';
 import { CreateSubjectDto } from '../../presentation/dto/request/subject-register.request.dto';
-import { SubjectMapper } from '../../data/mappers/subjectMapper';
 import { UpdateSubjectDto } from '../../presentation/dto/request/subject-update.request.dto';
 import { EnumService } from 'src/modules/enums/domain/enums.service';
 import { BranchService } from 'src/modules/branch/domain/branch.service';
+import type { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-query.dto';
+import { SubjectResponseMapper } from 'src/modules/subject/data/mappers/subject/subject-response.mapper';
+import { SubjectRequestMapper } from 'src/modules/subject/data/mappers/subject/subject-request.mapper';
 
 @Injectable()
 export class SubjectService {
@@ -23,20 +25,20 @@ export class SubjectService {
     private readonly branchService: BranchService,
     private readonly enumService: EnumService,
   ) {}
-  //search though code
-  async findSubjectByCode(code: string) {
-    const subject = await this.subjectRepository.findSubjectByCode(code);
 
-    if (!subject) {
-      throw new ConflictException(ERRORMESSAGE.SUBJECT_ALREADY_EXISTS);
-    }
-    return SubjectMapper.toResponse(subject);
-  }
+  //register
+
   async registerSubject(dto: CreateSubjectDto, user: UserResponseDto) {
     // check duplicate subject code
-    const existingSubject = await this.subjectRepository.findSubjectByCode(
+
+    const isSubjectExist = await this.subjectRepository.IsSubjectWithCodeExist(
       dto.code,
     );
+    if (isSubjectExist) {
+      return new ConflictException(
+        ERRORMESSAGE.SUBJECT_WITH_CODE_ALREADY_EXISTS,
+      );
+    }
 
     // get branch
     const branch = await this.branchService.getBranchEntityById(dto.branchId);
@@ -58,11 +60,18 @@ export class SubjectService {
       throw new ForbiddenException(ERRORMESSAGE.SUBJECT_CHANGE_NOT_AUTHORIZED);
     }
 
-    const subjectData = SubjectMapper.toEntity(dto, branch, semester);
+    const subjectData = SubjectRequestMapper.toCreateEntity(
+      dto,
+      branch,
+      semester,
+    );
 
     const toBeSaved = await this.subjectRepository.saveSubject(subjectData);
-    return SubjectMapper.toResponse(toBeSaved);
+    return SubjectResponseMapper.toResponse(toBeSaved);
   }
+
+  //update
+
   async updateSubject(
     id: number,
     dto: UpdateSubjectDto,
@@ -74,10 +83,11 @@ export class SubjectService {
       throw new ConflictException(ERRORMESSAGE.SUBJECT_NOT_FOUND);
     }
 
-    const existing = await this.subjectRepository.findSubjectByCode(dto.code!);
-
-    if (existing && existing.id !== id) {
-      throw new ConflictException(ERRORMESSAGE.SUBJECT_ALREADY_EXISTS);
+    const isSubjectExist = await this.subjectRepository.IsSubjectWithCodeExist(
+      dto.code!,
+    );
+    if (!isSubjectExist) {
+      return new ConflictException(ERRORMESSAGE.SUBJECT_NOT_FOUND);
     }
 
     const branch = await this.branchService.getBranchEntityById(dto.branchId!);
@@ -100,7 +110,7 @@ export class SubjectService {
       throw new ConflictException(ERRORMESSAGE.SEMESTER_INVALID_CREDENTIALS);
     }
 
-    const updatedSubject = SubjectMapper.updateEntity(
+    const updatedSubject = SubjectRequestMapper.toUpdateEntity(
       subject,
       dto,
       branch,
@@ -109,8 +119,9 @@ export class SubjectService {
 
     const toBeUpdated =
       await this.subjectRepository.saveSubject(updatedSubject);
-    return SubjectMapper.toResponse(toBeUpdated);
+    return SubjectResponseMapper.toResponse(toBeUpdated);
   }
+
   async getSubjectById(subjectId: number) {
     const subject = await this.subjectRepository.findSubjectById(subjectId);
 
@@ -120,44 +131,20 @@ export class SubjectService {
 
     return subject;
   }
-  //hod selection option menu bar
-  async getSubjectsByBranch(branchId: number) {
-    const subjects =
-      await this.subjectRepository.findSubjectsByBranch(branchId);
 
-    if (!subjects) {
-      throw new NotFoundException(ERRORMESSAGE.SUBJECT_NOT_FOUND);
-    }
-    return subjects.map((s) => SubjectMapper.toResponse(s));
-  }
-  //faculty allocation
-  async getSubjectsBySemester(branchId: number, semesterKey: string) {
-    const semester = await this.enumService.getMeEnumValueIfExist(
-      ENUM_TYPES.SEMESTER,
-      semesterKey,
+  async getAllSubject(
+    query: FindSubjectQueryDto,
+    currentUserRole,
+    currentUserBranchId,
+  ) {
+    const rawData = await this.subjectRepository.findAll(
+      query,
+      currentUserRole,
+      currentUserBranchId,
     );
-    if (!semester) {
-      throw new ConflictException(ERRORMESSAGE.SEMESTER_INVALID_CREDENTIALS);
-    }
-
-    const subjects =
-      await this.subjectRepository.findSubjectByBranchAndSemester(
-        branchId,
-        semester.id,
-      );
-    if (!subjects) {
-      throw new ConflictException(ERRORMESSAGE.SUBJECT_NOT_FOUND);
-    }
-
-    return subjects.map((s) => SubjectMapper.toResponse(s));
-  }
-  async getAllSubjects() {
-    const subjects = await this.subjectRepository.findAllSubjects();
-
-    if (!subjects.length) {
-      throw new NotFoundException(ERRORMESSAGE.SUBJECT_NOT_FOUND);
-    }
-
-    return subjects.map((s) => SubjectMapper.toResponse(s));
+    return {
+      items: SubjectResponseMapper.toPaginatedResponse(rawData.items),
+      meta: rawData.meta,
+    };
   }
 }
