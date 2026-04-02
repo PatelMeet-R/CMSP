@@ -4,7 +4,8 @@ export const API_ENDPOINT = {
     LOGIN: "auth/login",
     LOGOUT: "auth/logout",
     REFRESH_TOKEN: "auth/refresh",
-    VERIFY_EMAIL: "auth/verfiy-email",
+    VERIFY_EMAIL: (token: string) => `/auth/verify-email?token=${token}`,
+    SEND_VERIFICATION_MAIL: "auth/send-verification-mail",
     PASSWORD: {
       FORGOT_PASSWORD: "auth/forget-password",
       RESET_PASSWORD: (paramToken: string) =>

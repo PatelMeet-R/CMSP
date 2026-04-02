@@ -18,9 +18,16 @@ export const loginUser = async (
     credentials,
   );
   const data = response.data.data;
+  const isSecure = window.location.protocol === "https:";
 
-  Cookies.set("accessToken", data.accessToken, { expires: 1, secure: true });
-  Cookies.set("refreshToken", data.refreshToken, { expires: 7, secure: true });
+  Cookies.set("accessToken", data.accessToken, {
+    expires: 1,
+    secure: isSecure,
+  });
+  Cookies.set("refreshToken", data.refreshToken, {
+    expires: 7,
+    secure: isSecure,
+  });
 
   return response.data;
 };
@@ -45,6 +52,8 @@ export const logoutUser = async () => {
   }
   Cookies.remove("accessToken");
   Cookies.remove("refreshToken");
+  sessionStorage.clear();
+  localStorage.clear();
 };
 
 export const registerUser = async (data: SignupInput) => {
@@ -69,6 +78,20 @@ export const ResetPassword = async (
   const response = await axiosInstance.post(
     API_ENDPOINT.AUTH.PASSWORD.RESET_PASSWORD(token),
     data,
+  );
+  return response.data;
+};
+
+export const sendVerificationEmail = async () => {
+  const response = await axiosInstance.post(
+    API_ENDPOINT.AUTH.SEND_VERIFICATION_MAIL,
+  );
+  return response.data;
+};
+
+export const verifyEmailToken = async (token: string) => {
+  const response = await axiosInstance.get(
+    API_ENDPOINT.AUTH.VERIFY_EMAIL(token),
   );
   return response.data;
 };

@@ -46,17 +46,6 @@ export const PROFILE_SIDEBAR_CONFIG: SidebarItem[] = [
           ROLES.STUDENT,
         ],
       },
-      {
-        label: "Verify Email",
-        icon: "MailCheck",
-        link: ROUTENAME.VERIFY_EMAIL,
-        allowedRoles: [
-          ROLES.SUPER_ADMIN,
-          ROLES.HOD,
-          ROLES.PROFESSOR,
-          ROLES.STUDENT,
-        ],
-      },
     ],
   },
 ];

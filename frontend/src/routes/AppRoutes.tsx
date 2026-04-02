@@ -4,6 +4,8 @@ import ForgetPassword from "@/modules/auth/view/ForgetPassword";
 import Login from "@/modules/auth/view/Login";
 import ResetPassword from "@/modules/auth/view/ResetPassword";
 import Signup from "@/modules/auth/view/Signin";
+import { ProcessVerification } from "@/modules/profile/view/ProcessVerification";
+import { Profile } from "@/modules/profile/view/Profile";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 const AppRoutes = () => {
@@ -66,7 +68,7 @@ const AppRoutes = () => {
           />
 
           {/* Profile Routes */}
-          <Route path={ROUTENAME.PROFILE} element={<>profile page</>} />
+          <Route path={ROUTENAME.PROFILE} element={<Profile />} />
           <Route
             path={ROUTENAME.RESET_PASSWORD}
             element={<div>Reset Password</div>}
@@ -77,11 +79,13 @@ const AppRoutes = () => {
           />
         </Route>
 
-        {/* Public Routes */}
+        {/* protected Routes */}
         <Route
           path={ROUTENAME.AUTH_RESET_PASSWORD}
           element={<ResetPassword />}
         />
+        {/* Public Routes */}
+        <Route path="/verify-email" element={<ProcessVerification />} />
         <Route path={ROUTENAME.SIGNIN} element={<Signup />} />
         <Route path={ROUTENAME.LOGIN} element={<Login />} />
         <Route path={ROUTENAME.FORGET_PASSWORD} element={<ForgetPassword />} />
