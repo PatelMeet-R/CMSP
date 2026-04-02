@@ -18,7 +18,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
-    CacheModule.register(),
+    CacheModule.register({ isGlobal: true, ttl: 30000, max: 100 }),
     AuthModule,
     BranchModule,
     EnumsModule,

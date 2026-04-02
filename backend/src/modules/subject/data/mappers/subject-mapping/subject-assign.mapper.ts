@@ -1,6 +1,6 @@
 import { User } from 'src/modules/auth/domain/entities/user.entity';
-import { ProfessorSubMapping } from '../../domain/entities/professors-subject.entity';
-import { AssignSubjectDto } from '../../presentation/dto/request/professor-subjects.request.dto';
+import { ProfessorSubMapping } from '../../../domain/entities/professors-subject.entity';
+import { AssignSubjectDto } from '../../../presentation/dto/request/professor-subjects.request.dto';
 import { Subject } from 'src/modules/subject/domain/entities/subject.entity';
 import { EnumValue } from 'src/modules/enums/domain/entities/enumValue.entity';
 
@@ -20,5 +20,4 @@ export class AssignSubjectMapper {
 
     return assignment;
   }
-  
 }
