@@ -13,7 +13,7 @@ import { AuthService } from 'src/modules/auth/domain/services/auth.service';
 import { EnumService } from 'src/modules/enums/domain/enums.service';
 import { UpdateAssignSubjectDto } from '../../presentation/dto/request/professor-subjects-update.request.dto';
 import { UpdateSubjectMapper } from '../../data/mappers/subject-mapping/subject-assign-update.mapper';
-import type { FindSubjectMappingQueryDto } from 'src/common/pagination/dto/find-subject-mapping-query.dto';
+import { FindSubjectMappingQueryDto } from 'src/common/pagination/dto/find-subject-mapping-query.dto';
 import { ProfessorMappingResponseMapper } from 'src/modules/subject/data/mappers/subject-mapping/subject-mapping-response';
 
 @Injectable()

@@ -21,7 +21,7 @@ import { ROLES } from 'src/common/constants/roles.constant';
 import { Roles } from 'src/core/decorators/roles.decorators';
 import { UpdateAssignSubjectDto } from '../dto/request/professor-subjects-update.request.dto';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
-import type { FindSubjectMappingQueryDto } from 'src/common/pagination/dto/find-subject-mapping-query.dto';
+import { FindSubjectMappingQueryDto } from 'src/common/pagination/dto/find-subject-mapping-query.dto';
 
 @Controller('professor-subject')
 @UseGuards(JwtAuthGuard, RolesGuard)

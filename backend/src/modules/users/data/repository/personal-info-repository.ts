@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Brackets } from 'typeorm';
 import { PersonalInfo } from '../../domain/entities/personal-info.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import type { FindUsersPersonalInfoQueryDto } from 'src/common/pagination/dto/find-users-personal-query.dto';
+import { FindUsersPersonalInfoQueryDto } from 'src/common/pagination/dto/find-users-personal-query.dto';
 import type { PaginatedResponse } from 'src/common/pagination/interface/paginated-response.interface';
 import type { Cache } from 'cache-manager';
 import { paginate } from 'src/common/pagination/utils/pagination.util';

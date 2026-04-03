@@ -15,7 +15,7 @@ import { ROLES } from 'src/common/constants/roles.constant';
 import { UpdatePersonalInfoMapper } from 'src/modules/users/data/mapper/users.request,mapper';
 import type { UpdatePersonalInfoDto } from 'src/modules/users/presentation/dto/request/update-personal-info.dto';
 import { PersonalInfoResponseMapper } from 'src/modules/users/data/mapper/users-response.mapper';
-import type { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-query.dto';
+import { FindUsersPersonalInfoQueryDto } from 'src/common/pagination/dto/find-users-personal-query.dto';
 
 @Injectable()
 export class PersonalInfoService {
@@ -124,7 +124,7 @@ export class PersonalInfoService {
   }
 
   async findAll(
-    query: FindSubjectQueryDto,
+    query: FindUsersPersonalInfoQueryDto,
     currentUserRole,
     currentUserBranchId,
   ) {
