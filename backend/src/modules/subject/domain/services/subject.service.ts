@@ -13,7 +13,7 @@ import { CreateSubjectDto } from '../../presentation/dto/request/subject-registe
 import { UpdateSubjectDto } from '../../presentation/dto/request/subject-update.request.dto';
 import { EnumService } from 'src/modules/enums/domain/enums.service';
 import { BranchService } from 'src/modules/branch/domain/branch.service';
-import type { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-query.dto';
+import { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-query.dto';
 import { SubjectResponseMapper } from 'src/modules/subject/data/mappers/subject/subject-response.mapper';
 import { SubjectRequestMapper } from 'src/modules/subject/data/mappers/subject/subject-request.mapper';
 

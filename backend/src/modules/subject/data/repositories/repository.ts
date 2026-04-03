@@ -4,7 +4,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Brackets, Repository } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
-import type { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-query.dto';
+import { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-query.dto';
 import type { PaginatedResponse } from 'src/common/pagination/interface/paginated-response.interface';
 import { ROLES } from 'src/common/constants/roles.constant';
 import { paginate } from 'src/common/pagination/utils/pagination.util';
@@ -54,7 +54,7 @@ export class SubjectRepository {
 
   private generateSubjectsListCacheKey(query: FindSubjectQueryDto): string {
     const { page = 1, limit = 20, search, branchId, semesterId } = query;
-    return `subjects_p${page}_l${limit}_s${search || 'all'}_b${branchId}_sem${semesterId}`;
+    return `subjects_p${page}_l${limit}_s${search || 'all'}_b${branchId || 'all'}_sem${semesterId || 'all'}`;
   }
 
   async findAll(

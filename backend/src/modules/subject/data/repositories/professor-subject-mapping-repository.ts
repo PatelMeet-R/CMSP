@@ -4,7 +4,7 @@ import { Brackets, Repository } from 'typeorm';
 import { ProfessorSubMapping } from '../../domain/entities/professors-subject.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
-import type { FindSubjectMappingQueryDto } from 'src/common/pagination/dto/find-subject-mapping-query.dto';
+import { FindSubjectMappingQueryDto } from 'src/common/pagination/dto/find-subject-mapping-query.dto';
 import { ROLES } from 'src/common/constants/roles.constant';
 import { paginate } from 'src/common/pagination/utils/pagination.util';
 import type { PaginatedResponse } from 'src/common/pagination/interface/paginated-response.interface';

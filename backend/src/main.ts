@@ -17,6 +17,9 @@ async function bootstrap() {
       whitelist: true,
       disableErrorMessages: true,
       transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
     }),
   );
   const config = new DocumentBuilder()

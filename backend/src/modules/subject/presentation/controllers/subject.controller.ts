@@ -21,7 +21,7 @@ import { CreateSubjectDto } from '../dto/request/subject-register.request.dto';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
 import { ROLES } from 'src/common/constants/roles.constant';
 import { SubjectService } from '../../domain/services/subject.service';
-import type { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-query.dto';
+import { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-query.dto';
 
 @Controller('subject')
 @UseGuards(JwtAuthGuard, RolesGuard)
