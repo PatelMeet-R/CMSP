@@ -9,6 +9,7 @@ export function useBranchViewModel() {
   } = useQuery({
     queryKey: ["branches"], //  cache specific data
     queryFn: getBranches, // Axios service function
+    staleTime: 100000 * 60 * 60,
   });
 
   return { branches, isLoading, error };

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useAppSelector } from "@/store/hook";
-import { ProfileDropdown } from "@/components/custom/profiledropdown";
+import { ProfileDropdown } from "@/components/custom/ProfileDropdown";
 
 const Topbar = () => {
   const { toggleSidebar } = useSidebar();
