@@ -143,6 +143,11 @@
 }
 
 @layer base {
+  /* 1. DEFAULT (Mobile phones): Sidebar takes up most of the screen when opened */
+  :root {
+    --sidebar-width: 16rem;
+    --sidebar-width-icon: 3.5rem;
+  }
   * {
     @apply border-border outline-ring/50;
   }
@@ -151,5 +156,68 @@
   }
   html {
     @apply font-sans;
+  }
+
+  /* 2. TABLET (Screens 768px and up)*/
+  @media (min-width: 768px) {
+    :root {
+      --sidebar-width: 10rem;
+      --sidebar-width-icon: 3rem;
+    }
+  }
+
+  /* 3. DESKTOP (Screens 1024px and up): Wider sidebar */
+  @media (min-width: 1024px) {
+    :root {
+      --sidebar-width: 16rem;
+      --sidebar-width-icon: 4rem;
+    }
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  @layer components {
+    /* Expand container smoothly on hover AND on un-hover */
+    [data-collapsible="icon"][data-state="collapsed"]:hover
+      > [data-slot="sidebar-container"] {
+      width: var(--sidebar-width) !important;
+      box-shadow: 10px 0 20px -5px rgba(0, 0, 0, 0.15) !important;
+      transition: width 0.2s ease-in-out;
+    }
+
+    /* Expand the hidden layout gap to PUSH the page content */
+    [data-collapsible="icon"][data-state="collapsed"]:hover
+      > [data-slot="sidebar-gap"] {
+      width: var(--sidebar-width) !important;
+      transition: width 0.2s ease-in-out;
+    }
+
+    /* Expand buttons */
+    [data-collapsible="icon"][data-state="collapsed"]:hover
+      [data-sidebar="menu-button"] {
+      width: 100% !important;
+    }
+
+    /* Un-hide standard text & arrows */
+    [data-collapsible="icon"][data-state="collapsed"]:hover
+      [data-sidebar="menu-button"]
+      > span,
+    [data-collapsible="icon"][data-state="collapsed"]:hover
+      [data-sidebar="menu-button"]
+      > svg.ml-auto,
+    [data-collapsible="icon"][data-state="collapsed"]:hover .grid.flex-1,
+    [data-collapsible="icon"][data-state="collapsed"]:hover
+      [data-sidebar="group-label"] {
+      display: flex !important;
+      opacity: 1 !important;
+    }
+
+    /* Un-hide the sub-menus (Folders) */
+    [data-collapsible="icon"][data-state="collapsed"]:hover
+      [data-sidebar="menu-sub"],
+    [data-collapsible="icon"][data-state="collapsed"]:hover
+      [data-sidebar="menu-sub-button"] {
+      display: flex !important;
+    }
   }
 }

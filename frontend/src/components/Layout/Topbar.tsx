@@ -1,42 +1,32 @@
 import logo from "@/assets/01.png";
-import { LogIn, PanelLeft } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { useSidebar } from "@/components/ui/sidebar";
 import { useAppSelector } from "@/store/hook";
-import { ProfileDropdown } from "@/components/custom/profiledropdown";
+import { ROUTENAME } from "@/core/Constants/RouteName";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const Topbar = () => {
-  const { toggleSidebar } = useSidebar();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
+
   return (
-    <div className="flex justify-between items-center h-20 fixed w-full z-50 bg-mist-100 px-5 border-b">
+    <header className="flex justify-between items-center h-20 sticky top-0 z-50 bg-mist-100 px-5 border-b shrink-0">
       <div className="flex items-center gap-4">
+        <SidebarTrigger className="md:hidden" />
         <img src={logo} alt="logo" width={80} />
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleSidebar}
-          className="md:block"
-          aria-label="Toggle Sidebar"
-        >
-          <PanelLeft className="h-5 w-5" />
-        </Button>
       </div>
 
       <div>
-        {!isAuthenticated ? (
+        {!isAuthenticated && (
           <Button asChild>
-            <Link to="/login" className="rounded-full">
+            <Link to={ROUTENAME.LOGIN} className="rounded-full">
               <LogIn className="mr-2 h-4 w-4" />
               Login
             </Link>
           </Button>
-        ) : (
-          <ProfileDropdown />
         )}
       </div>
-    </div>
+    </header>
   );
 };
 
