@@ -1,5 +1,3 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Collapsible,
   CollapsibleContent,
@@ -36,6 +34,15 @@ import { useAppSelector } from "@/store/hook";
 import { ROLES, type RoleType } from "@/core/Constants/enums/role-enum-value";
 import { ROUTENAME } from "@/core/Constants/RouteName";
 import { PROFILE_SIDEBAR_CONFIG } from "@/core/config/ProfileSidebar";
+import {
+  SidebarGroup,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+} from "@/components/ui/sidebar";
 
 const IconMap: Record<string, React.ElementType> = {
   BookOpen,
@@ -99,76 +106,56 @@ export const DashboardSideBarDetails = () => {
         //  Chevron icon know when this specific item is open
         <Collapsible key={item.label} className="group/collapsible">
           {/* PARENT BUTTON (Trigger) */}
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start gap-2 transition-none hover:bg-accent hover:text-accent-foreground"
-            >
-              {/* Render the dynamic parent icon */}
-              <ParentIcon className="w-4 h-4" />
-              <span>{item.label}</span>
-              {/* Chevron icon rotates when the collapsible opens */}
-              <ChevronRightIcon className="ml-auto w-4 h-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-            </Button>
-          </CollapsibleTrigger>
+          <SidebarMenuItem>
+            <CollapsibleTrigger asChild>
+              {/* tooltip={item.label} shows the text when hovering in icon-only mode! */}
+              <SidebarMenuButton>
+                <ParentIcon className="w-5 h-5 shrink-0" />
+                <span>{item.label}</span>
+                <ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+              </SidebarMenuButton>
+            </CollapsibleTrigger>
 
-          {/* CHILDREN CONTENT */}
-          <CollapsibleContent className="pl-6 pt-1">
-            <div className="flex flex-col gap-1">
-              {/* Map over the children array to render the sub-links */}
-              {item.children.map((child: SidebarChild) => {
-                // Get the child's specific icon
-                const ChildIcon = IconMap[child.icon] || FileIcon;
-
-                return (
-                  <Button
-                    key={child.link}
-                    variant="ghost"
-                    size="sm"
-                    asChild
-                    className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
-                  >
-                    <Link to={child.link}>
-                      <ChildIcon className="w-4 h-4" />
-                      <span>{child.label}</span>
-                    </Link>
-                  </Button>
-                );
-              })}
-            </div>
-          </CollapsibleContent>
+            {/* CHILDREN CONTENT */}
+            <CollapsibleContent>
+              <SidebarMenuSub>
+                {item.children.map((child: SidebarChild) => {
+                  const ChildIcon = IconMap[child.icon] || FileIcon;
+                  return (
+                    <SidebarMenuSubItem key={child.link}>
+                      <SidebarMenuSubButton asChild>
+                        <Link to={child.link}>
+                          <ChildIcon />
+                          <span>{child.label}</span>
+                        </Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  );
+                })}
+              </SidebarMenuSub>
+            </CollapsibleContent>
+          </SidebarMenuItem>
         </Collapsible>
       );
     }
 
     //  RENDER ITEMS WITHOUT CHILDREN
     return (
-      <Button
-        key={item.label}
-        variant="ghost"
-        size="sm"
-        asChild
-        className="w-full justify-start gap-2 text-foreground"
-      >
-        <Link to={item.link || ""}>
-          <ParentIcon className="w-4 h-4" />
-          <span>{item.label}</span>
-        </Link>
-      </Button>
+      <SidebarMenuItem key={item.label}>
+        <SidebarMenuButton asChild>
+          <Link to={item.link || ""}>
+            <ParentIcon className={"w-5 h-5 shrink-0"} />
+            <span>{item.label}</span>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
     );
   };
   return (
-    <Card
-      className="mx-auto w-full max-w-[16rem] gap-2 border-0 shadow-none"
-      size="sm"
-    >
-      <CardContent className="p-4 pt-0">
-        <div className="flex flex-col gap-1">
-          {/* Start the rendering loop */}
-          {filteredSidebarConfig.map((item) => renderSideBarItem(item))}
-        </div>
-      </CardContent>
-    </Card>
+    <SidebarGroup>
+      <SidebarMenu>
+        {filteredSidebarConfig.map((item) => renderSideBarItem(item))}
+      </SidebarMenu>
+    </SidebarGroup>
   );
 };

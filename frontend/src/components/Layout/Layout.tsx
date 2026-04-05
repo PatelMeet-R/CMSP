@@ -1,20 +1,23 @@
 import { AppSidebar } from "@/components/Layout/AppSidebar";
 import Footer from "@/components/Layout/Footer";
 import Topbar from "@/components/Layout/Topbar";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Outlet } from "react-router-dom";
+import { TooltipProvider } from "@/components/ui/tooltip";
 const Layout = () => {
   return (
-    <SidebarProvider>
-      <Topbar />
-      <AppSidebar />
-      <main className="w-full pt-16 flex flex-col min-h-screen">
-        <div className="flex-1 p-6">
-          <Outlet />
-        </div>
-        <Footer />
-      </main>
-    </SidebarProvider>
+    <TooltipProvider delayDuration={0}>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset className="flex flex-col min-h-screen overflow-hidden">
+          <Topbar />
+          <main className="flex-1 p-4 md:p-6 w-full max-w-[100vw] overflow-x-hidden">
+            <Outlet />
+          </main>
+          <Footer />
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
   );
 };
 export default Layout;
