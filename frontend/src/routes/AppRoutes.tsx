@@ -6,6 +6,9 @@ import ResetPassword from "@/modules/auth/view/ResetPassword";
 import Signup from "@/modules/auth/view/Signin";
 import { ProcessVerification } from "@/modules/profile/view/ProcessVerification";
 import { Profile } from "@/modules/profile/view/Profile";
+import { SubjectDetailModule } from "@/modules/subject/view/SubjectUpdateModule";
+import { SubjectModule } from "@/modules/subject/view/SubjectModule";
+import { SubjectRegisterModule } from "@/modules/subject/view/SubjectRegister";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 const AppRoutes = () => {
@@ -18,11 +21,16 @@ const AppRoutes = () => {
             path={ROUTENAME.DASHBOARD}
             element={<div>Dashboard Page</div>}
           />
-          <Route path={ROUTENAME.SUBJECTS} element={<div>SUBJECTS Page</div>} />
+          <Route path={ROUTENAME.SUBJECTS} element={<SubjectModule />} />
           <Route
             path={ROUTENAME.ADD_SUBJECT}
-            element={<div>ADD_SUBJECT Page</div>}
+            element={<SubjectRegisterModule />}
           />
+          <Route
+            path={ROUTENAME.SUBJECT_DETAILS}
+            element={<SubjectDetailModule />}
+          />
+
           <Route
             path={ROUTENAME.PROFESSOR_ASSIGN_SUBJECT_POST}
             element={<div>PROFESSOR_ASSIGN_SUBJECT_POST Page</div>}

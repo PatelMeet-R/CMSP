@@ -6,7 +6,7 @@ export const useEnumViewModel = (category: EnumCategory) => {
   const { data: enums = [], isLoading } = useQuery({
     queryKey: ["enums", category],
     queryFn: () => enumService.getEnumsByCategory(category),
-    staleTime: 1000 * 60 * 60,
+    staleTime: 10000 * 60 * 60,
   });
 
   return {

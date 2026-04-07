@@ -9,6 +9,7 @@ export const ROUTENAME = {
   AUTH_RESET_PASSWORD: `/reset-password`,
   SUBJECTS: "/subjects",
   ADD_SUBJECT: "/subjects/register",
+  SUBJECT_DETAILS: `/subject/:id`,
   PROFESSOR_ASSIGN_SUBJECT_POST: "/assign-subject",
   PROFESSOR_ASSIGNED_SUBJECT_GET: "/professor-subject",
   ASSIGNMENT: "/assignments",

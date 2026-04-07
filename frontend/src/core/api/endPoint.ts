@@ -26,4 +26,10 @@ export const API_ENDPOINT = {
     MY_PROFILE: "personal-info/profile",
     UPDATE: (profileId: number) => `personal-info/update/${profileId}`,
   },
+  SUBJECT: {
+    VIEW: "/subject",
+    VIEW_BY_ID: (id: number) => `/subject/${id}`,
+    REGISTER: `/subject/register`,
+    UPDATE: (id: number) => `/subject/${id}`,
+  },
 } as const;

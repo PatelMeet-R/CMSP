@@ -4,6 +4,7 @@
     "ROUTENAME",
     "streamifier",
     "SUCCESSMSG",
-    "USERNOTEXIST"
+    "USERNOTEXIST",
+    "VIEWMODEL"
   ]
 }
