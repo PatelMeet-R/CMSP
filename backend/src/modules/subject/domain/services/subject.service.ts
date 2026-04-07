@@ -16,6 +16,7 @@ import { BranchService } from 'src/modules/branch/domain/branch.service';
 import { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-query.dto';
 import { SubjectResponseMapper } from 'src/modules/subject/data/mappers/subject/subject-response.mapper';
 import { SubjectRequestMapper } from 'src/modules/subject/data/mappers/subject/subject-request.mapper';
+import type { User } from 'src/modules/auth/domain/entities/user.entity';
 
 @Injectable()
 export class SubjectService {
@@ -28,38 +29,39 @@ export class SubjectService {
 
   //register
 
-  async registerSubject(dto: CreateSubjectDto, user: UserResponseDto) {
-    // check duplicate subject code
-
+  async registerSubject(dto: CreateSubjectDto, currentUser: User) {
+    //  check duplicate subject code
     const isSubjectExist = await this.subjectRepository.IsSubjectWithCodeExist(
       dto.code,
     );
+
     if (isSubjectExist) {
-      return new ConflictException(
+      throw new ConflictException(
         ERRORMESSAGE.SUBJECT_WITH_CODE_ALREADY_EXISTS,
       );
     }
 
     // get branch
     const branch = await this.branchService.getBranchEntityById(dto.branchId);
-
     if (!branch) {
-      throw new ConflictException(ERRORMESSAGE.BRANCH_INVALID_CREDENTIALS);
+      throw new NotFoundException(ERRORMESSAGE.BRANCH_INVALID_CREDENTIALS);
     }
 
-    // get semester enum
-    const semester = await this.enumService.getMeEnumValueIfExist(
-      ENUM_TYPES.SEMESTER,
-      dto.semesterId!.toString(),
-    );
+    const semester = await this.enumService.getEnumValueById(dto.semesterId);
 
     if (!semester) {
-      throw new ConflictException(ERRORMESSAGE.SEMESTER_INVALID_CREDENTIALS);
+      throw new NotFoundException(ERRORMESSAGE.SEMESTER_INVALID_CREDENTIALS);
     }
-    if (user.role !== ROLES.SUPER_ADMIN && user.branchId !== branch.id) {
+
+    //  AUTHORIZATION CHECK
+    const userRoleString = currentUser.role?.key || currentUser.role;
+    const userBranchId = currentUser.personalInfo?.branch?.id;
+
+    if (userRoleString !== ROLES.SUPER_ADMIN && userBranchId !== branch.id) {
       throw new ForbiddenException(ERRORMESSAGE.SUBJECT_CHANGE_NOT_AUTHORIZED);
     }
 
+    //  Map and Save
     const subjectData = SubjectRequestMapper.toCreateEntity(
       dto,
       branch,
@@ -69,45 +71,48 @@ export class SubjectService {
     const toBeSaved = await this.subjectRepository.saveSubject(subjectData);
     return SubjectResponseMapper.toResponse(toBeSaved);
   }
-
   //update
 
-  async updateSubject(
-    id: number,
-    dto: UpdateSubjectDto,
-    user: UserResponseDto,
-  ) {
+  async updateSubject(id: number, dto: UpdateSubjectDto, currentUser: User) {
     const subject = await this.subjectRepository.findSubjectById(id);
 
     if (!subject) {
-      throw new ConflictException(ERRORMESSAGE.SUBJECT_NOT_FOUND);
+      throw new NotFoundException(ERRORMESSAGE.SUBJECT_NOT_FOUND);
     }
 
-    const isSubjectExist = await this.subjectRepository.IsSubjectWithCodeExist(
-      dto.code!,
-    );
-    if (!isSubjectExist) {
-      return new ConflictException(ERRORMESSAGE.SUBJECT_NOT_FOUND);
+    if (dto.code && dto.code !== subject.code) {
+      const isCodeTaken = await this.subjectRepository.IsSubjectWithCodeExist(
+        dto.code,
+      );
+      if (isCodeTaken) {
+        throw new ConflictException(
+          ERRORMESSAGE.SUBJECT_WITH_CODE_ALREADY_EXISTS,
+        );
+      }
     }
 
-    const branch = await this.branchService.getBranchEntityById(dto.branchId!);
-
-    if (!branch) {
-      throw new ConflictException(ERRORMESSAGE.BRANCH_INVALID_CREDENTIALS);
+    let branch = subject.branch;
+    if (dto.branchId && dto.branchId !== subject.branch?.id) {
+      branch = await this.branchService.getBranchEntityById(dto.branchId);
+      if (!branch) {
+        throw new NotFoundException(ERRORMESSAGE.BRANCH_INVALID_CREDENTIALS);
+      }
     }
 
-    //AUTHORIZATION CHECK
-    if (user.role !== ROLES.SUPER_ADMIN && user.branchId !== branch.id) {
+    const userRoleString = currentUser.role?.key || currentUser.role;
+    const userBranchId = currentUser.personalInfo?.branch?.id;
+
+    if (userRoleString !== ROLES.SUPER_ADMIN && userBranchId !== branch?.id) {
       throw new ForbiddenException(ERRORMESSAGE.SUBJECT_CHANGE_NOT_AUTHORIZED);
     }
 
-    const semester = await this.enumService.getMeEnumValueIfExist(
-      ENUM_TYPES.SEMESTER,
-      dto.semesterId!.toString(),
-    );
-
-    if (!semester) {
-      throw new ConflictException(ERRORMESSAGE.SEMESTER_INVALID_CREDENTIALS);
+    // Only fetch new semester if it was changed
+    let semester = subject.semester;
+    if (dto.semesterId && dto.semesterId !== subject.semester?.id) {
+      semester = await this.enumService.getEnumValueById(dto.semesterId);
+      if (!semester) {
+        throw new NotFoundException(ERRORMESSAGE.SEMESTER_INVALID_CREDENTIALS);
+      }
     }
 
     const updatedSubject = SubjectRequestMapper.toUpdateEntity(
