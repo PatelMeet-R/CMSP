@@ -48,9 +48,9 @@ export const useProfileViewModel = () => {
       // re-fetch the fresh data
       queryClient.invalidateQueries({ queryKey: ["profile", "me"] });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toastService.error(
-        getAxiosErrorMessage(error) || "Failed to update profile",
+        getAxiosErrorMessage(error.message) || "Failed to update profile",
       );
     },
   });

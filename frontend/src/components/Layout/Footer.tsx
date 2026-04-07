@@ -1,8 +1,8 @@
 const Footer = () => {
   return (
-    <div className="text-sm text-center bg-red-100 py-3">
-      &#64; Copyright 2026 | designed &amp; Develeped for CMS
-    </div>
+    <footer className="shrink-0 text-sm text-center bg-red-100 py-3 z-10">
+      &#64; Copyright 2026 | designed &amp; Developed for CMS
+    </footer>
   );
 };
 

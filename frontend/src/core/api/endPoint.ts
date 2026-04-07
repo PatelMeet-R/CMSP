@@ -28,5 +28,8 @@ export const API_ENDPOINT = {
   },
   SUBJECT: {
     VIEW: "/subject",
+    VIEW_BY_ID: (id: number) => `/subject/${id}`,
+    REGISTER: `/subject/register`,
+    UPDATE: (id: number) => `/subject/${id}`,
   },
 } as const;

@@ -55,46 +55,47 @@ export function DataTablePagination({
                 <SelectItem value="10">10</SelectItem>
                 <SelectItem value="25">25</SelectItem>
                 <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
+                <SelectItem value="100">75</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
         </div>
         <div className="hidden sm:block">
-          Showing
+          Showing &nbsp;
           <span className="font-medium text-foreground">{meta.totalItems}</span>
-          total records
+          &nbsp;total records
         </div>
       </div>
 
       {/* Right Side: Page navigation */}
       <div className="flex items-center gap-4">
         <div>
-          Page
+          Page &nbsp;
           <span className="font-medium text-foreground">
             {meta.currentPage}
           </span>
-          of {meta.totalPages}
+          &nbsp; of {meta.totalPages} &nbsp;
         </div>
 
         <Pagination className="mx-0 w-auto">
-          <PaginationContent>
-            <PaginationItem>
+          <PaginationContent className="px-3">
+            <PaginationItem className="me-2">
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-8 h-8 p-0"
+                className="w-8 h-8 p-0 "
                 onClick={() => onPageChange(meta.currentPage - 1)}
                 disabled={!meta.hasPreviousPage}
               >
-                <PaginationPrevious className="h-4 w-4" />
+                <PaginationPrevious className="h-4 w-4 " />
               </Button>
             </PaginationItem>
-            <PaginationItem>
+
+            <PaginationItem className="ms-2">
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-8 h-8 p-0"
+                className="w-8 h-8 p-0 "
                 onClick={() => onPageChange(meta.currentPage + 1)}
                 disabled={!meta.hashNextPage}
               >

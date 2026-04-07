@@ -1,4 +1,4 @@
-import { Loader2, BookOpen } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -8,9 +8,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import type { Subject } from "@/modules/subject/types/subject.schemas";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SubjectTableProps {
-  subjects: any[]; // Replace 'any' with your actual Subject interface later!
+  subjects: Subject[];
   isLoading: boolean;
   isSuperAdmin: boolean;
   onRowClick: (subjectId: number) => void;
@@ -22,15 +24,15 @@ export function SubjectTable({
   isSuperAdmin,
   onRowClick,
 }: SubjectTableProps) {
+  const skeletonRows = Array.from({ length: 10 });
   return (
-    <div className="rounded-md border bg-card overflow-hidden w-full">
+    /*  overflow-x-auto for mobile safety */
+    <div className="w-full overflow-x-auto bg-card">
       <Table>
         <TableHeader className="bg-muted/50">
           <TableRow>
-            {/* Hide Code column on tiny mobile screens to save space */}
             <TableHead className="w-25 hidden sm:table-cell">Code</TableHead>
             <TableHead>Subject Name</TableHead>
-            {/* Only SuperAdmins see the Branch column */}
             {isSuperAdmin && (
               <TableHead className="hidden md:table-cell">Branch</TableHead>
             )}
@@ -39,18 +41,34 @@ export function SubjectTable({
         </TableHeader>
         <TableBody>
           {isLoading ? (
-            <TableRow>
-              <TableCell
-                colSpan={isSuperAdmin ? 4 : 3}
-                className="h-48 text-center"
-              >
-                <div className="flex flex-col items-center justify-center text-muted-foreground">
-                  <Loader2 className="h-8 w-8 animate-spin mb-2 text-primary" />
-                  <p>Loading curriculum...</p>
-                  {/* //<spinner> */}
-                </div>
-              </TableCell>
-            </TableRow>
+            //  THE SKELETON ROWS
+            skeletonRows.map((_, index) => (
+              <TableRow key={index}>
+                {/* Skeleton for Code */}
+                <TableCell className="hidden sm:table-cell">
+                  <Skeleton className="h-6 w-20" />
+                </TableCell>
+
+                {/* Skeleton for Subject Name */}
+                <TableCell>
+                  <Skeleton className="h-5 w-3/4 max-w-62.5 mb-2" />
+                  {/* Mobile code skeleton */}
+                  <Skeleton className="h-4 w-24 sm:hidden" />
+                </TableCell>
+
+                {/* Skeleton for Branch (SuperAdmin only) */}
+                {isSuperAdmin && (
+                  <TableCell className="hidden md:table-cell">
+                    <Skeleton className="h-5 w-40" />
+                  </TableCell>
+                )}
+
+                {/* Skeleton for Semester Badge */}
+                <TableCell>
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                </TableCell>
+              </TableRow>
+            ))
           ) : subjects.length === 0 ? (
             <TableRow>
               <TableCell
@@ -82,7 +100,6 @@ export function SubjectTable({
                   <div className="font-medium text-foreground">
                     {subject.name}
                   </div>
-                  {/* MOBILE FALLBACK: Show the code under the name ONLY on small screens */}
                   <div className="text-xs text-muted-foreground sm:hidden mt-1 font-mono">
                     {subject.code}
                   </div>

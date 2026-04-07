@@ -9,9 +9,9 @@ const Layout = () => {
     <TooltipProvider delayDuration={0}>
       <SidebarProvider>
         <AppSidebar />
-        <SidebarInset className="flex flex-col min-h-screen overflow-hidden">
+        <SidebarInset className="flex flex-col h-svh overflow-hidden">
           <Topbar />
-          <main className="flex-1 p-4 md:p-6 w-full max-w-[100vw] overflow-x-hidden">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 w-full max-w-[100vw] overflow-x-hidden">
             <Outlet />
           </main>
           <Footer />

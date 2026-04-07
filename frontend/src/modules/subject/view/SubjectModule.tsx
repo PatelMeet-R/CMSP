@@ -18,6 +18,11 @@ import { ROLES } from "@/core/Constants/enums/role-enum-value";
 import { useBranchViewModel } from "@/modules/branch/viewModel/useBranchViewModel";
 import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
 import { EnumCategory } from "@/modules/enums/types/enum.schemas";
+import type {
+  BranchResponse,
+  SemesterResponse,
+} from "@/modules/subject/types/subject.schemas";
+import { ROUTENAME } from "@/core/Constants/RouteName";
 
 export const SubjectModule = () => {
   const navigate = useNavigate();
@@ -30,34 +35,32 @@ export const SubjectModule = () => {
   const { enums: semesters, isLoading: isSemestersLoading } = useEnumViewModel(
     EnumCategory.SEMESTER,
   );
-  // 3. Format the data for the DynamicSelect component
-  const branchOptions =
-    branches?.map((b: any) => ({ id: b.id, label: b.name })) || [];
-  const semesterOptions =
-    semesters?.map((s: any) => ({ id: s.id, label: s.value })) || [];
 
-  // Check if any filter is currently active
+  const branchOptions =
+    branches?.map((b: BranchResponse) => ({ id: b.id, label: b.name })) || [];
+  const semesterOptions =
+    semesters?.map((s: SemesterResponse) => ({ id: s.id, label: s.value })) ||
+    [];
+
   const hasActiveFilters = Boolean(vm.search || vm.branchId || vm.semesterId);
 
   return (
-    <div className="w-full max-w-350 mx-auto p-4 md:p-6 space-y-6">
-      <Card className="border-none shadow-md">
-        {/* --- HEADER --- */}
-        <CardHeader className="pb-4">
-          <CardTitle className="text-2xl flex items-center gap-2">
+    <div className="w-full max-w-screen-2xl mx-auto">
+      <Card className="border-none shadow-md p-0">
+        <CardHeader className="pb-1">
+          <CardTitle className="text-2xl flex items-center gap-1">
             <BookOpen className="w-6 h-6 text-primary" />
             Curriculum Subjects
           </CardTitle>
           <CardDescription>
-            Manage and view academic subjects{" "}
+            Manage and view academic subjects
             {isSuperAdmin ? "across all branches" : "for your branch"}.
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           {/* --- TOOLBAR --- */}
-          <div className="flex flex-col lg:flex-row gap-4 items-end bg-muted/30 p-4 rounded-lg border">
-            {/* Reusable Search Component */}
+          <div className="flex flex-col lg:flex-row gap-4 items-end bg-muted/30 p-3 rounded-lg border">
             <div className="flex-1 w-full">
               <label className="text-xs font-semibold text-muted-foreground mb-1 block">
                 Search
@@ -70,7 +73,6 @@ export const SubjectModule = () => {
             </div>
 
             <div className="flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end">
-              {/* Conditional Branch Dropdown */}
               {isSuperAdmin && (
                 <div className="w-full sm:w-50">
                   <label className="text-xs font-semibold text-muted-foreground mb-1 block">
@@ -86,7 +88,6 @@ export const SubjectModule = () => {
                 </div>
               )}
 
-              {/* Semester Dropdown */}
               <div className="w-full sm:w-45">
                 <label className="text-xs font-semibold text-muted-foreground mb-1 block">
                   Semester
@@ -100,7 +101,6 @@ export const SubjectModule = () => {
                 />
               </div>
 
-              {/* Clear Filters Button */}
               {hasActiveFilters && (
                 <Button
                   variant="ghost"
@@ -114,25 +114,29 @@ export const SubjectModule = () => {
             </div>
           </div>
 
-          {/* --- DATA TABLE --- */}
-          <SubjectTable
-            subjects={vm.subjects}
-            isLoading={vm.isLoading}
-            isSuperAdmin={isSuperAdmin}
-            onRowClick={(id) => navigate(`/subjects/${id}`)}
-          />
+          {/* --- DATA TABLE WRAPPER --- */}
+          <div className="border rounded-md mb-0">
+            <SubjectTable
+              subjects={vm.subjects}
+              isLoading={vm.isLoading}
+              isSuperAdmin={isSuperAdmin}
+              onRowClick={(id) =>
+                navigate(
+                  ROUTENAME.SUBJECT_DETAILS.replace(":id", id.toString()),
+                )
+              }
+            />
+          </div>
 
           {/* --- PAGINATION --- */}
           {vm.meta && (
-            <DataTablePagination
-              meta={vm.meta}
-              onPageChange={vm.setPage}
-              // If you add a setLimit method to your ViewModel, you can wire it up here!
-              // For now, we'll just log it or pass a dummy function if it's fixed at 10.
-              onLimitChange={(newLimit) =>
-                console.log("Limit changed to", newLimit)
-              }
-            />
+            <div className="pt-2">
+              <DataTablePagination
+                meta={vm.meta}
+                onPageChange={vm.setPage}
+                onLimitChange={vm.setLimit}
+              />
+            </div>
           )}
         </CardContent>
       </Card>

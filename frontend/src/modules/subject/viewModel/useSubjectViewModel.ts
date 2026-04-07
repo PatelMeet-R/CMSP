@@ -1,24 +1,46 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/use-debounce";
 import { fetchSubjects } from "@/modules/subject/model/subjectService";
+import { useSearchParams } from "react-router-dom";
 
 export const useSubjectViewModel = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   //  UI State
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
-  const [search, setSearch] = useState("");
-  const [branchId, setBranchId] = useState<number | undefined>();
-  const [semesterId, setSemesterId] = useState<number | undefined>();
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const limit = parseInt(searchParams.get("limit") || "10", 10);
+  const search = searchParams.get("search") || "";
+  const branchId = searchParams.get("branchId")
+    ? Number(searchParams.get("branchId"))
+    : undefined;
+  const semesterId = searchParams.get("semesterId")
+    ? Number(searchParams.get("semesterId"))
+    : undefined;
 
-  //  Debounce the search
+  //  DEBOUNCE SEARCH
   const debouncedSearch = useDebounce(search, 1500);
+
+  //  UPDATE URL
+  const setParam = (key: string, value: string | number | undefined) => {
+    setSearchParams((prev) => {
+      if (value) prev.set(key, value.toString());
+      else prev.delete(key);
+      return prev;
+    });
+  };
+
+  const setPage = (p: number) => setParam("page", p);
+  const setLimit = (l: number) => setParam("limit", l);
+  const setSearch = (s: string) => setParam("search", s);
+  const setBranchId = (id: number | undefined) => setParam("branchId", id);
+  const setSemesterId = (id: number | undefined) => setParam("semesterId", id);
 
   //  Reset Pagination: If a user types a new search or changes a filter, go back to Page 1
   useEffect(() => {
-    console.log("🔄 [VIEWMODEL] Filter changed! Resetting page to 1.");
-    setPage(1);
-  }, [debouncedSearch, branchId, semesterId]);
+    if (page !== 1) {
+      setPage(1);
+    }
+  }, [debouncedSearch, branchId, semesterId, limit]);
 
   //  Group params to pass to API
   const queryParams = {
@@ -55,13 +77,11 @@ export const useSubjectViewModel = () => {
     setSearch,
     setBranchId,
     setSemesterId,
+    setLimit,
 
     // Helper Action
     clearFilters: () => {
-      setSearch("");
-      setBranchId(undefined);
-      setSemesterId(undefined);
-      setPage(1);
+      setSearchParams(new URLSearchParams());
     },
   };
 };
