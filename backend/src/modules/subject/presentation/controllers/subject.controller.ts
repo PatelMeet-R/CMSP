@@ -22,6 +22,7 @@ import { SUCCESSMSG } from 'src/common/constants/success.message';
 import { ROLES } from 'src/common/constants/roles.constant';
 import { SubjectService } from '../../domain/services/subject.service';
 import { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-query.dto';
+import type { User } from 'src/modules/auth/domain/entities/user.entity';
 
 @Controller('subject')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -34,7 +35,7 @@ export class SubjectController {
   async updateSubject(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateSubjectDto,
-    @CurrentUser() user: UserResponseDto,
+    @CurrentUser() user: User,
   ) {
     const updated = await this.subjectService.updateSubject(id, dto, user);
     return {
@@ -48,11 +49,11 @@ export class SubjectController {
   @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
   async createSubject(
     @Body() dto: CreateSubjectDto,
-    @CurrentUser() User: UserResponseDto,
+    @CurrentUser() user: User,
   ) {
     const newlyCreatedSubject = await this.subjectService.registerSubject(
       dto,
-      User,
+      user,
     );
     return {
       message: SUCCESSMSG.SUBJECT.CREATED,
