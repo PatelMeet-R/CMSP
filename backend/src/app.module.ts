@@ -12,6 +12,8 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import mailConfig from './config/mail.config';
 import appConfig from './config/app.config';
+import { AssignmentModule } from './modules/assignment/assignment.module';
+import cloudinaryConfig from './config/cloudinary.config';
 import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
@@ -22,10 +24,11 @@ import { CacheModule } from '@nestjs/cache-manager';
     EnumsModule,
     SubjectModule,
     UsersModule,
+    AssignmentModule,
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [mailConfig, appConfig],
+      load: [mailConfig, appConfig, cloudinaryConfig],
     }),
     ThrottlerModule.forRoot({
       throttlers: [
