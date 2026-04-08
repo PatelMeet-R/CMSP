@@ -2,7 +2,6 @@ import { IsOptional, IsString, IsNumber, Length } from 'class-validator';
 import { PI_DTO_MESSAGE } from 'src/common/constants/dto/users-dto/personal-info.dto.message';
 
 export class UpdatePersonalInfoDto {
- 
   // BASIC FIELDS (Anyone can update these)
 
   @IsOptional()
@@ -40,7 +39,10 @@ export class UpdatePersonalInfoDto {
   @IsNumber({}, { message: PI_DTO_MESSAGE.JOINED_ACADEMIC_YEAR_ID.NUMBER })
   joinedAcademicYearId?: number;
 
- 
+  @IsOptional()
+  @IsNumber({}, { message: 'Profile Image ID must be a number' })
+  profileImageId?: number;
+
   // ADMIN-ONLY FIELDS
 
   @IsOptional()

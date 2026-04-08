@@ -1,8 +1,17 @@
+import { IsOptional } from 'class-validator';
 import { AuditableEntity } from 'src/core/base.entity';
 import { User } from 'src/modules/auth/domain/entities/user.entity';
 import { Branch } from 'src/modules/branch/domain/entities/branch.entity';
 import { EnumValue } from 'src/modules/enums/domain/entities/enumValue.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
+import { File } from 'src/modules/file-upload/domain/entity/file.entity';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
+} from 'typeorm';
 
 @Entity('personal_info')
 export class PersonalInfo extends AuditableEntity {
@@ -10,12 +19,19 @@ export class PersonalInfo extends AuditableEntity {
   @JoinColumn()
   user: User;
 
+  @OneToOne(() => File, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'profileImageId' })
+  profileImage: File | null;
+
+  @Index()
   @Column({ length: 20, unique: true, nullable: true })
   enrollmentNumber: string;
 
+  @Index()
   @Column({ length: 50 })
   firstName: string;
 
+  @Index()
   @Column({ length: 50 })
   lastName: string;
 
@@ -35,7 +51,7 @@ export class PersonalInfo extends AuditableEntity {
   @JoinColumn({ name: 'expectedGraduateYearId' })
   expectedGraduateYear: EnumValue;
 
-  @Column({ length: 10 }) //max lenght is 10
+  @Column({ length: 10 })
   primaryMobileNumber: string;
 
   @Column({ type: 'varchar', nullable: true, length: 10 }) //optional one

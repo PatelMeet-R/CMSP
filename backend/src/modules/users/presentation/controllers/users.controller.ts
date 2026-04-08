@@ -23,6 +23,11 @@ import { UpdatePersonalInfoDto } from 'src/modules/users/presentation/dto/reques
 import { FindUsersPersonalInfoQueryDto } from 'src/common/pagination/dto/find-users-personal-query.dto';
 import type { PaginatedResponse } from 'src/common/pagination/interface/paginated-response.interface';
 import type { PersonalInfo } from 'src/modules/users/domain/entities/personal-info.entity';
+import type { User } from 'src/modules/auth/domain/entities/user.entity';
+import type {
+  ChangeUserRoleDto,
+  ToggleStatusDto,
+} from 'src/modules/users/presentation/dto/request/update-User.dto';
 
 @Controller('personal-info')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -67,5 +72,55 @@ export class PersonalInfoController {
     @CurrentUser() user: UserResponseDto,
   ): Promise<PaginatedResponse<PersonalInfo>> {
     return this.personalInfoService.findAll(query, user.role, user.branchId);
+  }
+  @Get(':personalInfoId')
+  @HttpCode(HttpStatus.OK)
+  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR)
+  async getUserProfile(
+    @Param('personalInfoId', ParseIntPipe) personalInfoId: number,
+    @CurrentUser() currentUser: User,
+  ) {
+    const res = await this.personalInfoService.getDetailedProfile(
+      personalInfoId,
+      currentUser,
+    );
+    return { data: res };
+  }
+  @Patch('status/:personalInfoId')
+  @HttpCode(HttpStatus.OK)
+  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
+  async toggleAccountStatus(
+    @Param('personalInfoId', ParseIntPipe) personalInfoId: number,
+    @Body() dto: ToggleStatusDto,
+    @CurrentUser() currentUser: UserResponseDto,
+  ) {
+    const res = await this.personalInfoService.toggleAccountStatus(
+      personalInfoId,
+      dto,
+      currentUser,
+    );
+
+    return {
+      message: 'Account status updated successfully',
+      data: res,
+    };
+  }
+  @Patch('role/:personalInfoId')
+  @HttpCode(HttpStatus.OK)
+  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
+  async changeUserRole(
+    @Param('personalInfoId', ParseIntPipe) personalInfoId: number,
+    @Body() dto: ChangeUserRoleDto,
+    @CurrentUser() currentUser: UserResponseDto,
+  ) {
+    const res = await this.personalInfoService.changeUserRole(
+      personalInfoId,
+      dto,
+      currentUser,
+    );
+
+    return {
+      message: res.message,
+    };
   }
 }

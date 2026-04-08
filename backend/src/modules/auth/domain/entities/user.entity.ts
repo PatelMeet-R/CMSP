@@ -27,4 +27,7 @@ export class User extends AuditableEntity {
 
   @OneToOne(() => PersonalInfo, (pi) => pi.user, { cascade: true })
   personalInfo: PersonalInfo;
+
+  @Column({ default: false })
+  mustChangePassword: boolean;
 }

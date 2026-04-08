@@ -29,19 +29,66 @@ export class PersonalInfoRepository {
 
     return savedEntity;
   }
+
+  //===================================
   async findPersonalInfoById(
     personalInfoId: number,
   ): Promise<PersonalInfo | null> {
-    return this.repo.findOne({
-      where: { id: personalInfoId },
-      relations: [
-        'user',
-        'branch',
-        'joinedAcademicYear',
-        'expectedGraduateYear',
-      ],
-    });
+    return await this.repo
+      .createQueryBuilder('profile')
+      // see their Email and Role
+      .leftJoinAndSelect('profile.user', 'user')
+      .leftJoinAndSelect('user.role', 'role')
+
+      //  Join Branch
+      .leftJoinAndSelect('profile.branch', 'branch')
+
+      //  Join Eager Enums
+      .leftJoinAndSelect('profile.gender', 'gender')
+      .leftJoinAndSelect('profile.joinedAcademicYear', 'joinedYear')
+      .leftJoinAndSelect('profile.expectedGraduateYear', 'gradYear')
+      .leftJoinAndSelect('profile.userAccountStatus', 'status')
+      .leftJoinAndSelect('profile.profileImage', 'profileImage')
+
+      //   Detail View
+      .select([
+        'profile.id',
+        'profile.firstName',
+        'profile.lastName',
+        'profile.enrollmentNumber',
+        'profile.primaryMobileNumber',
+        'profile.secondaryMobileNumber',
+        'profile.city',
+        'profile.state',
+        'profile.country',
+        'profile.postalCode',
+        'profile.createdAt',
+        // User Info
+        'user.id',
+        'user.email',
+        'role.id',
+        'role.key',
+        // Relations
+        'branch.id',
+        'branch.name',
+        'gender.id',
+        'gender.key',
+        'joinedYear.id',
+        'joinedYear.key',
+        'gradYear.id',
+        'gradYear.key',
+        'status.id',
+        'status.key',
+        //  profile Image
+        'profileImage.id',
+        'profileImage.url',
+        'profileImage.publicId',
+      ])
+      .where('profile.id = :id', { id: personalInfoId })
+      .getOne();
   }
+  // ==========================================
+
   async findAllPersonalInfo(): Promise<PersonalInfo[]> {
     const data = await this.repo.find({
       relations: ['expectedGraduateYear'],
@@ -175,6 +222,12 @@ export class PersonalInfoRepository {
         'status.key',
       ])
       .orderBy('profile.createdAt', 'DESC');
+    // Prevent HODs and Professors from seeing Super Admins
+    if (currentUserRole === ROLES.HOD || currentUserRole === ROLES.PROFESSOR) {
+      queryBuilder.andWhere('role.key != :adminRole', {
+        adminRole: ROLES.SUPER_ADMIN,
+      });
+    }
 
     //======  HOD GATE ======
     if (currentUserRole === ROLES.HOD && currentUserBranchId) {

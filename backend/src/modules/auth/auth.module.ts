@@ -28,7 +28,7 @@ import { UsersModule } from 'src/modules/users/users.module';
     BranchModule,
     PassportModule,
     ThrottlerModule,
-    UsersModule,
+    forwardRef(() => UsersModule),
     TypeOrmModule.forFeature([User, PersonalInfo, Branch]),
   ],
   providers: [
@@ -47,6 +47,6 @@ import { UsersModule } from 'src/modules/users/users.module';
     },
   ],
   controllers: [AuthController],
-  exports: [AuthService],
+  exports: [AuthService, AuthRepository],
 })
 export class AuthModule {}

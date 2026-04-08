@@ -4,6 +4,7 @@ export class PersonalInfoResponseMapper {
   static toResponse(entity: PersonalInfo) {
     return {
       id: entity.id,
+      profileImageUrl: entity.profileImage?.url || null,
       enrollmentNumber: entity.enrollmentNumber,
       fullName: `${entity.firstName} ${entity.lastName}`,
       firstName: entity.firstName,

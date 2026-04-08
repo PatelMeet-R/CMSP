@@ -11,11 +11,15 @@ import { EmailVerifiedGuard } from 'src/core/guards/email-verified.guard';
 import { RolesGuard } from 'src/core/guards/roles-guard';
 import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
 import { PersonalInfoController } from './presentation/controllers/users.controller';
+import { AuthModule } from 'src/modules/auth/auth.module';
+import { FileUploadModule } from 'src/modules/file-upload/file-upload.module';
 
 @Module({
   imports: [
+    forwardRef(() => AuthModule),
     BranchModule,
     EnumsModule,
+    FileUploadModule,
     TypeOrmModule.forFeature([EnumValue, User, PersonalInfo]),
   ],
   controllers: [PersonalInfoController],

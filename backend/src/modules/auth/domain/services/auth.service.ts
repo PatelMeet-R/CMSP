@@ -1,6 +1,8 @@
+import { InjectDataSource } from '@nestjs/typeorm';
 import {
   BadRequestException,
   ConflictException,
+  forwardRef,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -34,7 +36,7 @@ import { UserRegisterMapper } from '../../data/mappers/user-register.mapper';
 import { RegisterSpecificUserMapper } from '../../data/mappers/register-specific-user.mapper';
 import type { App } from 'src/config/app.config';
 import { PersonalInfoRepository } from 'src/modules/users/data/repository/personal-info-repository';
-import type { User } from 'src/modules/auth/domain/entities/user.entity';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class AuthService {
@@ -42,12 +44,15 @@ export class AuthService {
     @Inject('APP_CONFIG') private readonly appConfig: App,
     private readonly cryptoService: CryptoService,
     private readonly authRepository: AuthRepository,
+    @Inject(forwardRef(() => PersonalInfoRepository))
     private readonly personalInfoRespository: PersonalInfoRepository,
     private readonly mailService: MailService,
     private readonly JwtTokenService: JwtTokenService,
     private readonly bcryptService: BcyptService,
     private readonly enumService: EnumService,
     private readonly branchService: BranchService,
+    @InjectDataSource()
+    private dataSource: DataSource,
   ) {}
 
   async register(dto: RegisterStudentDto) {
@@ -215,6 +220,10 @@ export class AuthService {
     roleName: string,
     createdBy: number,
   ) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
       const existingUser = await this.authRepository.findByEmail(dto.email);
       if (existingUser) {
@@ -222,23 +231,19 @@ export class AuthService {
       }
       const creator =
         await this.authRepository.findByIdWithPersonalInfoRelation(createdBy);
-      if (!creator) {
-        throw new UnauthorizedException(ERRORMESSAGE.INSUFFICIENT_PERMISSION);
-      }
-      const branch = await this.branchService.getBranchEntityById(dto.branchId);
-      if (!branch) {
-        throw new NotFoundException(ERRORMESSAGE.DATA_NOT_FOUND('branch'));
-      }
 
-      const password = this.cryptoService.generateRandomPassword();
-      const hashedPassword = await this.bcryptService.hashPassword(password);
+      const branch = await this.branchService.getBranchEntityById(dto.branchId);
+
       const role = await this.enumService.getMeEnumValueIfExist(
         ENUM_TYPES.ROLE,
         roleName,
       );
-      if (!role) {
-        throw new NotFoundException(ERRORMESSAGE.DATA_NOT_FOUND('role'));
-      }
+
+      if (!branch || !role || !creator)
+        throw new NotFoundException('Required data not found');
+
+      const password = this.cryptoService.generateRandomPassword();
+      const hashedPassword = await this.bcryptService.hashPassword(password);
 
       const entity = RegisterSpecificUserMapper.toRegisterEntity(
         dto,
@@ -247,8 +252,11 @@ export class AuthService {
         createdBy,
         branch,
       );
-      const newlyCreatedUser = await this.authRepository.save(entity);
-      const RequiredEntity = EmailedUserResponse.toResponseDto(
+      entity.mustChangePassword = true;
+
+      const newlyCreatedUser = await queryRunner.manager.save(entity);
+
+      const emailData = EmailedUserResponse.toResponseDto(
         newlyCreatedUser,
         password,
         creator,
@@ -256,11 +264,19 @@ export class AuthService {
 
       await this.mailService.sendRegisterUserInfo(
         newlyCreatedUser.email,
-        RequiredEntity,
+        emailData,
       );
-      return new MessageResponseDto(SUCCESSMSG.AUTH.REGISTERED);
+      await queryRunner.commitTransaction();
+
+      return {
+        ...emailData,
+        id: newlyCreatedUser.id,
+      };
     } catch (e) {
+      await queryRunner.rollbackTransaction();
       throw new BadRequestException(ERRORMESSAGE.INVALID_TOKEN);
+    } finally {
+      await queryRunner.release();
     }
   }
 }

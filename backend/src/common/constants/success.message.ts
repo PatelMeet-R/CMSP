@@ -11,6 +11,7 @@ export const SUCCESSMSG = {
     PASSWORD_RESET_SUCCESS: 'Password reset successful.',
     VERIFICATION_EMAIL_SENT: 'Verification email sent successfully.',
     REGISTERED: 'User registered successfully!',
+    ROLE_UPDATED: 'Role updated successfully',
   },
 
   BRANCH: {

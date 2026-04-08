@@ -9,15 +9,22 @@ export class CloudinaryService {
     private readonly cloudinary: typeof v2,
   ) {}
 
-  uploadFile(file: Express.Multer.File): Promise<UploadApiResponse> {
+  uploadFile(
+    file: Express.Multer.File,
+    folder: string = 'assignment',
+  ): Promise<UploadApiResponse> {
     return new Promise<UploadApiResponse>((resolve, reject) => {
       const uploadStream = this.cloudinary.uploader.upload_stream(
         {
-          folder: 'assignment',
+          folder: folder,
           resource_type: 'auto',
         },
-        (error: UploadApiErrorResponse, result: UploadApiResponse) => {
-          if (error) reject(error);
+        (
+          error: UploadApiErrorResponse | undefined,
+          result: UploadApiResponse | undefined,
+        ) => {
+          if (error || !result)
+            return reject(error || new Error('Upload failed'));
           resolve(result);
         },
       );

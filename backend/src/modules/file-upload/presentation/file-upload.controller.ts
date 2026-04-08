@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Delete,
   FileTypeValidator,
@@ -45,6 +46,7 @@ export class FileUploadController {
     @UploadedFile()
     file: Express.Multer.File,
     // @Body() uploadfileDto :UploadFileDto,
+    @Body('folder') folder: string,
     @CurrentUser() user: UserResponseDto,
   ): Promise<any> {
     const res = await this.fileUploadService.uploadFile(file, user.id);

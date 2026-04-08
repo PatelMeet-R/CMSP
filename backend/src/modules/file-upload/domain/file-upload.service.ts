@@ -15,8 +15,15 @@ export class FileUploadService {
     private readonly CloudinaryService: CloudinaryService,
   ) {}
 
-  async uploadFile(file: Express.Multer.File, userId: number): Promise<File> {
-    const cloudinaryResponse = await this.CloudinaryService.uploadFile(file);
+  async uploadFile(
+    file: Express.Multer.File,
+    userId: number,
+    folder: string = 'general',
+  ): Promise<File> {
+    const cloudinaryResponse = await this.CloudinaryService.uploadFile(
+      file,
+      folder,
+    );
     const newlyCreatedFile = FileCreateMapper.toCreateEntity(
       file,
       cloudinaryResponse,
