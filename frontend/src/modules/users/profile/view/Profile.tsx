@@ -15,16 +15,18 @@ import { UserPen, Save, X } from "lucide-react";
 
 import { useProfileViewModel } from "../viewModel/useProfileViewModel";
 import { BranchDropdownMenu } from "@/modules/branch/view/BranchDropdownMenu";
-
-import type { UpdateProfileFormValues } from "@/modules/profile/types/profile.schema";
 import { EmailVerificationAlert } from "@/components/custom/EmailVerificationAlert";
 import { EnumDropdownMenu } from "@/components/custom/EnumDropdownMenu";
 import { EnumCategory } from "@/modules/enums/types/enum.schemas";
 
-// Import the newly separated Field component
+// Import your fields and spinner
 import { ProfileRenderField } from "./ProfileRenderField";
 import { toastService } from "@/core/toast/toastService";
 import { SpinnerCustom } from "@/components/ui/spinner";
+
+// 🚀 IMPORT THE NEW PROFILE HEADER
+import ProfileHeader from "./ProfileHeader";
+import type { UpdateProfileFormValues } from "@/modules/users/types/users.schemas";
 
 export const Profile = () => {
   const { user } = useAppSelector((state) => state.auth);
@@ -37,7 +39,8 @@ export const Profile = () => {
     useProfileViewModel();
   const { isDirty } = form.formState;
 
-  if (isFetchingProfile) {
+  // 🚀 Add !profile check so the Header doesn't crash on initial load
+  if (isFetchingProfile || !profile) {
     return (
       <div className="grid place-items-center h-screen">
         <SpinnerCustom />
@@ -59,13 +62,17 @@ export const Profile = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 pb-12">
       {/* THE VERIFICATION MODAL */}
       <EmailVerificationAlert
         isOpen={showVerifyModal}
         onClose={() => setShowVerifyModal(false)}
       />
 
+      {/* 🚀 1. THE NEW PROFILE HEADER (Handles Image & Summary) */}
+      <ProfileHeader user={profile} />
+
+      {/* 2. THE EXISTING EDIT FORM CARD */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -94,10 +101,9 @@ export const Profile = () => {
                 </Button>
                 <Button
                   onClick={form.handleSubmit(
-                    handleSubmitAndClose, // The success function
-                    (errors) => {
-                      console.log(" ZOD VALIDATION BLOCKED THE SUBMIT!");
-                      console.log("Errors:", errors);
+                    handleSubmitAndClose, 
+                    () => {
+                
                       toastService.error(
                         "Please fix the errors in the form before saving.",
                       );
@@ -214,7 +220,6 @@ export const Profile = () => {
                       name="joinedAcademicYearId"
                       label="Joined Year"
                       category={EnumCategory.ACADEMIC_YEAR}
-                      // disabled={!isAdmin}
                     />
                   )}
                 </div>
@@ -226,7 +231,7 @@ export const Profile = () => {
                         Expected Graduation
                       </FieldLabel>
                       <div className="h-10 py-2 text-sm font-medium border-b border-transparent">
-                        {profile?.expectedGraduationYear || "Not specified"}
+                        {profile?.gradYear || "Not specified"}
                       </div>
                     </>
                   ) : (

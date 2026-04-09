@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { ROUTENAME } from "@/core/Constants/RouteName";
-import { useProcessVerification } from "@/modules/profile/viewModel/useProcessVerification";
+import { useProcessVerification } from "@/modules/users/profile/viewModel/useProcessVerification";
 import { SpinnerCustom } from "@/components/ui/spinner";
 
 export const ProcessVerification = () => {

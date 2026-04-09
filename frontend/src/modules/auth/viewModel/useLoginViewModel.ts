@@ -26,7 +26,7 @@ export function useLoginViewModel() {
     mutationFn: loginUser,
     onSuccess: (response) => {
       dispatch(setCredentials(response.data.user));
-      toastService.success("welcome bhai bhai");
+      toastService.success("welcome !");
       navigate("/dashboard");
     },
     onError: (error) => {

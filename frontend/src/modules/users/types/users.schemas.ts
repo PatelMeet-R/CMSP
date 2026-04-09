@@ -8,6 +8,9 @@ export interface ProfileResponse {
   lastName: string;
   enrollmentNumber: string;
 
+  profileImageUrl: string | null;
+  email?: string;
+
   gender: string | null;
   genderId?: number;
 
@@ -17,7 +20,7 @@ export interface ProfileResponse {
   joinedYear: string | null;
   joinedAcademicYearId?: number;
 
-  expectedGraduationYear: string | null;
+  gradYear: string | null;
   expectedGraduateYearId?: number;
 
   accountStatus: string | null;
@@ -32,6 +35,8 @@ export interface ProfileResponse {
 
   primaryMobileNumber?: string;
   secondaryMobileNumber?: string;
+
+  createdAt: string;
 }
 
 export const updateProfileSchema = z.object({
@@ -76,4 +81,13 @@ export const updateProfileSchema = z.object({
   userAccountStatusId: z.number().optional(),
 });
 
+
+export const staffRegisterSchema = z.object({
+  firstName: z.string().min(2, "First name is required"),
+  lastName: z.string().min(2, "Last name is required"),
+  email: z.string().email("Invalid email address"),
+  branchId: z.number({ message: "Please select a branch" }),
+});
+
 export type UpdateProfileFormValues = z.infer<typeof updateProfileSchema>;
+export type StaffRegisterPayload = z.infer<typeof staffRegisterSchema>;

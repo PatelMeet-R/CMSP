@@ -1,7 +1,7 @@
 import { Controller, type Path, type UseFormReturn } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { FieldLabel } from "@/components/ui/field";
-import type { UpdateProfileFormValues } from "@/modules/profile/types/profile.schema";
+import type { UpdateProfileFormValues } from "@/modules/users/types/users.schemas";
 
 export interface ProfileRenderFieldProps {
   name: Path<UpdateProfileFormValues>;

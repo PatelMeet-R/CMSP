@@ -9,7 +9,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { SpinnerCustom } from "@/components/ui/spinner";
-import { useRequestVarification } from "@/modules/profile/viewModel/useRequestVarification";
+import { useRequestVarification } from "@/modules/users/profile/viewModel/useRequestVarification";
 
 interface EmailVerificationAlertProps {
   isOpen: boolean;

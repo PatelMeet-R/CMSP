@@ -25,9 +25,7 @@ export const getSubjectDetails = async (subjectId: number) => {
   const response = await axiosInstance.get(
     API_ENDPOINT.SUBJECT.VIEW_BY_ID(subjectId),
   );
-  console.log("====================");
-  console.log(response.data.data);
-  console.log("====================");
+
   return response.data.data;
 };
 export const updateSubjectDetails = async (
