@@ -132,20 +132,18 @@ export default function UserDetailsView() {
     selectedStatus !== currentStatus || selectedRole !== currentRoleId;
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6 pb-12 px-2 sm:px-4 md:px-6">
+    <div className="w-full max-w-7xl mx-auto space-y-6">
       {/* --- BREADCRUMB --- */}
-      <div className="pt-4">
-        <PageBreadcrumb
-          items={[
-            {
-              label: "User Management",
-              icon: Users,
-              onClick: () => navigate(-1),
-            },
-            { label: breadcrumbLabel || "User Details", isLoading },
-          ]}
-        />
-      </div>
+      <PageBreadcrumb
+        items={[
+          {
+            label: "User Management",
+            icon: Users,
+            onClick: () => navigate(-1),
+          },
+          { label: breadcrumbLabel || "User Details", isLoading },
+        ]}
+      />
 
       <Card className="border-none shadow-md p-0">
         {/* --- HEADER --- */}
@@ -173,7 +171,7 @@ export default function UserDetailsView() {
 
           {isAdmin && (
             <div className="flex flex-row w-full sm:w-auto gap-2 justify-end">
-              {/* 🚀 UPGRADED SYSTEM ACTIONS MODAL */}
+              {/* ACTIONS MODAL */}
               <Dialog open={actionModalOpen} onOpenChange={setActionModalOpen}>
                 <DialogTrigger asChild>
                   <Button
