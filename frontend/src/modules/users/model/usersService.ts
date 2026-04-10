@@ -1,11 +1,24 @@
 import axiosInstance from "@/core/api/axiosInstance";
 import { API_ENDPOINT } from "@/core/api/endPoint";
+import type {
+  FetchUsersQueryParams,
+  PaginatedUserResponse,
+  UpdateProfileFormValues,
+} from "@/modules/users/types/users.schemas";
 
-export const fetchUsersList = async (params: any) => {
+export const fetchUsersList = async (
+  params: FetchUsersQueryParams,
+): Promise<PaginatedUserResponse> => {
   const response = await axiosInstance.get(API_ENDPOINT.PROFILE.VIEW_LIST, {
     params,
   });
   return response.data;
+};
+export const fetchUserProfile = async (id: number) => {
+  const response = await axiosInstance.get(
+    API_ENDPOINT.PROFILE.VIEW_PROFILE(id),
+  );
+  return response.data.data || response.data;
 };
 
 export const updateAccountStatus = async (id: number, statusKey: string) => {
@@ -20,4 +33,13 @@ export const updateUserRole = async (id: number, newRoleId: number) => {
   });
 };
 
-
+export const updateUserDetails = async (
+  id: number,
+  data: UpdateProfileFormValues,
+) => {
+  const response = await axiosInstance.patch(
+    API_ENDPOINT.PROFILE.UPDATE(id),
+    data,
+  );
+  return response.data;
+};

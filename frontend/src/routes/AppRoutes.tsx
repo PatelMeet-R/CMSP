@@ -10,6 +10,8 @@ import { SubjectDetailModule } from "@/modules/subject/view/SubjectUpdateModule"
 import { SubjectModule } from "@/modules/subject/view/SubjectModule";
 import { SubjectRegisterModule } from "@/modules/subject/view/SubjectRegister";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import UserManagementView from "@/modules/users/view/UserManagementView";
+import UserDetailsView from "@/modules/users/view/UserDetailsView";
 
 const AppRoutes = () => {
   return (
@@ -57,10 +59,8 @@ const AppRoutes = () => {
             path={ROUTENAME.ADD_BRANCH}
             element={<div>ADD_BRANCH Page</div>}
           />
-          <Route
-            path={ROUTENAME.ALL_USERS}
-            element={<div>ALL_USERS Page</div>}
-          />
+          <Route path={ROUTENAME.ALL_USERS} element={<UserManagementView />} />
+          <Route path={ROUTENAME.USER_DETAILS} element={<UserDetailsView />} />
           <Route path={ROUTENAME.ADD_HOD} element={<div>ADD_HOD Page</div>} />
           <Route
             path={ROUTENAME.ADD_PROFESSOR}

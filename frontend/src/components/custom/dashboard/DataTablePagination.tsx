@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
-interface PaginationMeta {
+export interface PaginationMeta {
   currentPage: number;
   itemsPerPage: number;
   totalItems: number;

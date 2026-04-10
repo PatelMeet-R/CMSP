@@ -24,6 +24,7 @@ export const API_ENDPOINT = {
   },
   PROFILE: {
     MY_PROFILE: "personal-info/profile",
+    VIEW_PROFILE: (profileId: number) => `personal-info/${profileId}`,
     UPDATE: (profileId: number) => `personal-info/update/${profileId}`,
     VIEW_LIST: "/personal-info",
     STATUS_UPDATE: (profileId: number) => `/personal-info/status/${profileId}`,

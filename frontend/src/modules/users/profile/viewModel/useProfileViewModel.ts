@@ -5,7 +5,6 @@ import { toastService } from "@/core/toast/toastService";
 import { getAxiosErrorMessage } from "@/core/helper/errorMessage";
 import {
   getProfile,
-  updateProfile,
   updateProfileImage,
   uploadFile,
 } from "../model/profileService";
@@ -13,6 +12,7 @@ import {
   updateProfileSchema,
   type UpdateProfileFormValues,
 } from "@/modules/users/types/users.schemas";
+import { updateUserDetails } from "@/modules/users/model/usersService";
 
 export const useProfileViewModel = () => {
   const queryClient = useQueryClient();
@@ -43,7 +43,7 @@ export const useProfileViewModel = () => {
     mutationFn: (data: UpdateProfileFormValues) => {
       const targetId = profile?.personalInfoId || profile?.id;
       if (!targetId) throw new Error("Profile ID missing");
-      return updateProfile(targetId, data);
+      return updateUserDetails(targetId, data);
     },
     onSuccess: () => {
       toastService.success("Profile updated successfully!");
@@ -63,7 +63,7 @@ export const useProfileViewModel = () => {
       if (!targetId) throw new Error("Profile ID missing");
 
       const uploadRes = await uploadFile(file, "profiles");
-     
+
       const imageId = uploadRes?.data?.id;
       if (!imageId) throw new Error("Did not receive Image ID from Cloudinary");
       const response = await updateProfileImage(targetId, imageId);

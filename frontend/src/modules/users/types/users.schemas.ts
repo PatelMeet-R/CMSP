@@ -1,3 +1,4 @@
+import type { PaginationMeta } from "@/components/custom/dashboard/DataTablePagination";
 import { z } from "zod";
 
 export interface ProfileResponse {
@@ -37,6 +38,20 @@ export interface ProfileResponse {
   secondaryMobileNumber?: string;
 
   createdAt: string;
+}
+
+export interface FetchUsersQueryParams {
+  page: number;
+  limit: number;
+  search?: string;
+  roleId?: number;
+  branchId?: number;
+  genderId?: number;
+}
+
+export interface PaginatedUserResponse {
+  items: any[];
+  meta: PaginationMeta;
 }
 
 export const updateProfileSchema = z.object({
@@ -80,7 +95,6 @@ export const updateProfileSchema = z.object({
   expectedGraduateYearId: z.number().optional(),
   userAccountStatusId: z.number().optional(),
 });
-
 
 export const staffRegisterSchema = z.object({
   firstName: z.string().min(2, "First name is required"),
