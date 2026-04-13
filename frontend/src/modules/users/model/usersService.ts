@@ -46,6 +46,6 @@ export const updateUserDetails = async (
 };
 
 export const registerStaff = async (data: StaffRegisterFormValues) => {
-  const response = await axiosInstance.post("auth/register/staff", data);
+  const response = await axiosInstance.post(API_ENDPOINT.STAFF.REGISTER, data);
   return response.data;
 };
