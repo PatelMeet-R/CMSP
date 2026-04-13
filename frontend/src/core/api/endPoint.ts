@@ -32,6 +32,8 @@ export const API_ENDPOINT = {
     AVATAR_UPLOAD: `/file-upload`,
     AVATAR_UPDATE: (profileId: number) =>
       `/personal-info/update-image/${profileId}`,
+    ADD_PROF: `/register/professor`,
+    ADD_HOD: `/register/hod`,
   },
   SUBJECT: {
     VIEW: "/subject",

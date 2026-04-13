@@ -3,6 +3,7 @@ import { API_ENDPOINT } from "@/core/api/endPoint";
 import type {
   FetchUsersQueryParams,
   PaginatedUserResponse,
+  StaffRegisterFormValues,
   UpdateProfileFormValues,
 } from "@/modules/users/types/users.schemas";
 
@@ -41,5 +42,10 @@ export const updateUserDetails = async (
     API_ENDPOINT.PROFILE.UPDATE(id),
     data,
   );
+  return response.data;
+};
+
+export const registerStaff = async (data: StaffRegisterFormValues) => {
+  const response = await axiosInstance.post("auth/register/staff", data);
   return response.data;
 };

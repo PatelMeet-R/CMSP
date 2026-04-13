@@ -100,8 +100,13 @@ export const staffRegisterSchema = z.object({
   firstName: z.string().min(2, "First name is required"),
   lastName: z.string().min(2, "Last name is required"),
   email: z.string().email("Invalid email address"),
-  branchId: z.number({ message: "Please select a branch" }),
+  branchId: z
+    .number({ message: "Please select a branch" })
+    .min(1, "Branch is required"),
+  roleId: z
+    .number({ message: "Please select a role" })
+    .min(1, "Role is required"),
 });
 
 export type UpdateProfileFormValues = z.infer<typeof updateProfileSchema>;
-export type StaffRegisterPayload = z.infer<typeof staffRegisterSchema>;
+export type StaffRegisterFormValues = z.infer<typeof staffRegisterSchema>;

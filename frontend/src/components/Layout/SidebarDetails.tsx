@@ -31,7 +31,7 @@ import {
   type SidebarChild,
 } from "@/core/config/DashboardSidebarConfig";
 import { useAppSelector } from "@/store/hook";
-import { ROLES, type RoleType } from "@/core/Constants/enums/role-enum-value";
+import { type RoleType } from "@/core/Constants/enums/role-enum-value";
 import { ROUTENAME } from "@/core/Constants/RouteName";
 import { PROFILE_SIDEBAR_CONFIG } from "@/core/config/ProfileSidebar";
 import {
@@ -65,11 +65,10 @@ const IconMap: Record<string, React.ElementType> = {
 export const DashboardSideBarDetails = () => {
   const location = useLocation();
   const { user } = useAppSelector((state) => state.auth);
-  // if (!user) {
-  //   return null;
-  // }
-  // const userRole = user.role;
-  const userRole = ROLES.SUPER_ADMIN;
+  if (!user) {
+    return null;
+  }
+  const userRole = user.role;
 
   const isProfileRoute = location.pathname.includes(ROUTENAME.PROFILE);
 

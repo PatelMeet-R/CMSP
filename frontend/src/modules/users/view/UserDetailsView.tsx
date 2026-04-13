@@ -97,7 +97,7 @@ export default function UserDetailsView() {
   // --- SKELETON LOADER ---
   if (isLoading) {
     return (
-      <div className="w-full max-w-6xl mx-auto space-y-6 px-4">
+      <div className="w-full max-w-7xl mx-auto space-y-6">
         <div className="pt-4">
           <Skeleton className="h-5 w-64 mb-2" />
         </div>

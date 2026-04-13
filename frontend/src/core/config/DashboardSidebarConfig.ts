@@ -21,8 +21,7 @@ export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
       {
         label: "View Subjects",
         icon: "Eye",
-        link: ROUTENAME.SUBJECTS, // Replaces: /subject/all-subject, /subject, /professor/my-subject
-        // Everyone can view subjects, but the backend decides which ones they see!
+        link: ROUTENAME.SUBJECTS, 
         allowedRoles: [
           ROLES.SUPER_ADMIN,
           ROLES.HOD,
@@ -40,7 +39,6 @@ export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
         label: "Assign Subject",
         icon: "UserCog",
         link: ROUTENAME.PROFESSOR_ASSIGN_SUBJECT_POST,
-        // "/professor-subject/assign-subject",
         allowedRoles: [ROLES.SUPER_ADMIN, ROLES.HOD],
       },
       {
@@ -108,31 +106,14 @@ export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
         label: "View All Users",
         icon: "Eye",
         link: ROUTENAME.ALL_USERS,
-        allowedRoles: [ROLES.SUPER_ADMIN],
+        allowedRoles: [ROLES.SUPER_ADMIN, ROLES.HOD,ROLES.PROFESSOR,ROLES.STUDENT],
       },
+
       {
-        label: "Add HOD",
-        icon: "UserPen",
-        link: ROUTENAME.ADD_HOD,
-        allowedRoles: [ROLES.SUPER_ADMIN],
-      },
-      {
-        label: "Add Professor",
-        icon: "UserPen",
-        link: ROUTENAME.ADD_PROFESSOR,
+        label: "Register Staff",
+        icon: "UserPlus",
+        link: ROUTENAME.ADD_STAFF,
         allowedRoles: [ROLES.SUPER_ADMIN, ROLES.HOD],
-      },
-      {
-        label: "All Professors",
-        icon: "Users",
-        link: ROUTENAME.ALL_PROFESSOR,
-        allowedRoles: [ROLES.HOD],
-      },
-      {
-        label: "All Students",
-        icon: "Users",
-        link: ROUTENAME.ALL_STUDENT,
-        allowedRoles: [ROLES.HOD],
       },
     ],
   },

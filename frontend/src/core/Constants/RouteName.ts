@@ -19,8 +19,5 @@ export const ROUTENAME = {
   ADD_BRANCH: "/branch/register",
   ALL_USERS: "/users",
   USER_DETAILS: `/user/:id`,
-  ADD_HOD: "/register/hod",
-  ADD_PROFESSOR: "/register/professor",
-  ALL_PROFESSOR: "/professors",
-  ALL_STUDENT: "/studentS",
+  ADD_STAFF: "/user/create",
 } as const;

@@ -12,6 +12,7 @@ import { SubjectRegisterModule } from "@/modules/subject/view/SubjectRegister";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import UserManagementView from "@/modules/users/view/UserManagementView";
 import UserDetailsView from "@/modules/users/view/UserDetailsView";
+import CreateStaffView from "@/modules/users/view/CreateStaffView";
 
 const AppRoutes = () => {
   return (
@@ -60,20 +61,8 @@ const AppRoutes = () => {
             element={<div>ADD_BRANCH Page</div>}
           />
           <Route path={ROUTENAME.ALL_USERS} element={<UserManagementView />} />
+          <Route path={ROUTENAME.ADD_STAFF} element={<CreateStaffView />} />
           <Route path={ROUTENAME.USER_DETAILS} element={<UserDetailsView />} />
-          <Route path={ROUTENAME.ADD_HOD} element={<div>ADD_HOD Page</div>} />
-          <Route
-            path={ROUTENAME.ADD_PROFESSOR}
-            element={<div>ADD_PROFESSOR Page</div>}
-          />
-          <Route
-            path={ROUTENAME.ALL_PROFESSOR}
-            element={<div>ALL_PROFESSOR Page</div>}
-          />
-          <Route
-            path={ROUTENAME.ALL_STUDENT}
-            element={<div>ALL_STUDENT Page</div>}
-          />
 
           {/* Profile Routes */}
           <Route path={ROUTENAME.PROFILE} element={<Profile />} />

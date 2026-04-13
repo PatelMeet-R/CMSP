@@ -86,7 +86,7 @@ export default function UserManagementView() {
         <CardContent className="space-y-4 pb-3">
           {/* --- ROLE TABS --- */}
           <Tabs
-            value={vm.roleId}
+            value={vm.roleId || ""}
             onValueChange={vm.setRoleId}
             className="w-full"
           >

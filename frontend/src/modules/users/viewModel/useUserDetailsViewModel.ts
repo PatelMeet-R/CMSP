@@ -75,7 +75,7 @@ export const useUserDetailsViewModel = () => {
       queryClient.invalidateQueries({ queryKey: ["user-details", userId] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toastService.error(
         getAxiosErrorMessage(error.message) || "Failed to update status",
       );
@@ -90,7 +90,7 @@ export const useUserDetailsViewModel = () => {
       queryClient.invalidateQueries({ queryKey: ["user-details", userId] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toastService.error(
         getAxiosErrorMessage(error.message) || "Failed to update role",
       );
@@ -107,7 +107,7 @@ export const useUserDetailsViewModel = () => {
       queryClient.invalidateQueries({ queryKey: ["user-details", userId] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toastService.error(
         getAxiosErrorMessage(error.message) || "Failed to update user",
       );
