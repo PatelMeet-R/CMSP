@@ -9,6 +9,7 @@ export class UserRegisterMapper {
     dto: RegisterStudentDto,
     hashedPassword: string,
     role: EnumValue,
+    userAccountStatus: EnumValue,
     branch: Branch,
   ): User {
     const user = new User();
@@ -21,6 +22,7 @@ export class UserRegisterMapper {
     pi.firstName = dto.firstName;
     pi.lastName = dto.lastName;
     pi.enrollmentNumber = dto.enrollmentNumber;
+    pi.userAccountStatus = userAccountStatus;
     // THE BYPASS: Hardcode empty strings for everything the DB demands
     pi.primaryMobileNumber = '0000000000';
     pi.secondaryMobileNumber = undefined;

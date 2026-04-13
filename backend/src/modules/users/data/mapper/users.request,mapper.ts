@@ -2,7 +2,6 @@ import { EnumValue } from 'src/modules/enums/domain/entities/enumValue.entity';
 import { PersonalInfo } from '../../domain/entities/personal-info.entity';
 import { Branch } from 'src/modules/branch/domain/entities/branch.entity';
 import { UpdatePersonalInfoDto } from '../../presentation/dto/request/update-personal-info.dto';
-import type { File } from 'src/modules/file-upload/domain/entity/file.entity';
 
 export class UpdatePersonalInfoMapper {
   static toUpdateEntity(
@@ -15,7 +14,6 @@ export class UpdatePersonalInfoMapper {
       expectedGradYear?: EnumValue;
       accountStatus?: EnumValue;
       branch?: Branch;
-      profileImage?: File | null;
     },
   ) {
     // 1. BASIC FIELDS (Always mapped if provided)
@@ -31,9 +29,6 @@ export class UpdatePersonalInfoMapper {
     if (relations.gender !== undefined) entity.gender = relations.gender;
     if (relations.joinedYear !== undefined)
       entity.joinedAcademicYear = relations.joinedYear;
-    if (relations.profileImage !== undefined) {
-      entity.profileImage = relations.profileImage;
-    }
 
     // 2. SENSITIVE FIELDS (Only mapped if user is Admin)
     if (isAdmin) {

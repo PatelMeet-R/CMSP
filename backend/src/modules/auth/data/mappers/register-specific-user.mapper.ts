@@ -9,6 +9,7 @@ export class RegisterSpecificUserMapper {
     dto: RegisterSpecificUserDto,
     hashPassword: string,
     role: EnumValue,
+    userAccountStatus: EnumValue,
     createdBy: number,
     branch: Branch,
   ): User {
@@ -21,6 +22,15 @@ export class RegisterSpecificUserMapper {
     pi.branch = branch;
     pi.firstName = dto.firstName;
     pi.lastName = dto.lastName;
+    pi.userAccountStatus = userAccountStatus;
+    pi.enrollmentNumber = `STF_${Date.now().toString(36)}`;
+    pi.primaryMobileNumber = '0000000000';
+    pi.secondaryMobileNumber = undefined;
+    pi.city = 'Unknown';
+    pi.state = 'Unknown';
+    pi.country = 'Unknown';
+    pi.postalCode = '000000';
+
     user.personalInfo = pi;
     return user;
   }

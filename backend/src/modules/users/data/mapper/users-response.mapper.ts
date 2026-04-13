@@ -9,11 +9,18 @@ export class PersonalInfoResponseMapper {
       fullName: `${entity.firstName} ${entity.lastName}`,
       firstName: entity.firstName,
       lastName: entity.lastName,
-      contact: {
-        primary: entity.primaryMobileNumber,
+
+      address: {
         city: entity.city,
         state: entity.state,
+        country: entity.country,
+        postalCode: entity.postalCode,
       },
+      primaryMobileNumber: entity.primaryMobileNumber,
+      secondaryMobileNumber: entity.secondaryMobileNumber,
+
+      email: entity.user?.email || null,
+      role: entity.user?.role?.key || null,
 
       branch: entity.branch?.name || null,
       gender: entity.gender?.key || null,
@@ -25,6 +32,20 @@ export class PersonalInfoResponseMapper {
   }
 
   static toPaginatedResponse(items: PersonalInfo[]) {
-    return items.map((item) => this.toResponse(item));
+    return items.map((entity) => ({
+      id: entity.id,
+      enrollmentNumber: entity.enrollmentNumber,
+      fullName: `${entity.firstName} ${entity.lastName}`,
+      firstName: entity.firstName,
+      lastName: entity.lastName,
+
+      address: {
+        city: entity.city,
+      },
+
+      branch: entity.branch?.name || null,
+      gender: entity.gender?.key || null,
+      accountStatus: entity.userAccountStatus?.key || null,
+    }));
   }
 }

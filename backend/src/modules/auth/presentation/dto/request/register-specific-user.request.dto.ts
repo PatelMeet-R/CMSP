@@ -28,4 +28,8 @@ export class RegisterSpecificUserDto {
   @IsNotEmpty({ message: PI_DTO_MESSAGE.LAST_NAME.REQUIRED })
   @IsString({ message: PI_DTO_MESSAGE.LAST_NAME.STRING })
   lastName: string;
+
+  @IsInt({ message: 'Role ID must be an integer' })
+  @IsNotEmpty({ message: 'Role ID is required' })
+  roleId: number;
 }

@@ -26,6 +26,7 @@ import {
 } from 'src/modules/users/presentation/dto/request/update-User.dto';
 import { FileUploadService } from 'src/modules/file-upload/domain/file-upload.service';
 import { Inject, forwardRef } from '@nestjs/common';
+import type { UpdateProfileImageDto } from 'src/modules/users/presentation/dto/request/update-profile-image.dto';
 
 @Injectable()
 export class PersonalInfoService {
@@ -42,7 +43,8 @@ export class PersonalInfoService {
   async getPersonalProfileByAuthId(userId: number) {
     const profile =
       await this.personalInfoRepo.getPersonalProfileByAuthId(userId);
-    return PersonalInfoResponseMapper.toResponse(profile);
+    const mappedResponse = PersonalInfoResponseMapper.toResponse(profile);
+    return mappedResponse;
   }
   // ================================
 
@@ -89,34 +91,6 @@ export class PersonalInfoService {
       if (exists) throw new ConflictException(ERRORMESSAGE.ENROLLMENT_TAKEN);
     }
     const relations: any = {};
-    if (dto.profileImageId !== undefined) {
-      // CASE 1: User explicitly removed their photo (sent null)
-      if (dto.profileImageId === null) {
-        if (targetProfile.profileImage) {
-          await this.fileUploadService
-            .remove(targetProfile.profileImage.id)
-            .catch((e) => console.log('cleanup Failed :', e));
-        }
-        relations.profileImage = null;
-      }
-      // CASE 2: User uploaded a NEW photo
-      else {
-        const newImageFile = await this.fileUploadService.findFileEntityById(
-          dto.profileImageId,
-        );
-        if (!newImageFile)
-          throw new NotFoundException('Uploaded profile image no found');
-        if (
-          targetProfile.profileImage &&
-          targetProfile.profileImage.id !== newImageFile.id
-        ) {
-          await this.fileUploadService
-            .remove(targetProfile.profileImage.id)
-            .catch((e) => console.error('Cleanup failed:', e));
-          relations.profileImage = newImageFile;
-        }
-      }
-    }
     if (dto.genderId)
       relations.gender = await this.enumService.getEnumValueById(dto.genderId);
     if (dto.joinedAcademicYearId)
@@ -166,17 +140,90 @@ export class PersonalInfoService {
     return PersonalInfoResponseMapper.toResponse(saved);
   }
   // ================================
+  async updateProfileImage(
+    targetProfileId: number,
+    dto: UpdateProfileImageDto,
+    currentUser: UserResponseDto,
+  ) {
+    //  Fetch profile
+    const targetProfile =
+      await this.personalInfoRepo.findPersonalInfoById(targetProfileId);
+    if (!targetProfile) throw new NotFoundException(ERRORMESSAGE.NOT_FOUND);
 
+    //  Only the owner can change their image
+    const isSelf = targetProfile.user?.id === currentUser.id;
+
+    if (!isSelf) {
+      throw new ForbiddenException(
+        'You can only update your own profile image.',
+      );
+    }
+    let fileIdToDelete: number | null = null;
+
+    //  THE SWAP & CLEANUP LOGIC
+    if ('profileImageId' in dto) {
+      // SCENARIO A: Remove Image
+      if (dto.profileImageId === null) {
+        if (targetProfile.profileImage) {
+          fileIdToDelete = targetProfile.profileImage.id;
+        }
+        targetProfile.profileImage = null;
+      } else if (typeof dto.profileImageId === 'number') {
+        // Find the new file
+        const newImageFile = await this.fileUploadService.findFileEntityById(
+          dto.profileImageId,
+        );
+        if (!newImageFile)
+          throw new NotFoundException('Uploaded profile image not found.');
+
+        // Mark old file for deletion
+        if (
+          targetProfile.profileImage &&
+          targetProfile.profileImage.id !== newImageFile.id
+        ) {
+          fileIdToDelete = targetProfile.profileImage.id;
+        }
+
+        targetProfile.profileImage = newImageFile;
+      }
+    } else {
+      throw new NotFoundException(
+        `profileImageId was missing from the DTO entirely!`,
+      );
+    }
+
+    targetProfile.updatedBy = currentUser.id;
+
+    //  Save
+    const saved = await this.personalInfoRepo.saveInfo(targetProfile);
+    await this.personalInfoRepo.clearSingleUserCache(currentUser.id);
+
+    if (fileIdToDelete) {
+      await this.fileUploadService
+        .remove(fileIdToDelete)
+        .catch((e) => console.error('Cleanup failed:', e.message));
+    }
+
+    return PersonalInfoResponseMapper.toResponse(saved);
+  }
+  // ================================
   async findAll(
     query: FindUsersPersonalInfoQueryDto,
     currentUserRole,
     currentUserBranchId,
   ) {
-    return this.personalInfoRepo.FindAll(
+    const paginatedResult = await this.personalInfoRepo.FindAll(
       query,
       currentUserRole,
       currentUserBranchId,
     );
+
+    return {
+      items: PersonalInfoResponseMapper.toPaginatedResponse(
+        paginatedResult.items,
+      ),
+      meta: paginatedResult.meta,
+    };
   }
   // ================================
 

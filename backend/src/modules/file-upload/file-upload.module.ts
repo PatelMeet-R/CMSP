@@ -14,7 +14,7 @@ import { FileRepository } from './data/repository';
     CloudinaryModule,
     CloudinaryModule,
     MulterModule.register({
-      storage: memoryStorage,
+      storage: memoryStorage(),
     }),
   ],
   controllers: [FileUploadController],

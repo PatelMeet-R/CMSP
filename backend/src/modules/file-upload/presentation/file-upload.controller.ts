@@ -49,7 +49,7 @@ export class FileUploadController {
     @Body('folder') folder: string,
     @CurrentUser() user: UserResponseDto,
   ): Promise<any> {
-    const res = await this.fileUploadService.uploadFile(file, user.id);
+    const res = await this.fileUploadService.uploadFile(file, user.id, folder);
     return {
       data: FileResponse.toResponseDto(res),
     };
@@ -63,7 +63,7 @@ export class FileUploadController {
     };
   }
   @Delete(':id')
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR)
+  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR, ROLES.STUDENT)
   @UseGuards(JwtAuthGuard, RolesGuard)
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.fileUploadService.remove(id);

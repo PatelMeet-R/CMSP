@@ -18,7 +18,7 @@ export class FileUploadService {
   async uploadFile(
     file: Express.Multer.File,
     userId: number,
-    folder: string = 'general',
+    folder: string,
   ): Promise<File> {
     const cloudinaryResponse = await this.CloudinaryService.uploadFile(
       file,

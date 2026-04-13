@@ -37,19 +37,18 @@ export class PersonalInfoRepository {
     return await this.repo
       .createQueryBuilder('profile')
       // see their Email and Role
-      .leftJoinAndSelect('profile.user', 'user')
-      .leftJoinAndSelect('user.role', 'role')
+      .leftJoin('profile.user', 'user')
+      .leftJoin('user.role', 'role')
 
       //  Join Branch
-      .leftJoinAndSelect('profile.branch', 'branch')
+      .leftJoin('profile.branch', 'branch')
 
       //  Join Eager Enums
-      .leftJoinAndSelect('profile.gender', 'gender')
-      .leftJoinAndSelect('profile.joinedAcademicYear', 'joinedYear')
-      .leftJoinAndSelect('profile.expectedGraduateYear', 'gradYear')
-      .leftJoinAndSelect('profile.userAccountStatus', 'status')
-      .leftJoinAndSelect('profile.profileImage', 'profileImage')
-
+      .leftJoin('profile.gender', 'gender')
+      .leftJoin('profile.joinedAcademicYear', 'joinedYear')
+      .leftJoin('profile.expectedGraduateYear', 'gradYear')
+      .leftJoin('profile.userAccountStatus', 'status')
+      .leftJoin('profile.profileImage', 'profileImage')
       //   Detail View
       .select([
         'profile.id',
@@ -132,12 +131,14 @@ export class PersonalInfoRepository {
       .leftJoin('profile.joinedAcademicYear', 'joinedYear')
       .leftJoin('profile.expectedGraduateYear', 'gradYear')
       .leftJoin('profile.userAccountStatus', 'status')
+      .leftJoin('profile.profileImage', 'profileImage')
       .select([
         'profile.id',
         'profile.firstName',
         'profile.lastName',
         'profile.enrollmentNumber',
         'profile.primaryMobileNumber',
+        'profile.secondaryMobileNumber',
         'profile.city',
         'profile.state',
         'profile.country',
@@ -152,6 +153,10 @@ export class PersonalInfoRepository {
         'gradYear.key',
         'status.id',
         'status.key',
+        //-------------------------
+        'profileImage.id',
+        'profileImage.url',
+        'profileImage.publicId',
       ])
       .where('user.id = :id', { id: userId })
       .getOneOrFail();
@@ -168,6 +173,7 @@ export class PersonalInfoRepository {
     const { page = 1, limit = 10, search, branchId, genderId, roleId } = query;
     return `users_p${page}_l${limit}_s${search || 'all'}_b${branchId || 'all'}_g${genderId || 'all'}_r${roleId || 'all'}`;
   }
+  // =========================================================
   async FindAll(
     query: FindUsersPersonalInfoQueryDto,
     currentUserRole?: string,
@@ -188,7 +194,8 @@ export class PersonalInfoRepository {
     }
     console.log(`Cache Miss------> Returning users PI list from database`);
 
-    const { search, branchId, genderId, roleId } = query;
+    const { search, genderId, roleId } = query;
+    let { branchId } = query;
 
     const queryBuilder = this.repo
       .createQueryBuilder('profile')
@@ -220,32 +227,39 @@ export class PersonalInfoRepository {
         'gradYear.key',
         'status.id',
         'status.key',
+        // -----------------------
+        'role.id',
+        'role.key',
+        'role.value',
       ])
       .orderBy('profile.createdAt', 'DESC');
-    // Prevent HODs and Professors from seeing Super Admins
+
+    // ==========================================
+    //  GATE 1: BASE SECURITY (Hide Super Admins)
+    // ==========================================
+
     if (currentUserRole === ROLES.HOD || currentUserRole === ROLES.PROFESSOR) {
       queryBuilder.andWhere('role.key != :adminRole', {
         adminRole: ROLES.SUPER_ADMIN,
       });
     }
 
-    //======  HOD GATE ======
-    if (currentUserRole === ROLES.HOD && currentUserBranchId) {
-      queryBuilder.andWhere('profile.branchId = :branchId', {
-        branchId: currentUserBranchId,
-      });
-    }
-    //======  PROFESSOR ONLY SEE OWN BRANCH STUDENT ======
-    else if (currentUserRole === ROLES.PROFESSOR && currentUserBranchId) {
-      queryBuilder.andWhere('profile.branchId = :branchId', {
-        branchId: currentUserBranchId,
-      });
-      queryBuilder.andWhere('role.key = :studentRole', {
-        studentRole: ROLES.STUDENT,
-      });
+    // ==========================================
+    //  GATE 2: DATA ISOLATION (HOD & PROFESSOR)
+    // ==========================================
+    if (currentUserRole !== ROLES.SUPER_ADMIN && currentUserBranchId) {
+      branchId = currentUserBranchId;
+
+      if (currentUserRole === ROLES.PROFESSOR) {
+        queryBuilder.andWhere('role.key = :studentRole', {
+          studentRole: ROLES.STUDENT,
+        });
+      }
     }
 
-    //======  DYNAMIC FRONTEND FILTERS ======
+    // ==========================================
+    //  GATE 3: DYNAMIC FRONTEND FILTERS
+    // ==========================================
     if (branchId) {
       queryBuilder.andWhere('profile.branchId = :filteredBranchId', {
         filteredBranchId: branchId,
@@ -301,3 +315,4 @@ export class PersonalInfoRepository {
     console.log('======');
   }
 }
+  

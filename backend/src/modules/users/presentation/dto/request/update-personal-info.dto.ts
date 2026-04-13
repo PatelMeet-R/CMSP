@@ -39,10 +39,6 @@ export class UpdatePersonalInfoDto {
   @IsNumber({}, { message: PI_DTO_MESSAGE.JOINED_ACADEMIC_YEAR_ID.NUMBER })
   joinedAcademicYearId?: number;
 
-  @IsOptional()
-  @IsNumber({}, { message: 'Profile Image ID must be a number' })
-  profileImageId?: number;
-
   // ADMIN-ONLY FIELDS
 
   @IsOptional()

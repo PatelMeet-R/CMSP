@@ -2,6 +2,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   forwardRef,
   Inject,
   Injectable,
@@ -26,7 +27,10 @@ import { CryptoService } from 'src/common/utils/crypto/crypto.service';
 import { RESET_PASSWORD_TOKEN_EXPIRY } from 'src/common/constants/token.constants';
 import { UserMapper } from '../../data/mappers/user.response.mapper';
 import { AuthMapper } from '../../data/mappers/auth.mapper';
-import { ENUM_TYPES } from 'src/common/constants/enum-types.constant';
+import {
+  ENUM_TYPES,
+  ENUM_VALUES,
+} from 'src/common/constants/enum-types.constant';
 import { ROLES } from 'src/common/constants/roles.constant';
 import { EnumService } from 'src/modules/enums/domain/enums.service';
 import { EmailedUserResponse } from '../../data/mappers/emailed-user.response.mapper';
@@ -37,6 +41,7 @@ import { RegisterSpecificUserMapper } from '../../data/mappers/register-specific
 import type { App } from 'src/config/app.config';
 import { PersonalInfoRepository } from 'src/modules/users/data/repository/personal-info-repository';
 import { DataSource } from 'typeorm';
+import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 
 @Injectable()
 export class AuthService {
@@ -54,6 +59,7 @@ export class AuthService {
     @InjectDataSource()
     private dataSource: DataSource,
   ) {}
+  // =====================================
 
   async register(dto: RegisterStudentDto) {
     const existingUser = await this.authRepository.findByEmail(dto.email);
@@ -65,8 +71,12 @@ export class AuthService {
       ENUM_TYPES.ROLE,
       ROLES.STUDENT,
     );
-    if (!role) {
-      throw new NotFoundException(ERRORMESSAGE.DATA_NOT_FOUND('role'));
+    const userAccountStatus = await this.enumService.getMeEnumValueIfExist(
+      ENUM_TYPES.ROLE,
+      ENUM_VALUES.USER_ACC_STATUS.ACTIVE,
+    );
+    if (!role && !userAccountStatus) {
+      throw new NotFoundException(ERRORMESSAGE.DATA_NOT_FOUND('Enum Value'));
     }
     const branch = await this.branchService.getBranchEntityById(dto.branchId);
     if (!branch) {
@@ -84,6 +94,7 @@ export class AuthService {
       dto,
       hashedPassword,
       role,
+      userAccountStatus,
       branch,
     );
 
@@ -92,6 +103,7 @@ export class AuthService {
     const saved = await this.authRepository.save(entity);
     return UserMapper.toResponseDto(saved);
   }
+  // =====================================
 
   async login(dto: LoginDto) {
     const user = await this.authRepository.findByEmail(dto.email);
@@ -117,6 +129,8 @@ export class AuthService {
 
     return new RefreshTokenResponseDto({ accessToken });
   }
+  // =====================================
+
   async getUserByIdWithPersonalInfo(userId: number) {
     const user =
       await this.authRepository.findByIdWithPersonalInfoRelation(userId);
@@ -125,6 +139,7 @@ export class AuthService {
     }
     return user;
   }
+  // =====================================
   // find the current user by id
   // only role extract purpose for jwt Strategy
   async findUserEntityById(userId: number) {
@@ -135,6 +150,8 @@ export class AuthService {
     return user;
   }
   // send the mail with token for verify purpose
+  // =====================================
+
   async sendVerifyEmailLink(userId: number) {
     try {
       const user = await this.authRepository.findById(userId);
@@ -152,7 +169,8 @@ export class AuthService {
       throw new InternalServerErrorException(ERRORMESSAGE.MAIL_SERVER_ISSUE);
     }
   }
-  // validate the email user
+  // =====================================
+
   async verifyEmail(token: string) {
     try {
       const payload = this.JwtTokenService.verifyEmailToken(token);
@@ -175,6 +193,8 @@ export class AuthService {
     }
   }
 
+  // =====================================
+
   async forgetPassword(dto: ForgetPassMailReq) {
     try {
       const user = await this.authRepository.findByEmail(dto.email);
@@ -196,6 +216,7 @@ export class AuthService {
       throw new InternalServerErrorException(ERRORMESSAGE.SERVER_ERROR);
     }
   }
+  // =====================================
 
   async resetPassword(token: string, dto: ResetPasswordDto) {
     if (dto.password !== dto.confirmPassword) {
@@ -214,12 +235,9 @@ export class AuthService {
     await this.authRepository.save(user);
     return new MessageResponseDto(SUCCESSMSG.AUTH.PASSWORD_RESET_SUCCESS);
   }
+  // =====================================
 
-  async registerSpecificUser(
-    dto: RegisterSpecificUserDto,
-    roleName: string,
-    createdBy: number,
-  ) {
+  async registerSpecificUser(dto: RegisterSpecificUserDto, creatorDto) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -230,17 +248,48 @@ export class AuthService {
         throw new ConflictException(ERRORMESSAGE.EMAIL_ALREADY_EXISTS);
       }
       const creator =
-        await this.authRepository.findByIdWithPersonalInfoRelation(createdBy);
+        await this.authRepository.findByIdWithPersonalInfoRelation(
+          creatorDto.id,
+        );
 
       const branch = await this.branchService.getBranchEntityById(dto.branchId);
 
-      const role = await this.enumService.getMeEnumValueIfExist(
+      const roleToAssign = await this.enumService.getEnumValueById(dto.roleId);
+      const userAccountStatus = await this.enumService.getMeEnumValueIfExist(
         ENUM_TYPES.ROLE,
-        roleName,
+        ENUM_VALUES.USER_ACC_STATUS.INACTIVE,
       );
 
-      if (!branch || !role || !creator)
+      if (!branch || !roleToAssign || !creator || !userAccountStatus)
         throw new NotFoundException('Required data not found');
+
+      const isCreatorSuperAdmin = creatorDto.role?.key === ROLES.SUPER_ADMIN;
+      const isCreatorHOD = creatorDto.role?.key === ROLES.HOD;
+      if (isCreatorHOD) {
+        const creatorBranchId = creator.personalInfo?.branch?.id;
+
+        // If they try to create a professor for a different branch, reject them!
+        if (dto.branchId !== creatorBranchId) {
+          throw new ForbiddenException(
+            'HODs can only register staff for their own department.',
+          );
+        }
+      }
+
+      // If they are trying to create an HOD, the creator MUST be a Super Admin
+      if (roleToAssign.key === ROLES.HOD && !isCreatorSuperAdmin) {
+        throw new ForbiddenException('Only Super Admins can register HODs.');
+      }
+
+      // Prevent this route from being used to create Students or Admins directly
+      if (
+        roleToAssign.key !== ROLES.HOD &&
+        roleToAssign.key !== ROLES.PROFESSOR
+      ) {
+        throw new BadRequestException(
+          'Invalid role assignment for this endpoint.',
+        );
+      }
 
       const password = this.cryptoService.generateRandomPassword();
       const hashedPassword = await this.bcryptService.hashPassword(password);
@@ -248,8 +297,9 @@ export class AuthService {
       const entity = RegisterSpecificUserMapper.toRegisterEntity(
         dto,
         hashedPassword,
-        role,
-        createdBy,
+        roleToAssign,
+        userAccountStatus,
+        creator.id,
         branch,
       );
       entity.mustChangePassword = true;
@@ -274,7 +324,8 @@ export class AuthService {
       };
     } catch (e) {
       await queryRunner.rollbackTransaction();
-      throw new BadRequestException(ERRORMESSAGE.INVALID_TOKEN);
+      // throw new BadRequestException(ERRORMESSAGE.INVALID_TOKEN);
+      throw e;
     } finally {
       await queryRunner.release();
     }

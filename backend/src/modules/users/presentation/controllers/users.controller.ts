@@ -21,13 +21,13 @@ import { EmailVerifiedGuard } from 'src/core/guards/email-verified.guard';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
 import { UpdatePersonalInfoDto } from 'src/modules/users/presentation/dto/request/update-personal-info.dto';
 import { FindUsersPersonalInfoQueryDto } from 'src/common/pagination/dto/find-users-personal-query.dto';
-import type { PaginatedResponse } from 'src/common/pagination/interface/paginated-response.interface';
-import type { PersonalInfo } from 'src/modules/users/domain/entities/personal-info.entity';
 import type { User } from 'src/modules/auth/domain/entities/user.entity';
-import type {
+import {
   ChangeUserRoleDto,
   ToggleStatusDto,
 } from 'src/modules/users/presentation/dto/request/update-User.dto';
+import { UpdateProfileImageDto } from 'src/modules/users/presentation/dto/request/update-profile-image.dto';
+import { UserMapper } from 'src/modules/auth/data/mappers/user.response.mapper';
 
 @Controller('personal-info')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -64,15 +64,22 @@ export class PersonalInfoController {
       data: res,
     };
   }
+
   @Get()
   @HttpCode(HttpStatus.OK)
   @Roles(ROLES.PROFESSOR, ROLES.HOD, ROLES.SUPER_ADMIN)
   async findAll(
     @Query() query: FindUsersPersonalInfoQueryDto,
-    @CurrentUser() user: UserResponseDto,
-  ): Promise<PaginatedResponse<PersonalInfo>> {
-    return this.personalInfoService.findAll(query, user.role, user.branchId);
+    @CurrentUser() rawUser: User,
+  ) {
+    const mappedUser = UserMapper.toResponseDto(rawUser);
+    return this.personalInfoService.findAll(
+      query,
+      mappedUser.role,
+      mappedUser.branchId,
+    );
   }
+
   @Get(':personalInfoId')
   @HttpCode(HttpStatus.OK)
   @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR)
@@ -121,6 +128,26 @@ export class PersonalInfoController {
 
     return {
       message: res.message,
+    };
+  }
+  @Patch('update-image/:personalInfoId')
+  @UseGuards(EmailVerifiedGuard)
+  @HttpCode(HttpStatus.OK)
+  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR, ROLES.STUDENT)
+  async updateProfileImage(
+    @Param('personalInfoId', ParseIntPipe) targetProfileId: number,
+    @Body() dto: UpdateProfileImageDto,
+    @CurrentUser() currentUser: UserResponseDto,
+  ) {
+    const res = await this.personalInfoService.updateProfileImage(
+      targetProfileId,
+      dto,
+      currentUser,
+    );
+
+    return {
+      message: 'Profile image updated successfully',
+      data: res,
     };
   }
 }
