@@ -251,8 +251,9 @@ export class PersonalInfoRepository {
       branchId = currentUserBranchId;
 
       if (currentUserRole === ROLES.PROFESSOR) {
-        queryBuilder.andWhere('role.key = :studentRole', {
+        queryBuilder.andWhere('role.key IN (:studentRole, :profRole)', {
           studentRole: ROLES.STUDENT,
+          profRole: ROLES.PROFESSOR,
         });
       }
     }
@@ -315,4 +316,3 @@ export class PersonalInfoRepository {
     console.log('======');
   }
 }
-  
