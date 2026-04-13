@@ -41,4 +41,7 @@ export const API_ENDPOINT = {
     REGISTER: `/subject/register`,
     UPDATE: (id: number) => `/subject/${id}`,
   },
+  STAFF: {
+    REGISTER: `auth/register/staff`,
+  },
 } as const;
