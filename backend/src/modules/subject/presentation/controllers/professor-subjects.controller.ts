@@ -1,6 +1,8 @@
 import {
   Body,
   Controller,
+  Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -84,4 +86,44 @@ export class ProfessorSubMappingController {
       data: res,
     };
   }
+  // ==============================
+  @Delete('unassign/:mappingId')
+  @HttpCode(HttpStatus.OK)
+  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
+  async unassignSubject(
+    @Param('mappingId', ParseIntPipe) mappingId: number,
+    @CurrentUser() user: UserResponseDto,
+  ) {
+    const res = await this.professorSubMappingService.unassignSubject(
+      mappingId,
+      user.id,
+    );
+    return {
+      message: res.message,
+    };
+  }
+
+  @Get('history/:professorId')
+  @HttpCode(HttpStatus.OK)
+  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR)
+  async getProfessorHistory(
+    @Param('professorId', ParseIntPipe) professorId: number,
+    @CurrentUser() user: UserResponseDto,
+  ) {
+    if (user.role === ROLES.PROFESSOR && user.id !== professorId) {
+      throw new ForbiddenException(
+        "You cannot view another professor's history.",
+      );
+    }
+
+    const history =
+      await this.professorSubMappingService.getProfessorSubjectHistory(
+        professorId,
+      );
+    return {
+      message: 'Professor subject history retrieved successfully',
+      data: history,
+    };
+  }
+  // ===================
 }

@@ -15,6 +15,8 @@ import { UpdateAssignSubjectDto } from '../../presentation/dto/request/professor
 import { UpdateSubjectMapper } from '../../data/mappers/subject-mapping/subject-assign-update.mapper';
 import { FindSubjectMappingQueryDto } from 'src/common/pagination/dto/find-subject-mapping-query.dto';
 import { ProfessorMappingResponseMapper } from 'src/modules/subject/data/mappers/subject-mapping/subject-mapping-response';
+import { StaffProfileService } from 'src/modules/users/domain/services/staff-profile.service';
+import { map } from 'rxjs';
 
 @Injectable()
 export class ProfessorSubMappingService {
@@ -23,6 +25,7 @@ export class ProfessorSubMappingService {
     private readonly authService: AuthService,
     private readonly enumService: EnumService,
     private professorSubjectRepo: ProfessorSubMappingRepository,
+    private readonly staffProfileService: StaffProfileService,
   ) {}
 
   async saveAssignedSubject(dto: AssignSubjectDto, assignedById: number) {
@@ -44,6 +47,15 @@ export class ProfessorSubMappingService {
         `${ERRORMESSAGE.USER_NOT_AUTHENTICATED} or ${ERRORMESSAGE.INVALID_TOKEN}`,
       );
     }
+    const staffProfile = await this.staffProfileService
+      .getProfileByUserId(dto.professorId)
+      .catch(() => null);
+
+    if (!staffProfile) {
+      throw new ConflictException(
+        'This user does not have a Staff Profile and cannot be assigned subjects.',
+      );
+    }
 
     const existing = await this.professorSubjectRepo.findExisting(
       dto.professorId,
@@ -61,7 +73,7 @@ export class ProfessorSubMappingService {
     let saved;
     try {
       saved = await this.professorSubjectRepo.saveAssignedSubject(entity);
-    } catch (error) {
+    } catch (error: any) {
       if (error.code === '23505') {
         throw new ConflictException(ERRORMESSAGE.SUBJECT_ALREADY_ASSIGNED);
       }
@@ -184,4 +196,38 @@ export class ProfessorSubMappingService {
     // Returns true if the mapping exists, false if it doesn't
     return !!existing;
   }
+  // ============== UNASSIGN SUBJECT  ===============
+  async unassignSubject(mappingId: number, currentUserId: number) {
+    const mapping =
+      await this.professorSubjectRepo.findAssignSubjectByIdWithRelations(
+        mappingId,
+      );
+    if (!mapping) {
+      throw new NotFoundException(
+        ERRORMESSAGE.DATA_NOT_FOUND('Subject Assignment'),
+      );
+    }
+    mapping.updatedBy = currentUserId;
+    const mappingToSoftDelete =
+      await this.professorSubjectRepo.saveAssignedSubject(mapping);
+      
+    await this.professorSubjectRepo.softRemoveMapping(mapping);
+    return { success: true, message: 'Subject unassigned successfully' };
+  }
+
+  // =======  GET PROFESSOR SUBJECT HISTORY =======
+
+  async getProfessorSubjectHistory(professorId: number) {
+    const history =
+      await this.professorSubjectRepo.findHistoryByProfessorId(professorId);
+
+    const groupedHistory = Object.groupBy(
+      history,
+      (curr) => curr.academicYear?.key || 'Unknown Year',
+    );
+
+    return groupedHistory;
+  }
+  // =============================
+  // =============================
 }

@@ -182,11 +182,30 @@ export class ProfessorSubMappingRepository {
     await this.cacheManager.set(cacheKey, responseResult, 30000);
     return responseResult;
   }
-
+  // ==========================
   async clearPaginationCache() {
     for (const key of this.MappingListCacheKeys) {
       await this.cacheManager.del(key);
     }
     this.MappingListCacheKeys.clear();
   }
+  // ==========================
+  async softRemoveMapping(mapping: ProfessorSubMapping) {
+    const removed = await this.repo.softRemove(mapping);
+    await this.clearPaginationCache();
+    return removed;
+  }
+  // ==========================
+  async findHistoryByProfessorId(professorId: number) {
+    return this.repo.find({
+      where: { professor: { id: professorId } },
+      relations: ['subject', 'semester', 'academicYear'],
+      withDeleted: true, // Fetch soft-deleted records for the audit trail
+      order: {
+        academicYear: { value: 'DESC' },
+        semester: { value: 'DESC' },
+      },
+    });
+  }
+  // ===========================
 }
