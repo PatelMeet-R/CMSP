@@ -72,7 +72,7 @@ export class AuthService {
       ROLES.STUDENT,
     );
     const userAccountStatus = await this.enumService.getMeEnumValueIfExist(
-      ENUM_TYPES.ROLE,
+      ENUM_TYPES.USER_ACC_STATUS,
       ENUM_VALUES.USER_ACC_STATUS.ACTIVE,
     );
     if (!role && !userAccountStatus) {
@@ -256,8 +256,8 @@ export class AuthService {
 
       const roleToAssign = await this.enumService.getEnumValueById(dto.roleId);
       const userAccountStatus = await this.enumService.getMeEnumValueIfExist(
-        ENUM_TYPES.ROLE,
-        ENUM_VALUES.USER_ACC_STATUS.INACTIVE,
+        ENUM_TYPES.USER_ACC_STATUS,
+        ENUM_VALUES.USER_ACC_STATUS.ACTIVE,
       );
 
       if (!branch || !roleToAssign || !creator || !userAccountStatus)
@@ -268,12 +268,12 @@ export class AuthService {
       if (isCreatorHOD) {
         const creatorBranchId = creator.personalInfo?.branch?.id;
 
-        // If they try to create a professor for a different branch, reject them!
-        if (dto.branchId !== creatorBranchId) {
-          throw new ForbiddenException(
-            'HODs can only register staff for their own department.',
+        if (!creatorBranchId) {
+          throw new BadRequestException(
+            "Could not determine the HOD's branch.",
           );
         }
+        dto.branchId = creatorBranchId;
       }
 
       // If they are trying to create an HOD, the creator MUST be a Super Admin

@@ -40,7 +40,7 @@ export class AuthRepository {
   async findByIdWithPersonalInfoRelation(id: number) {
     return this.repo.findOne({
       where: { id: id },
-      relations: ['personalInfo'],
+      relations: ['personalInfo', 'personalInfo.branch'],
     });
   }
   async update(id: number, partialEntity: Partial<User>) {
