@@ -106,6 +106,27 @@ export const staffRegisterSchema = z.object({
   roleId: z
     .number({ message: "Please select a role" })
     .min(1, "Role is required"),
+  designation: z
+    .string()
+    .min(2, "Designation is required (e.g., Assistant Professor)"),
+  officeLocation: z
+    .string()
+    .min(2, "Office Location is required (e.g., Room 402)"),
+  joiningDate: z
+    .string()
+    .optional()
+    .refine(
+      (dateString) => {
+        if (!dateString) return true;
+
+        const selectedDate = new Date(dateString);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        return selectedDate >= today;
+      },
+      { message: "Joining date cannot be in the past" },
+    ),
 });
 
 export type UpdateProfileFormValues = z.infer<typeof updateProfileSchema>;

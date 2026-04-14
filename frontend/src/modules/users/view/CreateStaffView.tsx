@@ -164,7 +164,7 @@ export default function CreateStaffView() {
                           options={availableRoles}
                           placeholder="Role"
                           isLoading={isRolesLoading}
-                          disabled={!isSuperAdmin || isRolesLoading}
+                          disabled={isRolesLoading}
                         />
                       )}
                     />
@@ -197,6 +197,63 @@ export default function CreateStaffView() {
                       <p className="text-xs text-red-500">
                         {form.formState.errors.branchId.message}
                       </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {/* Professional Details Group */}
+              <div className="space-y-0.5 md:space-y-4 pt-1 md:pt-4">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">
+                  Professional Details
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-4">
+                  <div className="space-y-1.5">
+                    <FieldLabel>
+                      Designation <span className="text-red-500">*</span>
+                    </FieldLabel>
+                    <Input
+                      {...form.register("designation")}
+                      placeholder="e.g., Assistant Professor"
+                    />
+                    {form.formState.errors.designation && (
+                      <span className="text-xs text-red-500">
+                        {form.formState.errors.designation.message}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <FieldLabel>
+                      Office Location <span className="text-red-500">*</span>
+                    </FieldLabel>
+                    <Input
+                      {...form.register("officeLocation")}
+                      placeholder="e.g., Block B, Room 402"
+                    />
+                    {form.formState.errors.officeLocation && (
+                      <span className="text-xs text-red-500">
+                        {form.formState.errors.officeLocation.message}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <FieldLabel>Date of Joining</FieldLabel>
+                    <Controller
+                      name="joiningDate"
+                      control={form.control}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type="date"
+                          min={new Date().toISOString().split("T")[0]}
+                        />
+                      )}
+                    />
+                    {form.formState.errors.joiningDate && (
+                      <span className="text-xs text-red-500">
+                        {form.formState.errors.joiningDate.message}
+                      </span>
                     )}
                   </div>
                 </div>
