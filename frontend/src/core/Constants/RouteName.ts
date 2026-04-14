@@ -20,4 +20,5 @@ export const ROUTENAME = {
   ALL_USERS: "/users",
   USER_DETAILS: `/user/:id`,
   ADD_STAFF: "/user/create",
+  SETTING: "/setting",
 } as const;

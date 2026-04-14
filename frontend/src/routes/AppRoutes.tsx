@@ -13,6 +13,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import UserManagementView from "@/modules/users/view/UserManagementView";
 import UserDetailsView from "@/modules/users/view/UserDetailsView";
 import CreateStaffView from "@/modules/users/view/CreateStaffView";
+import SystemSettingsView from "@/modules/settings/view/SystemSettingsView";
 
 const AppRoutes = () => {
   return (
@@ -47,6 +48,7 @@ const AppRoutes = () => {
             path={ROUTENAME.ASSIGNMENT}
             element={<div>ASSIGNMENT Page</div>}
           />
+          <Route path={ROUTENAME.SETTING} element={<SystemSettingsView />} />
           <Route
             path={ROUTENAME.ADD_ASSIGNMENT}
             element={<div>ADD_ASSIGNMENT Page</div>}

@@ -44,4 +44,8 @@ export const API_ENDPOINT = {
   STAFF: {
     REGISTER: `auth/register/staff`,
   },
+  SETTING: {
+    GET: (key: string) => `/settings/${key}`,
+    UPSERT: "/settings/upsert",
+  },
 } as const;
