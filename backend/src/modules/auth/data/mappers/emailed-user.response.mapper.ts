@@ -9,6 +9,10 @@ export class EmailedUserResponse {
       branch: data.personalInfo.branch.name,
       createdBy: creator.personalInfo.fullName,
       fullName: data.personalInfo.fullName,
+
+      designation: data.staffProfile?.designation,
+      officeLocation: data.staffProfile?.officeLocation,
+      joiningDate: data.staffProfile?.joiningDate,
     };
   }
 }

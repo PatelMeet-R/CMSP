@@ -1,9 +1,12 @@
+import { Type } from 'class-transformer';
 import {
   IsEmail,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MaxLength,
+  MinDate,
   MinLength,
 } from 'class-validator';
 import { AUTH_DTO_MESSAGE } from 'src/common/constants/dto/auth.dto.message';
@@ -32,4 +35,18 @@ export class RegisterSpecificUserDto {
   @IsInt({ message: 'Role ID must be an integer' })
   @IsNotEmpty({ message: 'Role ID is required' })
   roleId: number;
+  @IsString()
+  @IsNotEmpty({ message: 'Designation is required for staff members.' })
+  designation: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Office location is required.' })
+  officeLocation: string;
+
+  @IsOptional()
+  @Type(() => Date)
+  @MinDate(() => new Date(new Date().setHours(0, 0, 0, 0)), {
+    message: 'Joining date cannot be in the past',
+  })
+  joiningDate?: string;
 }

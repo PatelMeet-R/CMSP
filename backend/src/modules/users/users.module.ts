@@ -13,6 +13,10 @@ import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
 import { PersonalInfoController } from './presentation/controllers/users.controller';
 import { AuthModule } from 'src/modules/auth/auth.module';
 import { FileUploadModule } from 'src/modules/file-upload/file-upload.module';
+import { StaffProfileService } from 'src/modules/users/domain/services/staff-profile.service';
+import { StaffProfileRepository } from 'src/modules/users/data/repository/staff-profile.repository';
+import { StaffProfileController } from 'src/modules/users/presentation/controllers/staff-profile.controller';
+import { StaffProfile } from 'src/modules/users/domain/entities/staff-profile.entity';
 
 @Module({
   imports: [
@@ -20,16 +24,18 @@ import { FileUploadModule } from 'src/modules/file-upload/file-upload.module';
     BranchModule,
     EnumsModule,
     FileUploadModule,
-    TypeOrmModule.forFeature([EnumValue, User, PersonalInfo]),
+    TypeOrmModule.forFeature([EnumValue, User, StaffProfile, PersonalInfo]),
   ],
-  controllers: [PersonalInfoController],
+  controllers: [PersonalInfoController, StaffProfileController],
   providers: [
     PersonalInfoRepository,
+    StaffProfileService,
+    StaffProfileRepository,
     PersonalInfoService,
     JwtAuthGuard,
     RolesGuard,
     EmailVerifiedGuard,
   ],
-  exports: [PersonalInfoRepository],
+  exports: [PersonalInfoRepository, StaffProfileService],
 })
 export class UsersModule {}

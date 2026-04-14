@@ -31,19 +31,6 @@ export class MailService {
         pass: this.options.pass,
       },
     });
-
-    // if (!this.configService.get<string>('SMTP_HOST')) {
-    //   throw new Error(ERRORMESSAGE.SMTP_CONNECTION_FAILED);
-    // }
-    // this.transporter = nodemailer.createTransport({
-    //   host: this.configService.get<string>('SMTP_HOST'),
-    //   port: Number(this.configService.get<string>('SMTP_PORT')),
-    //   secure: false,
-    //   auth: {
-    //     user: this.configService.get<string>('SMTP_USER'),
-    //     pass: this.configService.get<string>('SMTP_PASS'),
-    //   },
-    // });
   }
 
   private compileTemplate(templateName: string, context: any) {
@@ -88,10 +75,16 @@ export class MailService {
       branch: string;
       createdBy: string;
       fullName: string;
+      designation?: string;
+      officeLocation?: string;
+      joiningDate?: Date;
     },
   ) {
     // Prepare template context
     const loginUrl = this.appConfig.frontendUrl;
+    const formattedDate = userData.joiningDate
+      ? new Date(userData.joiningDate).toLocaleDateString('en-IN')
+      : null;
     const context = {
       email: userData.email,
       password: userData.password,
@@ -100,6 +93,9 @@ export class MailService {
       createdBy: userData.createdBy,
       fullName: userData.fullName,
       loginUrl: loginUrl,
+      designation: userData.designation,
+      officeLocation: userData.officeLocation,
+      joiningDate: formattedDate,
     };
 
     // Send email using existing sendMail method

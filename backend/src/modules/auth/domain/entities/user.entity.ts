@@ -1,6 +1,7 @@
 import { AuditableEntity } from 'src/core/base.entity';
 import { EnumValue } from 'src/modules/enums/domain/entities/enumValue.entity';
 import { PersonalInfo } from 'src/modules/users/domain/entities/personal-info.entity';
+import { StaffProfile } from 'src/modules/users/domain/entities/staff-profile.entity';
 
 import { Column, Entity, Index, ManyToOne, OneToOne } from 'typeorm';
 
@@ -30,4 +31,10 @@ export class User extends AuditableEntity {
 
   @Column({ default: false })
   mustChangePassword: boolean;
+
+  @OneToOne(() => StaffProfile, (staffProfile) => staffProfile.user, {
+    cascade: true,
+    eager: false,
+  })
+  staffProfile: StaffProfile;
 }

@@ -45,8 +45,23 @@
                     >{{password}}</code></p>
                   <p style='margin: 0 0 10px 0;'><strong>Role:</strong>
                     {{role}}</p>
-                  <p style='margin: 0;'><strong>Department/Branch:</strong>
-                    {{branchName}}</p>
+                  <p style='margin: 0 0 10px 0;'><strong>Department:</strong>
+                    {{branch}}</p>
+
+                  {{#if designation}}
+                    <p style='margin: 0 0 10px 0;'><strong>Designation:</strong>
+                      {{designation}}</p>
+                  {{/if}}
+
+                  {{#if officeLocation}}
+                    <p style='margin: 0 0 10px 0;'><strong>Office/Room:</strong>
+                      {{officeLocation}}</p>
+                  {{/if}}
+
+                  {{#if joiningDate}}
+                    <p style='margin: 0;'><strong>Date of Joining:</strong>
+                      {{joiningDate}}</p>
+                  {{/if}}
                 </div>
 
                 <table
@@ -75,8 +90,7 @@
               <td
                 style='padding: 20px 30px; background-color: #f4f4f7; text-align: center; font-size: 12px; color: #999;'
               >
-                <p style='margin: 0;'>&copy; 2026 Your College Name. All rights
-                  reserved.</p>
+                <p style='margin: 0;'>&copy; 2026 CMS. All rights reserved.</p>
               </td>
             </tr>
           </table>

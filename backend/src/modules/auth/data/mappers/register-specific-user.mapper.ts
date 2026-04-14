@@ -3,6 +3,7 @@ import { RegisterSpecificUserDto } from '../../presentation/dto/request/register
 import { User } from '../../domain/entities/user.entity';
 import { Branch } from 'src/modules/branch/domain/entities/branch.entity';
 import { PersonalInfo } from 'src/modules/users/domain/entities/personal-info.entity';
+import { StaffProfile } from 'src/modules/users/domain/entities/staff-profile.entity';
 
 export class RegisterSpecificUserMapper {
   static toRegisterEntity(
@@ -31,7 +32,18 @@ export class RegisterSpecificUserMapper {
     pi.country = 'Unknown';
     pi.postalCode = '000000';
 
+    // =============
+    const staffProfile = new StaffProfile();
+    staffProfile.designation = dto.designation;
+    staffProfile.officeLocation = dto.officeLocation;
+    staffProfile.joiningDate = dto.joiningDate
+      ? new Date(dto.joiningDate)
+      : new Date();
+    staffProfile.maxSubjectWorkload = 4;
+
+    user.staffProfile = staffProfile;
     user.personalInfo = pi;
+
     return user;
   }
 }
