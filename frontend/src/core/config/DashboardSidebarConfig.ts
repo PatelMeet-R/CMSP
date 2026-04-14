@@ -11,6 +11,7 @@ export type SidebarItem = {
   icon: string;
   children?: SidebarChild[];
   link?: string;
+  allowedRoles?: RoleType[];
 };
 
 export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
@@ -21,7 +22,7 @@ export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
       {
         label: "View Subjects",
         icon: "Eye",
-        link: ROUTENAME.SUBJECTS, 
+        link: ROUTENAME.SUBJECTS,
         allowedRoles: [
           ROLES.SUPER_ADMIN,
           ROLES.HOD,
@@ -106,7 +107,12 @@ export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
         label: "View All Users",
         icon: "Eye",
         link: ROUTENAME.ALL_USERS,
-        allowedRoles: [ROLES.SUPER_ADMIN, ROLES.HOD,ROLES.PROFESSOR,ROLES.STUDENT],
+        allowedRoles: [
+          ROLES.SUPER_ADMIN,
+          ROLES.HOD,
+          ROLES.PROFESSOR,
+          ROLES.STUDENT,
+        ],
       },
 
       {
@@ -116,5 +122,11 @@ export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
         allowedRoles: [ROLES.SUPER_ADMIN, ROLES.HOD],
       },
     ],
+  },
+  {
+    label: "Setting",
+    icon: "Settings",
+    link: ROUTENAME.SETTING,
+    allowedRoles: [ROLES.SUPER_ADMIN, ROLES.HOD],
   },
 ];

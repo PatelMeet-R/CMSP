@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   KeyRound,
   MailCheck,
+  Settings,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -60,6 +61,7 @@ const IconMap: Record<string, React.ElementType> = {
   ShieldCheck,
   KeyRound,
   MailCheck,
+  Settings,
 };
 
 export const DashboardSideBarDetails = () => {
@@ -77,23 +79,48 @@ export const DashboardSideBarDetails = () => {
     : DASHBOARD_SIDEBAR_CONFIG;
 
   //THE FILTERING
+  // const filteredSidebarConfig = activeConfig
+  //   .map((parentCategory) => {
+  //     //  Keep only the children this specific role is allowed to see
+  //     const allowedChildren =
+  //       parentCategory.children?.filter((child) =>
+  //         child.allowedRoles.includes(userRole as RoleType),
+  //       ) || [];
+  //     //  Return the parent with the newly filtered children array
+  //     return {
+  //       ...parentCategory,
+  //       children: allowedChildren,
+  //     };
+  //   })
+  //   .filter((parentCategory) => {
+  //     return parentCategory.children && parentCategory.children.length > 0;
+  //   });
   const filteredSidebarConfig = activeConfig
     .map((parentCategory) => {
-      //  Keep only the children this specific role is allowed to see
-      const allowedChildren =
-        parentCategory.children?.filter((child) =>
+      if (parentCategory.children) {
+        const allowedChildren = parentCategory.children.filter((child) =>
           child.allowedRoles.includes(userRole as RoleType),
-        ) || [];
-      //  Return the parent with the newly filtered children array
-      return {
-        ...parentCategory,
-        children: allowedChildren,
-      };
+        );
+        return {
+          ...parentCategory,
+          children: allowedChildren,
+        };
+      }
+      // If it doesn't have children, just return it as is
+      return parentCategory;
     })
     .filter((parentCategory) => {
-      return parentCategory.children && parentCategory.children.length > 0;
-    });
+      // Keep it if it has valid children OR if it's a direct link that the user is allowed to see
+      const hasValidChildren =
+        parentCategory.children && parentCategory.children.length > 0;
 
+      // We need to add allowedRoles to the top level SidebarItem type for direct links to work!
+      const isAllowedDirectLink =
+        parentCategory.link &&
+        (parentCategory as any).allowedRoles?.includes(userRole as RoleType);
+
+      return hasValidChildren || isAllowedDirectLink;
+    });
   const renderSideBarItem = (item: SidebarItem) => {
     //  GET THE DYNAMIC ICON
 
