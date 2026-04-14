@@ -26,15 +26,14 @@ const AppDataSource = new DataSource({
 
 async function runSeed() {
   await AppDataSource.initialize();
-  // await seedUserRoleEnums(AppDataSource);
-  // await seedUsers(AppDataSource);
-  // await seedSemsEnum(AppDataSource);
-  // await seedBranches(AppDataSource);
-  // await seedSubjects(AppDataSource);
-  // await seedAcademicYearEnums(AppDataSource);
-  // await seedGenderEnums(AppDataSource);
-  // await seedUserAccountStatusEnums(AppDataSource);
-  // await seedAdminUser(AppDataSource);
+  await seedUserRoleEnums(AppDataSource);
+  await seedSemsEnum(AppDataSource);
+  await seedBranches(AppDataSource);
+  await seedSubjects(AppDataSource);
+  await seedAcademicYearEnums(AppDataSource);
+  await seedGenderEnums(AppDataSource);
+  await seedUserAccountStatusEnums(AppDataSource);
+  await seedAdminUser(AppDataSource);
   console.log('----------------------------');
   console.log('Seeding completed');
   console.log('----------------------------');

@@ -3,6 +3,7 @@ import { hash } from 'bcrypt';
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
 import { ROLES } from 'src/common/constants/roles.constant';
 import { User } from 'src/modules/auth/domain/entities/user.entity';
+import { StaffProfile } from 'src/modules/users/domain/entities/staff-profile.entity';
 import { EnumValue } from 'src/modules/enums/domain/entities/enumValue.entity';
 import { PersonalInfo } from 'src/modules/users/domain/entities/personal-info.entity';
 import { DataSource } from 'typeorm';
@@ -11,6 +12,7 @@ export async function seedAdminUser(dataSource: DataSource) {
   const userRepo = dataSource.getRepository(User);
   const enumRepo = dataSource.getRepository(EnumValue);
   const personalInfoRepo = dataSource.getRepository(PersonalInfo);
+  const staffProfileRepo = dataSource.getRepository(StaffProfile);
 
   const existingSuperAdmin = await userRepo.findOne({
     where: { email: 'meet333110@gmail.com' },
@@ -41,6 +43,12 @@ export async function seedAdminUser(dataSource: DataSource) {
     country: 'System',
     postalCode: '000000',
   });
+  const adminStaffProfile = staffProfileRepo.create({
+    designation: 'SYSTEM',
+    officeLocation: 'SERVER ROOM',
+    joiningDate: new Date(),
+    maxSubjectWorkload: 0,
+  });
 
   const savedProfile = await personalInfoRepo.save(adminProfile);
 
@@ -49,6 +57,7 @@ export async function seedAdminUser(dataSource: DataSource) {
     password: hashedPassword,
     role: role,
     personalInfo: savedProfile,
+    staffProfile: adminStaffProfile,
   });
 
   await userRepo.save(superAdmin);
