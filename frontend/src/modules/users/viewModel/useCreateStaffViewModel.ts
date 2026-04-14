@@ -32,17 +32,17 @@ export const useCreateStaffViewModel = () => {
   const currentUserBranchId = user?.branchId;
   const defaultBranchId = isSuperAdmin ? 0 : currentUserBranchId || 0;
 
-  const profRole = roles?.find((r) => r.key === ROLES.PROFESSOR);
-  const defaultRoleId = isSuperAdmin ? 0 : profRole?.id || 0;
-
   const form = useForm<StaffRegisterFormValues>({
     resolver: zodResolver(staffRegisterSchema),
     defaultValues: {
       firstName: "",
       lastName: "",
       email: "",
-      roleId: defaultRoleId,
+      roleId: 0,
       branchId: defaultBranchId,
+      designation: "",
+      officeLocation: "",
+      joiningDate: new Date().toISOString().split("T")[0],
     },
   });
 
