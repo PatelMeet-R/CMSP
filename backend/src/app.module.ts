@@ -15,6 +15,7 @@ import appConfig from './config/app.config';
 import { AssignmentModule } from './modules/assignment/assignment.module';
 import cloudinaryConfig from './config/cloudinary.config';
 import { CacheModule } from '@nestjs/cache-manager';
+import { SettingsModule } from 'src/core/system-setting/settings.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { CacheModule } from '@nestjs/cache-manager';
     SubjectModule,
     UsersModule,
     AssignmentModule,
+    SettingsModule,
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
