@@ -4,6 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toastService } from "@/core/toast/toastService";
 import { getAxiosErrorMessage } from "@/core/helper/errorMessage";
 import {
+  fetchProfessorHistory,
+  fetchStaffProfile,
   fetchUserProfile,
   updateAccountStatus,
   updateUserDetails,
@@ -15,6 +17,9 @@ import {
   updateProfileSchema,
   type UpdateProfileFormValues,
 } from "@/modules/users/types/users.schemas";
+import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
+import { fetchSystemSetting } from "@/modules/settings/model/settingsService";
+import { EnumCategory } from "@/modules/enums/types/enum.schemas";
 
 export const useUserDetailsViewModel = () => {
   const { id } = useParams<{ id: string }>();
@@ -35,6 +40,66 @@ export const useUserDetailsViewModel = () => {
     queryFn: () => fetchUserProfile(userId),
     enabled: !!userId,
   });
+
+  //    NEW: ACCORDION & PROFILE STATE
+  const [expandedYearKey, setExpandedYearKey] = useState<string | undefined>(
+    undefined,
+  );
+
+  //    NEW: FETCH STAFF PROFILE
+  const { data: staffProfile, isLoading: isStaffLoading } = useQuery({
+    queryKey: ["staff-profile", userId],
+    queryFn: () => fetchStaffProfile(userId),
+    enabled:
+      !!userId &&
+      (userProfile?.role === "PROFESSOR" ||
+        userProfile?.role === "HOD" ||
+        userProfile?.role?.key === "PROFESSOR" ||
+        userProfile?.role?.key === "HOD"),
+    retry: false, // Don't retry if they are a student without a profile
+  });
+
+  //    NEW: FETCH SUBJECT HISTORY
+  const { data: historyMap, isLoading: isHistoryLoading } = useQuery({
+    queryKey: ["professor-history", userId],
+    queryFn: () => fetchProfessorHistory(userId),
+    enabled:
+      !!userId &&
+      (userProfile?.role === "PROFESSOR" ||
+        userProfile?.role === "HOD" ||
+        userProfile?.role?.key === "PROFESSOR" ||
+        userProfile?.role?.key === "HOD"),
+  });
+
+  //    NEW: FETCH SETTINGS FOR AUTO-EXPAND
+  const { enums: academicYears } = useEnumViewModel(EnumCategory.ACADEMIC_YEAR);
+  const { data: activeYearSetting } = useQuery({
+    queryKey: ["system-setting", "CURRENT_ACADEMIC_YEAR_ID"],
+    queryFn: () => fetchSystemSetting("CURRENT_ACADEMIC_YEAR_ID"),
+  });
+
+  //    NEW: AUTO-EXPAND LOGIC
+  const [activeYearKey, setActiveYearKey] = useState<string | undefined>(
+    undefined,
+  );
+
+  //    NEW: AUTO-EXPAND LOGIC
+  useEffect(() => {
+    if (activeYearSetting?.value && academicYears) {
+      const activeYearEnum = academicYears.find(
+        (y) => y.id.toString() === activeYearSetting.value,
+      );
+
+      if (activeYearEnum) {
+        setActiveYearKey(activeYearEnum.key); // Save this for student filtering!
+
+        // Only expand if the map exists and has data for this year
+        if (historyMap && historyMap[activeYearEnum.key]) {
+          setExpandedYearKey(activeYearEnum.key);
+        }
+      }
+    }
+  }, [activeYearSetting, academicYears, historyMap]);
 
   //    SETUP FORM
   const form = useForm<UpdateProfileFormValues>({
@@ -116,7 +181,12 @@ export const useUserDetailsViewModel = () => {
 
   return {
     userProfile,
-    isLoading,
+    staffProfile,
+    historyMap,
+    expandedYearKey,
+    setExpandedYearKey,
+    activeYearKey,
+    isLoading: isLoading || isStaffLoading || isHistoryLoading,
     isError,
     navigate,
 
