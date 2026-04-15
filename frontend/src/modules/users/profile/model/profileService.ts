@@ -2,14 +2,15 @@ import axiosInstance from "@/core/api/axiosInstance";
 import { API_ENDPOINT } from "@/core/api/endPoint";
 import type { ProfileResponse } from "@/modules/users/types/users.schemas";
 
+interface FileUploadResponse {
+  data: { id: number; url: string };
+}
+// ============================
 export const getProfile = async (): Promise<ProfileResponse> => {
   const res = await axiosInstance.get(API_ENDPOINT.PROFILE.MY_PROFILE);
   return res.data.data;
 };
-
-interface FileUploadResponse {
-  data: { id: number; url: string };
-}
+// ============================
 
 export const uploadFile = async (
   file: File,
@@ -27,6 +28,8 @@ export const uploadFile = async (
   );
   return response.data;
 };
+// ============================
+
 export const updateProfileImage = async (
   personalInfoId: number,
   profileImageId: number | null,
@@ -39,3 +42,11 @@ export const updateProfileImage = async (
   );
   return response.data;
 };
+// ============================
+
+export const fetchUserById = async (userId: string) => {
+  // Replace with your actual user fetch endpoint
+  const response = await axiosInstance.get(`/auth/users/${userId}`);
+  return response.data.data;
+};
+

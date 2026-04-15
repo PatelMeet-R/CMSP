@@ -49,3 +49,14 @@ export const registerStaff = async (data: StaffRegisterFormValues) => {
   const response = await axiosInstance.post(API_ENDPOINT.STAFF.REGISTER, data);
   return response.data;
 };
+
+export const fetchStaffProfile = async (userId: number) => {
+  const response = await axiosInstance.get(`/staff-profile/${userId}`);
+  return response.data.data;
+};
+export const fetchProfessorHistory = async (userId: number) => {
+  const response = await axiosInstance.get(
+    `/professor-subject/history/${userId}`,
+  );
+  return response.data.data;
+};

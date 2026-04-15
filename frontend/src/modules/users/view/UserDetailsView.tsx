@@ -34,6 +34,7 @@ import { EnumDropdownMenu } from "@/components/custom/EnumDropdownMenu";
 import { BranchDropdownMenu } from "@/modules/branch/view/BranchDropdownMenu";
 import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
 import { ProfileRenderField } from "@/modules/users/profile/view/ProfileRenderField";
+import { StaffProfessionalDetails } from "@/modules/users/view/StaffProfessionalDetails";
 
 export default function UserDetailsView() {
   const vm = useUserDetailsViewModel();
@@ -45,6 +46,10 @@ export default function UserDetailsView() {
 
   const {
     userProfile: profile,
+    staffProfile,
+    historyMap,
+    expandedYearKey,
+    setExpandedYearKey,
     isLoading,
     navigate,
     form,
@@ -123,6 +128,12 @@ export default function UserDetailsView() {
 
   const isStudent =
     profile.role === "STUDENT" || profile.role?.key === "STUDENT";
+  const isStaff =
+    profile.role === "PROFESSOR" ||
+    profile.role === "HOD" ||
+    profile.role?.key === "PROFESSOR" ||
+    profile.role?.key === "HOD";
+
   const breadcrumbLabel =
     isStudent && profile.enrollmentNumber !== "NOT_REQUIRED"
       ? profile.enrollmentNumber
@@ -515,10 +526,21 @@ export default function UserDetailsView() {
                   />
                 </div>
               </div>
+              {/* ============= */}
             </form>
           </div>
         </CardContent>
       </Card>
+
+      {/* --- NEW: STAFF PROFESSIONAL INFO & HISTORY GRID --- */}
+      {isStaff && (
+        <StaffProfessionalDetails
+          staffProfile={staffProfile}
+          historyMap={historyMap}
+          expandedYearKey={expandedYearKey}
+          setExpandedYearKey={setExpandedYearKey}
+        />
+      )}
     </div>
   );
 }
