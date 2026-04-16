@@ -23,6 +23,7 @@ export class SystemSettingController {
   // Publicly accessible to logged-in users (so the frontend accordion can read it)
   @Get(':key')
   @HttpCode(HttpStatus.OK)
+  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR, ROLES.STUDENT)
   async getSetting(@Param('key') key: string) {
     const value = await this.settingService.getSettingValue(key);
     return { message: 'Setting retrieved', data: { key, value } };

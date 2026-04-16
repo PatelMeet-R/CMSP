@@ -28,21 +28,44 @@ import type { User } from 'src/modules/auth/domain/entities/user.entity';
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class SubjectController {
   constructor(private readonly subjectService: SubjectService) {}
+  // ======================================
 
-  @Patch(':id')
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  @Roles(ROLES.PROFESSOR, ROLES.HOD, ROLES.SUPER_ADMIN, ROLES.STUDENT)
+  async getSubjects(
+    @Query() query: FindSubjectQueryDto,
+    @CurrentUser() user: UserResponseDto,
+  ) {
+    return await this.subjectService.getAllSubject(
+      query,
+      user.role,
+      user.branchId,
+    );
+  }
+  // ======================================
+
+  @Get('search-combobox')
   @HttpCode(HttpStatus.OK)
   @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
-  async updateSubject(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateSubjectDto,
-    @CurrentUser() user: User,
+  async searchSubjectsForCombobox(
+    @Query('search') search?: string,
+    @Query('semesterId') semesterId?: string,
+    @Query('limit') limit?: string,
   ) {
-    const updated = await this.subjectService.updateSubject(id, dto, user);
-    return {
-      message: SUCCESSMSG.SUBJECT.UPDATED,
-      data: updated,
-    };
+    const parsedSemId = semesterId ? parseInt(semesterId, 10) : undefined;
+    const parsedLimit = limit ? parseInt(limit, 10) : 10;
+    const safeSearch = search || '';
+
+    const data = await this.subjectService.searchSubjectsForAssignment(
+      safeSearch,
+      parsedSemId,
+      parsedLimit,
+    );
+
+    return { message: 'Subjects retrieved', data };
   }
+  // ======================================
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
@@ -60,6 +83,23 @@ export class SubjectController {
       data: newlyCreatedSubject,
     };
   }
+  // ======================================
+
+  @Patch(':id')
+  @HttpCode(HttpStatus.OK)
+  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
+  async updateSubject(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateSubjectDto,
+    @CurrentUser() user: User,
+  ) {
+    const updated = await this.subjectService.updateSubject(id, dto, user);
+    return {
+      message: SUCCESSMSG.SUBJECT.UPDATED,
+      data: updated,
+    };
+  }
+  // ======================================
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
@@ -71,18 +111,5 @@ export class SubjectController {
       data: subject,
     };
   }
-
-  @Get()
-  @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.PROFESSOR, ROLES.HOD, ROLES.SUPER_ADMIN, ROLES.STUDENT)
-  async getSubjects(
-    @Query() query: FindSubjectQueryDto,
-    @CurrentUser() user: UserResponseDto,
-  ) {
-    return await this.subjectService.getAllSubject(
-      query,
-      user.role,
-      user.branchId,
-    );
-  }
+  // ======================================
 }

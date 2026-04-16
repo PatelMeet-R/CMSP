@@ -43,6 +43,29 @@ export class PersonalInfoController {
       data: res,
     };
   }
+  @Get('search-staff-combobox')
+  @HttpCode(HttpStatus.OK)
+  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
+  async searchStaffForCombobox(
+    @Query('search') search: string,
+    @Query('limit') limit: string,
+    @CurrentUser() rawUser: User,
+  ) {
+    const parsedLimit = limit ? parseInt(limit, 10) : 15;
+    const currentUser = UserMapper.toResponseDto(rawUser);
+
+    const data = await this.personalInfoService.searchStaffForAssignment(
+      search,
+      parsedLimit,
+      currentUser.role,
+      currentUser.branchId ?? undefined,
+    );
+
+    return {
+      message: 'Staff retrieved securely for assignment',
+      data: data,
+    };
+  }
 
   @Patch('update/:personalInfoId')
   @UseGuards(EmailVerifiedGuard)
@@ -67,7 +90,13 @@ export class PersonalInfoController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.PROFESSOR, ROLES.HOD, ROLES.SUPER_ADMIN)
+  @Roles(
+    ROLES.PROFESSOR,
+    ROLES.HOD,
+    ROLES.SUPER_ADMIN,
+    ROLES.PROFESSOR,
+    ROLES.STUDENT,
+  )
   async findAll(
     @Query() query: FindUsersPersonalInfoQueryDto,
     @CurrentUser() rawUser: User,

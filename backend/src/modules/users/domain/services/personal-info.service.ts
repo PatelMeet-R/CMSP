@@ -27,6 +27,7 @@ import {
 import { FileUploadService } from 'src/modules/file-upload/domain/file-upload.service';
 import { Inject, forwardRef } from '@nestjs/common';
 import type { UpdateProfileImageDto } from 'src/modules/users/presentation/dto/request/update-profile-image.dto';
+import { StaffAssignmentMapper } from 'src/modules/users/data/mapper/staff-assignment.mapper';
 
 @Injectable()
 export class PersonalInfoService {
@@ -352,4 +353,42 @@ export class PersonalInfoService {
   }
 
   // ================================
+  async searchStaffForAssignment(
+    searchTerm: string,
+    limit: number = 15,
+    currentUserRole: string,
+    currentUserBranchId?: number,
+  ) {
+    // 1. Security Check: If HOD, lock the search to their specific branch
+    const branchFilter =
+      currentUserRole === 'HOD' ? currentUserBranchId : undefined;
+
+    // 2. Fetch raw data using your strict Brackets query
+    const rawItems = await this.personalInfoRepo.searchStaffForCombobox(
+      searchTerm,
+      limit,
+      branchFilter,
+    );
+
+    // 3. Map the data cleanly so the frontend gets exactly what it needs
+    return rawItems.map((profile) => {
+      const formatName = (str: string) => {
+        if (!str) return '';
+        return str
+          .split(' ')
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(' ');
+      };
+
+      const cleanName = formatName(`${profile.firstName} ${profile.lastName}`);
+
+      return {
+        id: profile.id,
+        userId: profile.user?.id || null,
+        fullName: cleanName,
+        roleKey: profile.user?.role?.key || null,
+        roleValue: profile.user?.role?.value || null,
+      };
+    });
+  }
 }

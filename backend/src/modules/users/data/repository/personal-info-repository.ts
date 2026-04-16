@@ -157,6 +157,7 @@ export class PersonalInfoRepository {
         'profileImage.id',
         'profileImage.url',
         'profileImage.publicId',
+        'user.id',
       ])
       .where('user.id = :id', { id: userId })
       .getOneOrFail();
@@ -217,6 +218,7 @@ export class PersonalInfoRepository {
         'profile.country',
         'profile.createdAt',
         // -----------------------
+        'user.id',
         'gender.id',
         'gender.key',
         'branch.id',
@@ -319,4 +321,46 @@ export class PersonalInfoRepository {
     console.log(' Pagination Cache Cleared!');
     console.log('======');
   }
+  // ======================================
+
+  async searchStaffForCombobox(
+    searchTerm: string,
+    limit: number = 15,
+    branchId?: number,
+  ) {
+    const queryBuilder = this.repo
+      .createQueryBuilder('profile')
+      .leftJoinAndSelect('profile.user', 'user')
+      .leftJoinAndSelect('user.role', 'role')
+      .where('role.key IN (:...roles)', { roles: ['PROFESSOR', 'HOD'] });
+
+    if (branchId) {
+      queryBuilder.andWhere('profile.branchId = :branchId', { branchId });
+    }
+
+    if (searchTerm) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where('profile.firstName ILIKE :search', {
+            search: `%${searchTerm}%`,
+          })
+            .orWhere('profile.lastName ILIKE :search', {
+              search: `%${searchTerm}%`,
+            })
+            .orWhere('profile.enrollmentNumber ILIKE :search', {
+              search: `%${searchTerm}%`,
+            })
+            .orWhere(
+              "CONCAT(profile.firstName, ' ', profile.lastName) ILIKE :search",
+              { search: `%${searchTerm}%` },
+            );
+        }),
+      );
+    }
+
+    queryBuilder.limit(limit);
+    return queryBuilder.getMany();
+  }
+
+  // ======================================
 }

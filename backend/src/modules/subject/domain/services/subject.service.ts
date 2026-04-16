@@ -5,9 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
-import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 import { ROLES } from 'src/common/constants/roles.constant';
-import { ENUM_TYPES } from 'src/common/constants/enum-types.constant';
 import { SubjectRepository } from '../../data/repositories/repository';
 import { CreateSubjectDto } from '../../presentation/dto/request/subject-register.request.dto';
 import { UpdateSubjectDto } from '../../presentation/dto/request/subject-update.request.dto';
@@ -28,6 +26,7 @@ export class SubjectService {
   ) {}
 
   //register
+  // ======================================
 
   async registerSubject(dto: CreateSubjectDto, currentUser: User) {
     //  check duplicate subject code
@@ -71,7 +70,9 @@ export class SubjectService {
     const toBeSaved = await this.subjectRepository.saveSubject(subjectData);
     return SubjectResponseMapper.toResponse(toBeSaved);
   }
+
   //update
+  // ======================================
 
   async updateSubject(id: number, dto: UpdateSubjectDto, currentUser: User) {
     const subject = await this.subjectRepository.findSubjectById(id);
@@ -126,6 +127,7 @@ export class SubjectService {
       await this.subjectRepository.saveSubject(updatedSubject);
     return SubjectResponseMapper.toResponse(toBeUpdated);
   }
+  // ======================================
 
   async getSubjectById(subjectId: number) {
     const subject = await this.subjectRepository.findSubjectById(subjectId);
@@ -136,6 +138,7 @@ export class SubjectService {
 
     return subject;
   }
+  // ======================================
 
   async getAllSubject(
     query: FindSubjectQueryDto,
@@ -152,4 +155,26 @@ export class SubjectService {
       meta: rawData.meta,
     };
   }
+  // ======================================
+
+  async searchSubjectsForAssignment(
+    searchTerm: string,
+    semesterId?: number,
+    limit: number = 10,
+  ) {
+    const rawItems = await this.subjectRepository.searchSubjectsForCombobox(
+      searchTerm,
+      semesterId,
+      limit,
+    );
+
+    return rawItems.map((subject) => ({
+      id: subject.id,
+      name: subject.name,
+      code: subject.code,
+      semester: subject.semester?.value || null,
+      semesterId: subject.semester?.id || null,
+    }));
+  }
+  // ======================================
 }

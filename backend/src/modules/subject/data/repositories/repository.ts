@@ -143,7 +143,39 @@ export class SubjectRepository {
     }
     this.SubjectsListCacheKeys.clear();
     console.log('======');
-    console.log(' Pagination Cache Cleared!');
+    console.log('Subject Pagination Cache Cleared!');
     console.log('======');
   }
+  // ======================================
+
+  async searchSubjectsForCombobox(
+    searchTerm: string,
+    semesterId?: number,
+    limit: number = 10,
+  ) {
+    const queryBuilder = this.repo
+      .createQueryBuilder('subject')
+      .leftJoinAndSelect('subject.semester', 'semester');
+
+    // If a semester ID is provided, LOCK the search to that semester
+    if (semesterId) {
+      queryBuilder.andWhere('subject.semesterId = :semesterId', { semesterId });
+    }
+
+    if (searchTerm) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where('subject.name ILIKE :search', {
+            search: `%${searchTerm}%`,
+          }).orWhere('subject.code ILIKE :search', {
+            search: `%${searchTerm}%`,
+          });
+        }),
+      );
+    }
+
+    queryBuilder.limit(limit);
+    return queryBuilder.getMany();
+  }
+  // ======================================
 }
