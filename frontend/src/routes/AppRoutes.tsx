@@ -14,6 +14,7 @@ import UserManagementView from "@/modules/users/view/UserManagementView";
 import UserDetailsView from "@/modules/users/view/UserDetailsView";
 import CreateStaffView from "@/modules/users/view/CreateStaffView";
 import SystemSettingsView from "@/modules/settings/view/SystemSettingsView";
+import SubjectAssignmentView from "@/modules/subject-mapping/view/SubjectAssignmentView";
 
 const AppRoutes = () => {
   return (
@@ -36,12 +37,8 @@ const AppRoutes = () => {
           />
 
           <Route
-            path={ROUTENAME.PROFESSOR_ASSIGN_SUBJECT_POST}
-            element={<div>PROFESSOR_ASSIGN_SUBJECT_POST Page</div>}
-          />
-          <Route
-            path={ROUTENAME.PROFESSOR_ASSIGNED_SUBJECT_GET}
-            element={<div>PROFESSOR_ASSIGNED_SUBJECT_GET Page</div>}
+            path={ROUTENAME.ASSIGN_SUBJECT}
+            element={<SubjectAssignmentView />}
           />
 
           <Route

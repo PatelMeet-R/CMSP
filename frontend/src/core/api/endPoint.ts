@@ -40,9 +40,14 @@ export const API_ENDPOINT = {
     VIEW_BY_ID: (id: number) => `/subject/${id}`,
     REGISTER: `/subject/register`,
     UPDATE: (id: number) => `/subject/${id}`,
+    ASSIGN: `/professor-subject/assign-subject`,
+    UNASSIGN: (mappingId: number) => `/professor-subject/unassign/${mappingId}`,
+    VIEW_PROFESSOR_SUBJECT: `/professor-subject`,
   },
   STAFF: {
     REGISTER: `auth/register/staff`,
+    SEARCH_STAFF: `/personal-info/search-staff-combobox`,
+    SEARCH_SUBJECT: `/subject/search-combobox`,
   },
   SETTING: {
     GET: (key: string) => `/settings/${key}`,

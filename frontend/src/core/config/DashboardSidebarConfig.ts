@@ -39,14 +39,7 @@ export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
       {
         label: "Assign Subject",
         icon: "UserCog",
-        link: ROUTENAME.PROFESSOR_ASSIGN_SUBJECT_POST,
-        allowedRoles: [ROLES.SUPER_ADMIN, ROLES.HOD],
-      },
-      {
-        label: "View Assignments (Subject)",
-        icon: "List",
-        link: ROUTENAME.PROFESSOR_ASSIGNED_SUBJECT_GET,
-        //  "/professor-subject/all",
+        link: ROUTENAME.ASSIGN_SUBJECT,
         allowedRoles: [ROLES.SUPER_ADMIN, ROLES.HOD],
       },
     ],
