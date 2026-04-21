@@ -15,6 +15,10 @@ import UserDetailsView from "@/modules/users/view/UserDetailsView";
 import CreateStaffView from "@/modules/users/view/CreateStaffView";
 import SystemSettingsView from "@/modules/settings/view/SystemSettingsView";
 import SubjectAssignmentView from "@/modules/subject-mapping/view/SubjectAssignmentView";
+import AssignmentListView from "@/modules/assignment/view/AssignmentListView";
+import AssignmentCreateView from "@/modules/assignment/view/AssignmentCreateView";
+import AssignmentDetailView from "@/modules/assignment/view/AssignmentDetailView";
+import AssignmentEditView from "@/modules/assignment/view/AssignmentEditView";
 
 const AppRoutes = () => {
   return (
@@ -41,15 +45,20 @@ const AppRoutes = () => {
             element={<SubjectAssignmentView />}
           />
 
-          <Route
-            path={ROUTENAME.ASSIGNMENT}
-            element={<div>ASSIGNMENT Page</div>}
-          />
-          <Route path={ROUTENAME.SETTING} element={<SystemSettingsView />} />
+          <Route path={ROUTENAME.ASSIGNMENT} element={<AssignmentListView />} />
           <Route
             path={ROUTENAME.ADD_ASSIGNMENT}
-            element={<div>ADD_ASSIGNMENT Page</div>}
+            element={<AssignmentCreateView />}
           />
+          <Route
+            path={ROUTENAME.EDIT_ASSIGNMENT}
+            element={<AssignmentEditView />}
+          />
+          <Route
+            path={ROUTENAME.VIEW_ASSIGNMENT}
+            element={<AssignmentDetailView />}
+          />
+          <Route path={ROUTENAME.SETTING} element={<SystemSettingsView />} />
           <Route
             path={ROUTENAME.MY_ASSIGNMENT}
             element={<div>MY_ASSIGNMENT Page</div>}

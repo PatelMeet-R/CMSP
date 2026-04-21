@@ -45,12 +45,23 @@ export const API_ENDPOINT = {
     VIEW_PROFESSOR_SUBJECT: `/professor-subject`,
   },
   STAFF: {
-    REGISTER: `auth/register/staff`,
+    REGISTER: `/auth/register/staff`,
     SEARCH_STAFF: `/personal-info/search-staff-combobox`,
     SEARCH_SUBJECT: `/subject/search-combobox`,
   },
   SETTING: {
     GET: (key: string) => `/settings/${key}`,
     UPSERT: "/settings/upsert",
+  },
+  ASSIGNMENT: {
+    ADD: `/assignment/create`,
+    LIST: `/assignment/all`,
+    VIEW: (assignmentId: number) => `/assignment/${assignmentId}`,
+    UPDATE: (assignmentId: number) => `/assignment/${assignmentId}`,
+    DELETE: (assignmentId: number) => `/assignment/${assignmentId}`,
+  },
+  FILE: {
+    UPLOAD: `/file-upload`,
+    DELETE: (fileId: number) => `/file-upload/${fileId}`,
   },
 } as const;
