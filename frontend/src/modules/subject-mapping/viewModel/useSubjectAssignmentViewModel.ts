@@ -61,8 +61,12 @@ export const useSubjectAssignmentViewModel = () => {
     onSuccess: () => {
       toastService.success("Subject assigned successfully!");
       // Reset the form but keep the academic year and professor so they can quickly assign another!
-      form.resetField("subjectId");
-      form.resetField("semesterId");
+      form.reset({
+        professorId: undefined,
+        subjectId: undefined,
+        semesterId: undefined,
+        academicYearId: activeAcademicYearId || undefined,
+      });
 
       // Refresh the data table
       queryClient.invalidateQueries({ queryKey: ["active-assignments"] });
@@ -83,16 +87,26 @@ export const useSubjectAssignmentViewModel = () => {
   const [tableBranchId, setTableBranchId] = useState<number | undefined>(
     undefined,
   );
-  const debouncedTableSearch = useDebounce(tableSearch, 500);
+  const [tableAcademicYearId, setTableAcademicYearId] = useState<
+    number | undefined
+  >(activeAcademicYearId);
+
+  const debouncedTableSearch = useDebounce(tableSearch, 1500);
 
   const { data: assignmentsData, isLoading: isTableLoading } = useQuery({
-    queryKey: ["active-assignments", debouncedTableSearch, tableBranchId],
+    queryKey: [
+      "active-assignments",
+      debouncedTableSearch,
+      tableBranchId,
+      tableAcademicYearId,
+    ],
     queryFn: () =>
       fetchActiveAssignments({
         page: 1,
         limit: 50,
         search: debouncedTableSearch,
         branchId: tableBranchId,
+        academicYearId: tableAcademicYearId,
       }),
   });
 
@@ -119,6 +133,10 @@ export const useSubjectAssignmentViewModel = () => {
       setSearch: setTableSearch,
       branchId: tableBranchId,
       setBranchId: setTableBranchId,
+      //
+      academicYearId: tableAcademicYearId,
+      setAcademicYearId: setTableAcademicYearId,
+      //
       data: assignmentsData,
       isLoading: isTableLoading,
       onUnassign: (id: number) => unassignMutation.mutate(id),

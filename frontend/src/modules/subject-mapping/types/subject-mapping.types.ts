@@ -29,6 +29,7 @@ export interface SearchParams {
   search?: string;
   semesterId?: number;
   branchId?: number;
+  academicYearId?: number;
   page?: number;
 }
 
@@ -42,4 +43,24 @@ export interface PaginatedResponse<T> {
     items?: T[];
   };
   items?: T[];
+}
+
+export interface ActiveAssignmentTableResponse {
+  id: number;
+  createdAt: string;
+  professor: {
+    id?: number;
+    name: string;
+    email?: string;
+    mobile?: string | null;
+  };
+  subject: {
+    id?: number;
+    code?: string;
+    name?: string;
+    branch?: string | null;
+  };
+  semester: string | null;
+  academicYear: string | null;
+  assignedBy: string;
 }

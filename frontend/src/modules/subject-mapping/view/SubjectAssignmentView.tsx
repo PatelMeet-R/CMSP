@@ -31,6 +31,11 @@ import { useBranchViewModel } from "@/modules/branch/viewModel/useBranchViewMode
 import { useAppSelector } from "@/store/hook";
 import { ROLES } from "@/core/Constants/enums/role-enum-value";
 import { ActiveAssignmentsTable } from "@/modules/subject-mapping/view/ActiveAssignmentsTable";
+import type {
+  ActiveAssignmentTableResponse,
+  SubjectComboboxDTO,
+} from "@/modules/subject-mapping/types/subject-mapping.types";
+import type { BranchResponse } from "@/modules/subject/types/subject.schemas";
 
 export default function SubjectAssignmentView() {
   const navigate = useNavigate();
@@ -70,10 +75,15 @@ export default function SubjectAssignmentView() {
     [activeSemesterId, selectedBranchId],
   );
 
-  const handleSubjectSelect = (subjectId: number | null, rawData?: any) => {
+  const handleSubjectSelect = (
+    subjectId: number | null,
+    rawData?: SubjectComboboxDTO | null,
+  ) => {
     if (!subjectId) {
-      vm.form.setValue("subjectId", null as any, { shouldValidate: true });
-      vm.form.setValue("semesterId", undefined as any, {
+      vm.form.setValue("subjectId", undefined as unknown as number, {
+        shouldValidate: true,
+      });
+      vm.form.setValue("semesterId", undefined as unknown as number, {
         shouldValidate: true,
       });
       return;
@@ -82,10 +92,7 @@ export default function SubjectAssignmentView() {
     vm.form.setValue("subjectId", subjectId, { shouldValidate: true });
 
     if (rawData?.semester && semesters) {
-      const semString =
-        typeof rawData.semester === "string"
-          ? rawData.semester
-          : rawData.semester.value;
+      const semString = rawData.semester;
       const matchedSem = semesters.find(
         (s) => s.key === semString || s.value === semString,
       );
@@ -154,22 +161,34 @@ export default function SubjectAssignmentView() {
                     }
                     onValueChange={(val) => {
                       setSelectedBranchId(Number(val));
-                      vm.form.setValue("professorId", null as any, {
-                        shouldValidate: true,
-                      });
-                      vm.form.setValue("subjectId", null as any, {
-                        shouldValidate: true,
-                      });
-                      vm.form.setValue("semesterId", null as any, {
-                        shouldValidate: true,
-                      });
+                      vm.form.setValue(
+                        "professorId",
+                        undefined as unknown as number,
+                        {
+                          shouldValidate: true,
+                        },
+                      );
+                      vm.form.setValue(
+                        "subjectId",
+                        undefined as unknown as number,
+                        {
+                          shouldValidate: true,
+                        },
+                      );
+                      vm.form.setValue(
+                        "semesterId",
+                        undefined as unknown as number,
+                        {
+                          shouldValidate: true,
+                        },
+                      );
                     }}
                   >
                     <SelectTrigger className="bg-background border-primary/30 shadow-sm">
                       <SelectValue placeholder="Select Branch to Search..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {branches?.map((branch: any) => (
+                      {branches?.map((branch: BranchResponse) => (
                         <SelectItem
                           key={branch.id}
                           value={branch.id.toString()}
@@ -290,11 +309,15 @@ export default function SubjectAssignmentView() {
           <ActiveAssignmentsTable
             isSuperAdmin={isSuperAdmin}
             branches={branches || []}
+            academicYears={academicYears || []} // 🚀 Pass the years down
             search={vm.table.search}
             onSearchChange={vm.table.setSearch}
             branchId={vm.table.branchId}
             onBranchChange={vm.table.setBranchId}
-            data={vm.table.data || []}
+            academicYearId={vm.table.academicYearId} 
+            onAcademicYearChange={vm.table.setAcademicYearId}
+            
+            data={(vm.table.data as ActiveAssignmentTableResponse[]) || []}
             isLoading={vm.table.isLoading}
             onUnassign={vm.table.onUnassign}
             isUnassigning={vm.table.isUnassigning}

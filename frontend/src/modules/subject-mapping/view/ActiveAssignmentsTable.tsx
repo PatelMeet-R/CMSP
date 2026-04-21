@@ -1,4 +1,4 @@
-import { Users, Search, Trash2 } from "lucide-react";
+import { Users, Search, Trash2} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -19,16 +19,26 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { BranchResponse } from "@/modules/subject/types/subject.schemas";
+import type { ActiveAssignmentTableResponse } from "@/modules/subject-mapping/types/subject-mapping.types";
 
 interface ActiveAssignmentsTableProps {
   isSuperAdmin: boolean;
-  branches: any[];
-  // 🚀 Data & Handlers passed down from the ViewModel
+  branches: BranchResponse[];
+  academicYears?: { id: number; key: string; value: string }[]; // Pass enums here later
+
+  // Handlers
   search: string;
   onSearchChange: (val: string) => void;
   branchId: number | undefined;
   onBranchChange: (val: number | undefined) => void;
-  data: any[];
+
+  // 🚀 Added Academic Year Filter Prop
+  academicYearId: number | undefined;
+  onAcademicYearChange: (val: number | undefined) => void;
+
+  // 🚀 FIXED: data is an array!
+  data: ActiveAssignmentTableResponse[];
   isLoading: boolean;
   onUnassign: (id: number) => void;
   isUnassigning: boolean;
@@ -37,10 +47,13 @@ interface ActiveAssignmentsTableProps {
 export function ActiveAssignmentsTable({
   isSuperAdmin,
   branches,
+  academicYears,
   search,
   onSearchChange,
   branchId,
   onBranchChange,
+  academicYearId,
+  onAcademicYearChange,
   data,
   isLoading,
   onUnassign,
@@ -55,17 +68,39 @@ export function ActiveAssignmentsTable({
             Active Matrix
           </CardTitle>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            {/* Search Box */}
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search name, code, or subject..."
+                placeholder="Search name, code..."
                 className="pl-9 h-9 text-sm bg-muted/20"
                 value={search}
                 onChange={(e) => onSearchChange(e.target.value)}
               />
             </div>
 
+            {/* 🚀 NEW: Academic Year Filter */}
+            <Select
+              value={academicYearId ? String(academicYearId) : "all"}
+              onValueChange={(val) =>
+                onAcademicYearChange(val === "all" ? undefined : Number(val))
+              }
+            >
+              <SelectTrigger className="h-9 w-40 bg-muted/20">
+                <SelectValue placeholder="Academic Year" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Years</SelectItem>
+                {academicYears?.map((year) => (
+                  <SelectItem key={year.id} value={year.id.toString()}>
+                    {year.value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Branch Filter (SuperAdmin Only) */}
             {isSuperAdmin && (
               <Select
                 value={branchId ? String(branchId) : "all"}
@@ -73,12 +108,12 @@ export function ActiveAssignmentsTable({
                   onBranchChange(val === "all" ? undefined : Number(val))
                 }
               >
-                <SelectTrigger className="h-9 w-45 bg-muted/20">
+                <SelectTrigger className="h-9 w-40 bg-muted/20">
                   <SelectValue placeholder="All Branches" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Branches</SelectItem>
-                  {branches?.map((branch: any) => (
+                  {branches?.map((branch: BranchResponse) => (
                     <SelectItem key={branch.id} value={branch.id.toString()}>
                       {branch.name}
                     </SelectItem>
@@ -103,6 +138,8 @@ export function ActiveAssignmentsTable({
               <TableRow>
                 <TableHead>Professor</TableHead>
                 <TableHead>Subject</TableHead>
+                {/* 🚀 Conditional Header for Branch */}
+                {isSuperAdmin && <TableHead>Branch</TableHead>}
                 <TableHead>Semester</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -111,31 +148,51 @@ export function ActiveAssignmentsTable({
               {data?.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    // Adjust colSpan dynamically based on admin status
+                    colSpan={isSuperAdmin ? 5 : 4}
                     className="text-center h-24 text-muted-foreground"
                   >
                     No active assignments found.
                   </TableCell>
                 </TableRow>
               ) : (
-                data?.map((mapping: any) => (
+                data?.map((mapping: ActiveAssignmentTableResponse) => (
                   <TableRow key={mapping.id}>
+                    {/* 🚀 FIXED: Now uses the flattened mapper properties */}
                     <TableCell>
                       <div className="font-medium">
-                        {mapping.professor?.personalInfo?.firstName}{" "}
-                        {mapping.professor?.personalInfo?.lastName}
+                        {mapping.professor?.name || "Unknown"}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {mapping.professor?.email}
+                        {mapping.professor?.email || "No email"}
                       </div>
                     </TableCell>
+
                     <TableCell>
                       <div className="font-medium">{mapping.subject?.name}</div>
                       <Badge variant="secondary" className="text-[10px]">
                         {mapping.subject?.code}
                       </Badge>
                     </TableCell>
-                    <TableCell>{mapping.semester?.value}</TableCell>
+
+                    {/* 🚀 Conditional Cell for Branch */}
+                    {isSuperAdmin && (
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px]">
+                          {mapping.subject?.branch || "N/A"}
+                        </Badge>
+                      </TableCell>
+                    )}
+
+                    <TableCell>
+                      <div className="font-medium">
+                        {mapping.semester || "N/A"}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {mapping.academicYear}
+                      </div>
+                    </TableCell>
+
                     <TableCell className="text-right">
                       <Button
                         variant="ghost"
@@ -143,6 +200,7 @@ export function ActiveAssignmentsTable({
                         className="text-red-500 hover:bg-red-50 hover:text-red-700"
                         onClick={() => onUnassign(mapping.id)}
                         disabled={isUnassigning}
+                        title={`Assigned by: ${mapping.assignedBy}`} // Neat tooltip addition!
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

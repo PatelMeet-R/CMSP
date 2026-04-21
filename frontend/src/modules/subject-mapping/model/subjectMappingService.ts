@@ -5,17 +5,23 @@ import type {
   PaginatedResponse,
   StaffComboboxDTO,
   StandardResponse,
+  SearchParams,
   SubjectComboboxDTO,
 } from "@/modules/subject-mapping/types/subject-mapping.types";
 import type { AxiosError } from "axios";
 
-const extractItems = (response: any) => {
-  return response.data?.items || response.data?.data?.items || [];
+const extractItems = <T>(response: {
+  data?: { items?: T[]; data?: { items?: T[] } };
+  items?: T[];
+}): T[] => {
+  return (
+    response.data?.items || response.data?.data?.items || response.items || []
+  );
 };
 
 // 1  Search Staff (Professors & HODs) via Personal Info Route
 export const searchStaff = async (searchTerm: string, branchId?: number) => {
-  const params: any = { limit: 15 };
+  const params: SearchParams = { limit: 15 };
   if (searchTerm && searchTerm.trim() !== "") params.search = searchTerm.trim();
 
   if (branchId) params.branchId = branchId;
@@ -45,7 +51,7 @@ export const searchSubjects = async (
   semesterId?: number,
   branchId?: number,
 ) => {
-  const params: any = { limit: 10 };
+  const params: SearchParams = { limit: 10 };
   if (searchTerm && searchTerm.trim() !== "") params.search = searchTerm.trim();
   if (semesterId) params.semesterId = semesterId;
 
@@ -88,12 +94,7 @@ export const unassignSubject = async (mappingId: number) => {
 };
 
 // 5. Get Active Assignments for the Table
-export const fetchActiveAssignments = async (params: {
-  page: number;
-  limit: number;
-  search?: string;
-  branchId?: number;
-}) => {
+export const fetchActiveAssignments = async (params: SearchParams) => {
   const response = await axiosInstance.get<PaginatedResponse<unknown>>(
     API_ENDPOINT.SUBJECT.VIEW_PROFESSOR_SUBJECT,
     { params },
