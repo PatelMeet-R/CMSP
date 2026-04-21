@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -12,7 +13,10 @@ import { AssignmentRepository } from '../data/repository';
 import { FileUploadService } from 'src/modules/file-upload/domain/file-upload.service';
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
 import { AssignmentResponseMapper } from '../data/mapper/assignment-response.mapper';
-import { AssignmentResponseDto } from '../presentation/dto/response/assignment.response.dto';
+import {
+  AssignmentResponseDto,
+  AssignmentResponseArrayDto,
+} from '../presentation/dto/response/assignment.response.dto';
 import { UpdateAssignmentDto } from '../presentation/dto/request/update-assignment.request.dto';
 import { SubjectService } from 'src/modules/subject/domain/services/subject.service';
 import { BranchService } from 'src/modules/branch/domain/branch.service';
@@ -22,6 +26,7 @@ import { UpdateAssignmentMapper } from '../data/mapper/assignment-update.mapper'
 import { File as FileEntity } from 'src/modules/file-upload/domain/entity/file.entity';
 import { ROLES } from 'src/common/constants/roles.constant';
 import { ProfessorSubMappingService } from 'src/modules/subject/domain/services/professor-subject-mapping.service';
+import { FindAssignmentQueryDto } from 'src/common/pagination/dto/find-assignment-query.dto';
 
 @Injectable()
 export class AssignmentService {
@@ -88,11 +93,12 @@ export class AssignmentService {
       academicYear,
       file,
     );
+    await this.assignmentRepository.clearPaginationCache();
     return await this.assignmentRepository.saveAssignment(entity);
   }
 
   //updateAssignment
-  async updateAssignment(
+  async update(
     assignmentId: number,
     dto: UpdateAssignmentDto,
     userId: number,
@@ -159,7 +165,8 @@ export class AssignmentService {
       semester,
       fileEntity, // Now passing the actual Entity or null,
     );
-
+    await this.assignmentRepository.clearSingleAssignmentCache(entity.id);
+    await this.assignmentRepository.clearPaginationCache();
     return await this.assignmentRepository.saveAssignment(entity);
   }
 
@@ -174,6 +181,7 @@ export class AssignmentService {
       await this.assignmentRepository.findAssignmentByIdWithAttachmentRelation(
         assignmentId,
       );
+
     if (!assignment) {
       throw new NotFoundException(
         ERRORMESSAGE.ASSIGNMENT_MESSAGE.NOT_FOUND(assignmentId),
@@ -189,7 +197,6 @@ export class AssignmentService {
         );
       }
     } else if (userRole === ROLES.HOD) {
-      //Hod :To Validate that Hod Can Remove Assignment of Own Branch
       if (!userBranchId) {
         throw new ForbiddenException(
           ERRORMESSAGE.ASSIGNMENT_MESSAGE.FORBIDDEN.BRANCH_MISSING,
@@ -201,25 +208,41 @@ export class AssignmentService {
         );
       }
     }
+    const attachmentIdToRemove = assignment.attachment?.id;
+
+    await this.assignmentRepository.removeAssignment(assignment);
 
     //Super_Admin can do anything
-    if (assignment.attachment) {
-      await this.fileUploadService.remove(assignment.attachment.id);
+    if (attachmentIdToRemove) {
+      try {
+        await this.fileUploadService.remove(attachmentIdToRemove);
+        await this.assignmentRepository.clearSingleAssignmentCache(
+          attachmentIdToRemove,
+        );
+        await this.assignmentRepository.clearPaginationCache();
+      } catch (error) {
+        console.error(
+          ` [SERVICE] Cloudinary Cleanup Failed for Attachment ID ${attachmentIdToRemove}:`,
+          error,
+        );
+      }
     }
-    await this.assignmentRepository.removeAssignment(assignment);
   }
+
   //findAllByFilter
-  async findAllAssignmentByFilter(
-    branchId: number,
-    semesterId: number,
-  ): Promise<AssignmentResponseDto[]> {
-    const data: Assignment[] = await this.assignmentRepository.findAllByFilter(
-      branchId,
-      semesterId,
-    );
-    return AssignmentResponseMapper.toResponseDtoArray(data);
-  }
+  // async findAllAssignmentByFilter(
+  //   branchId: number,
+  //   semesterId: number,
+  // ): Promise<AssignmentResponseArrayDto[]> {
+  //   const data: Assignment[] = await this.assignmentRepository.findAllByFilter(
+  //     branchId,
+  //     semesterId,
+  //   );
+  //   return AssignmentResponseMapper.toResponseDtoArray(data);
+  // }
   //findOne
+
+  // ==============
   async findAssignmentByIdWithAllRelation(
     id: number,
   ): Promise<AssignmentResponseDto> {
@@ -232,29 +255,28 @@ export class AssignmentService {
     }
     return AssignmentResponseMapper.toResponseDto(assignment);
   }
-  //For Hod and Super_Admin specific
-  async getAllAssignment(
+
+  // =========================
+  async getAllAssignments(
+    query: FindAssignmentQueryDto,
     userRole: string,
-    userBranchId?: number | null,
-  ): Promise<AssignmentResponseDto[]> {
-    let data: Assignment[] = [];
-    if (userRole === ROLES.SUPER_ADMIN) {
-      data = await this.assignmentRepository.findAllAssignement();
-    } else if (userRole === ROLES.HOD) {
-      if (!userBranchId) {
-        throw new ForbiddenException(
-          ERRORMESSAGE.ASSIGNMENT_MESSAGE.FORBIDDEN.BRANCH_MISSING,
-        );
-      }
-      data =
-        await this.assignmentRepository.findAllAssignmentByBranchId(
-          userBranchId,
-        );
-    } else {
-      throw new ForbiddenException(
-        ERRORMESSAGE.ASSIGNMENT_MESSAGE.FORBIDDEN.NO_PERMISSION,
+    userBranchId?: number,
+  ) {
+    const effectiveBranchId =
+      userRole === ROLES.SUPER_ADMIN ? query.branchId : userBranchId;
+
+    const rawData =
+      await this.assignmentRepository.findAllAssignmentsWithFilters(
+        query,
+        effectiveBranchId,
+        userRole,
       );
-    }
-    return AssignmentResponseMapper.toResponseDtoArray(data);
+
+    return {
+      items: AssignmentResponseMapper.toResponseDtoArray(rawData.items),
+      meta: rawData.meta,
+    };
   }
+  // =========================
+  // =========================
 }

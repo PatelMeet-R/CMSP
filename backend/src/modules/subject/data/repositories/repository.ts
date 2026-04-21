@@ -151,6 +151,7 @@ export class SubjectRepository {
   async searchSubjectsForCombobox(
     searchTerm: string,
     semesterId?: number,
+    branchId?: number,
     limit: number = 10,
   ) {
     const queryBuilder = this.repo
@@ -160,6 +161,9 @@ export class SubjectRepository {
     // If a semester ID is provided, LOCK the search to that semester
     if (semesterId) {
       queryBuilder.andWhere('subject.semesterId = :semesterId', { semesterId });
+    }
+    if (branchId) {
+      queryBuilder.andWhere('subject.branchId = :branchId', { branchId });
     }
 
     if (searchTerm) {

@@ -47,18 +47,25 @@ export class PersonalInfoController {
   @HttpCode(HttpStatus.OK)
   @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
   async searchStaffForCombobox(
-    @Query('search') search: string,
-    @Query('limit') limit: string,
     @CurrentUser() rawUser: User,
+    @Query('search') search: string,
+    @Query('branchId') branchId: string,
+    @Query('limit') limit: string,
   ) {
-    const parsedLimit = limit ? parseInt(limit, 10) : 15;
     const currentUser = UserMapper.toResponseDto(rawUser);
+    let finalBranchId = branchId ? parseInt(branchId, 10) : undefined;
+
+    if (currentUser.role === ROLES.HOD) {
+      finalBranchId = currentUser.branchId ?? undefined;
+    }
+
+    const parsedLimit = limit ? parseInt(limit, 10) : 15;
+    const safeSearch = search || '';
 
     const data = await this.personalInfoService.searchStaffForAssignment(
-      search,
+      safeSearch,
       parsedLimit,
-      currentUser.role,
-      currentUser.branchId ?? undefined,
+      finalBranchId,
     );
 
     return {

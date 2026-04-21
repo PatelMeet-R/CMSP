@@ -2,16 +2,17 @@ import { AuditableEntity } from 'src/core/base.entity';
 import { User } from 'src/modules/auth/domain/entities/user.entity';
 import { EnumValue } from 'src/modules/enums/domain/entities/enumValue.entity';
 import { Subject } from 'src/modules/subject/domain/entities/subject.entity';
-import {
-  DeleteDateColumn,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  Unique,
-} from 'typeorm';
+import { Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
+@Index(
+  'IDX_UNIQUE_ACTIVE_ASSIGNMENT',
+  ['professor', 'subject', 'semester', 'academicYear'],
+  {
+    unique: true,
+    where: '"deletedAt" IS NULL',
+  },
+)
 @Entity('professor_subjects')
-@Unique(['professor', 'subject', 'semester', 'academicYear'])
 export class ProfessorSubMapping extends AuditableEntity {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'professorId' })
@@ -32,6 +33,4 @@ export class ProfessorSubMapping extends AuditableEntity {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'assignedById' })
   assignedBy: User;
-
-  
 }

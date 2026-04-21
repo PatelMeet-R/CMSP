@@ -39,7 +39,10 @@ export class FileUploadController {
         // This ensures the file is required and valid
         validators: [
           new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }), // 5MB limit
-          new FileTypeValidator({ fileType: '.(png|jpeg|jpg|pdf|docx)' }),
+          new FileTypeValidator({
+            fileType:
+              /(image\/(png|jpeg|jpg)|application\/(pdf|vnd\.openxmlformats-officedocument\.wordprocessingml\.document|msword))/,
+          }),
         ],
       }),
     )

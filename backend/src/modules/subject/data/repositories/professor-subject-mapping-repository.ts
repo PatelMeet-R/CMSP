@@ -182,6 +182,7 @@ export class ProfessorSubMappingRepository {
     await this.cacheManager.set(cacheKey, responseResult, 30000);
     return responseResult;
   }
+  
   // ==========================
   async clearPaginationCache() {
     for (const key of this.MappingListCacheKeys) {

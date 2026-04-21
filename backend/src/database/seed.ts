@@ -15,12 +15,23 @@ import { seedGenderEnums } from './seeds/gender.seed';
 import { seedUserAccountStatusEnums } from './seeds/user-account-status.seed';
 import { seedAdminUser } from 'src/database/seeds/updated-super-admin.seed';
 import { PersonalInfo } from 'src/modules/users/domain/entities/personal-info.entity';
+import { File } from 'src/modules/file-upload/domain/entity/file.entity';
+import { StaffProfile } from 'src/modules/users/domain/entities/staff-profile.entity';
 
 const AppDataSource = new DataSource({
   type: 'postgres',
   url: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
-  entities: [User, EnumValue, EnumType, Branch, Subject, PersonalInfo],
+  entities: [
+    User,
+    EnumValue,
+    EnumType,
+    Branch,
+    Subject,
+    PersonalInfo,
+    File,
+    StaffProfile,
+  ],
   synchronize: true,
 });
 

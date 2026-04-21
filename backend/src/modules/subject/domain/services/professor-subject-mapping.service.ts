@@ -210,7 +210,7 @@ export class ProfessorSubMappingService {
     mapping.updatedBy = currentUserId;
     const mappingToSoftDelete =
       await this.professorSubjectRepo.saveAssignedSubject(mapping);
-      
+
     await this.professorSubjectRepo.softRemoveMapping(mapping);
     return { success: true, message: 'Subject unassigned successfully' };
   }

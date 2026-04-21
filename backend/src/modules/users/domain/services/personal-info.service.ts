@@ -356,21 +356,14 @@ export class PersonalInfoService {
   async searchStaffForAssignment(
     searchTerm: string,
     limit: number = 15,
-    currentUserRole: string,
-    currentUserBranchId?: number,
+    branchId?: number,
   ) {
-    // 1. Security Check: If HOD, lock the search to their specific branch
-    const branchFilter =
-      currentUserRole === 'HOD' ? currentUserBranchId : undefined;
-
-    // 2. Fetch raw data using your strict Brackets query
     const rawItems = await this.personalInfoRepo.searchStaffForCombobox(
       searchTerm,
       limit,
-      branchFilter,
+      branchId,
     );
 
-    // 3. Map the data cleanly so the frontend gets exactly what it needs
     return rawItems.map((profile) => {
       const formatName = (str: string) => {
         if (!str) return '';

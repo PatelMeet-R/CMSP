@@ -23,6 +23,7 @@ import { ROLES } from 'src/common/constants/roles.constant';
 import { SubjectService } from '../../domain/services/subject.service';
 import { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-query.dto';
 import type { User } from 'src/modules/auth/domain/entities/user.entity';
+import { UserMapper } from 'src/modules/auth/data/mappers/user.response.mapper';
 
 @Controller('subject')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -49,10 +50,22 @@ export class SubjectController {
   @HttpCode(HttpStatus.OK)
   @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
   async searchSubjectsForCombobox(
+    @CurrentUser() rawUser: User,
     @Query('search') search?: string,
     @Query('semesterId') semesterId?: string,
+    @Query('branchId') branchId?: string,
     @Query('limit') limit?: string,
   ) {
+   
+    const currentUser = UserMapper.toResponseDto(rawUser);
+
+    let finalBranchId = branchId ? parseInt(branchId, 10) : undefined;
+
+  
+    if (currentUser.role === ROLES.HOD) {
+      finalBranchId = currentUser.branchId ?? undefined; 
+    }
+
     const parsedSemId = semesterId ? parseInt(semesterId, 10) : undefined;
     const parsedLimit = limit ? parseInt(limit, 10) : 10;
     const safeSearch = search || '';
@@ -60,6 +73,7 @@ export class SubjectController {
     const data = await this.subjectService.searchSubjectsForAssignment(
       safeSearch,
       parsedSemId,
+      finalBranchId,
       parsedLimit,
     );
 

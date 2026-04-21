@@ -160,11 +160,13 @@ export class SubjectService {
   async searchSubjectsForAssignment(
     searchTerm: string,
     semesterId?: number,
+    branchId?: number,
     limit: number = 10,
   ) {
     const rawItems = await this.subjectRepository.searchSubjectsForCombobox(
       searchTerm,
       semesterId,
+      branchId,
       limit,
     );
 
