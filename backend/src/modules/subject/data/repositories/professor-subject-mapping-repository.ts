@@ -182,7 +182,23 @@ export class ProfessorSubMappingRepository {
     await this.cacheManager.set(cacheKey, responseResult, 30000);
     return responseResult;
   }
-  
+
+  // ==========================
+  async findMyActiveSubjects(professorId: number, academicYearId: number) {
+    return await this.repo.find({
+      where: {
+        professor: { id: professorId },
+        academicYear: { id: academicYearId },
+      },
+      relations: ['subject', 'semester'],
+      select: {
+        id: true,
+        subject: { id: true, name: true, code: true },
+        semester: { id: true, value: true },
+      },
+    });
+  }
+  // ==========================
   // ==========================
   async clearPaginationCache() {
     for (const key of this.MappingListCacheKeys) {

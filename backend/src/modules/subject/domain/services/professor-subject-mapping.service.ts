@@ -229,5 +229,23 @@ export class ProfessorSubMappingService {
     return groupedHistory;
   }
   // =============================
+  async getMyActiveSubjects(professorId: number, academicYearId: number) {
+    if (!academicYearId) return [];
+    const mappings = await this.professorSubjectRepo.findMyActiveSubjects(
+      professorId,
+      academicYearId,
+    );
+
+    // Map to a clean, flat format for the frontend dropdown
+    return mappings.map((m) => ({
+      mappingId: m.id,
+      subjectId: m.subject.id,
+      subjectName: m.subject.name,
+      subjectCode: m.subject.code,
+      semesterId: m.semester.id,
+      semesterName: m.semester.value,
+    }));
+  }
+  // =============================
   // =============================
 }

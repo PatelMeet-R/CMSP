@@ -126,4 +126,22 @@ export class ProfessorSubMappingController {
     };
   }
   // ===================
+  @Get('my-active-subjects')
+  @HttpCode(HttpStatus.OK)
+  @Roles(ROLES.PROFESSOR, ROLES.HOD)
+  async getMyActiveSubjects(
+    @Query('academicYearId', ParseIntPipe) academicYearId: number,
+    @CurrentUser() user: UserResponseDto,
+  ) {
+    const res = await this.professorSubMappingService.getMyActiveSubjects(
+      user.id,
+      academicYearId,
+    );
+    return {
+      message: 'Fetched assigned subjects successfully',
+      data: res,
+    };
+  }
+  // ===================
+  // ===================
 }
