@@ -1,9 +1,0 @@
-nest new backend
-
-npm i @nestjs/typeorm typeorm pg
-
-npm i @nestjs/jwt passport passport-jwt bcrypt @types/passport-jwt @types/bcrypt -D
-
-
-npm install -D ts-node tsconfig-paths
-npm install handlebars //for the email templates
