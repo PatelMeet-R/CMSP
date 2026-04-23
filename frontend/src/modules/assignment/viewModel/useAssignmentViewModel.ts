@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toastService } from "@/core/toast/toastService";
+import { useSearchParams } from "react-router-dom";
 
 import {
   uploadAssignmentFile,
   createAssignment,
   deleteUploadedFile,
+  fetchMyActiveSubjects,
+  fetchAssignmentById,
 } from "../model/assignmentService";
 import {
   assignmentFormSchema,
@@ -20,16 +23,17 @@ import { useSystemSettingsViewModel } from "@/modules/settings/viewModel/useSyst
 
 export function useAssignmentViewModel() {
   const queryClient = useQueryClient();
+
+  // 1. URL & Auth States
+  const [searchParams] = useSearchParams();
+  const cloneId = searchParams.get("cloneId");
   const { user } = useAppSelector((state) => state.auth);
   const { selectedYearId: activeAcademicYearId } = useSystemSettingsViewModel();
 
-  // 1. Hold the physical file in memory before uploading
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploadingFile, setIsUploadingFile] = useState(false);
-  const defaultBranchId =
-    user?.role !== ROLES.SUPER_ADMIN ? user?.branchId : undefined;
+  const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
+  const defaultBranchId = !isSuperAdmin ? user?.branchId : undefined;
 
-  // 2. Setup React Hook Form
+  // 2. Form Setup
   const form = useForm<AssignmentFormValues>({
     resolver: zodResolver(assignmentFormSchema),
     mode: "onChange",
@@ -44,7 +48,83 @@ export function useAssignmentViewModel() {
     },
   });
 
-  // 3. Create Assignment Mutation
+  const currentYearId = form.watch("academicYearId");
+
+  // 3. 🚀 Data Fetching (Moved ABOVE the useEffects)
+  const { data: clonedAssignment, isLoading: isCloning } = useQuery({
+    queryKey: ["assignment", cloneId],
+    queryFn: () => fetchAssignmentById(Number(cloneId)),
+    enabled: !!cloneId,
+  });
+
+  const { data: mySubjects, isLoading: isMySubjectsLoading } = useQuery({
+    queryKey: ["my-active-subjects", currentYearId],
+    queryFn: () => fetchMyActiveSubjects(currentYearId as number),
+    enabled: !isSuperAdmin && !!currentYearId,
+  });
+
+  // 4. 🚀 The SMART Clone Effect (Now has access to mySubjects)
+  useEffect(() => {
+    // Wait until both the cloned data AND the professor's current subjects are loaded
+    if (clonedAssignment && !isMySubjectsLoading) {
+      // Check if the old subject is still in their active assigned subjects list
+      const isSubjectStillAssigned =
+        isSuperAdmin ||
+        (mySubjects || []).some(
+          (sub: any) => sub.subjectId === clonedAssignment.subjectId,
+        );
+
+      // Warning if they don't teach it anymore
+      if (!isSubjectStillAssigned && !isSuperAdmin) {
+        toastService.warning(
+          "You are no longer assigned to the original subject. Please select a current subject.",
+        );
+      } else {
+        toastService.success(
+          "Assignment cloned! Please select a new Due Date.",
+        );
+      }
+
+      form.reset({
+        title: `${clonedAssignment.title} (Copy)`,
+        description: clonedAssignment.description,
+
+        // 🚀 THE FIX: Only auto-fill if they still teach it! Otherwise, force them to pick.
+        subjectId: isSubjectStillAssigned
+          ? clonedAssignment.subjectId
+          : (undefined as unknown as number),
+        semesterId: isSubjectStillAssigned
+          ? clonedAssignment.semesterId
+          : (undefined as unknown as number),
+
+        branchId: clonedAssignment.branchId,
+        attachmentId: clonedAssignment.attachmentId || null,
+
+        academicYearId: activeAcademicYearId || undefined,
+        dueDate: undefined as unknown as Date,
+      });
+    }
+  }, [
+    clonedAssignment,
+    isMySubjectsLoading,
+    mySubjects,
+    activeAcademicYearId,
+    form,
+    isSuperAdmin,
+  ]);
+
+  // 5. Initial Year Sync Effect
+  useEffect(() => {
+    if (activeAcademicYearId && !cloneId) {
+      form.setValue("academicYearId", activeAcademicYearId);
+    }
+  }, [activeAcademicYearId, form, cloneId]);
+
+  // 6. File & Upload States
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+
+  // 7. Create Mutation
   const createMutation = useMutation({
     mutationFn: createAssignment,
     onSuccess: () => {
@@ -68,13 +148,12 @@ export function useAssignmentViewModel() {
     },
   });
 
-  // 4. The Master Submit Handler (Handles File Upload FIRST, then Assignment)
+  // 8. Submit Handler
   const onSubmit = async (values: AssignmentFormValues) => {
     try {
       let finalAttachmentId = values.attachmentId;
       let newlyUploadedFileId: number | null = null;
 
-      // STEP 1: Upload the file
       if (selectedFile) {
         setIsUploadingFile(true);
         try {
@@ -87,10 +166,11 @@ export function useAssignmentViewModel() {
         } catch (error) {
           toastService.error("File upload failed. Please try again.");
           setIsUploadingFile(false);
-          return; // Stop the form submission if file upload fails
+          return;
         }
         setIsUploadingFile(false);
       }
+
       const finalPayload: AssignmentPayload = {
         title: values.title,
         description: values.description,
@@ -113,10 +193,7 @@ export function useAssignmentViewModel() {
             await deleteUploadedFile(newlyUploadedFileId);
             console.log("Ghost file successfully deleted.");
           } catch (cleanupError) {
-            console.error(
-              "Failed to delete ghost file. Manual cleanup may be required.",
-              cleanupError,
-            );
+            console.error("Failed to delete ghost file.", cleanupError);
           }
         }
       }
@@ -125,20 +202,20 @@ export function useAssignmentViewModel() {
     }
   };
 
-  useEffect(() => {
-    if (activeAcademicYearId) {
-      form.setValue("academicYearId", activeAcademicYearId);
-    }
-  }, [activeAcademicYearId, form]);
-
   return {
     form,
     onSubmit: form.handleSubmit(onSubmit),
     isSubmitting: createMutation.isPending || isUploadingFile,
+    isCloning,
     fileState: {
       file: selectedFile,
       setFile: setSelectedFile,
       isUploading: isUploadingFile,
+      existingUrl: clonedAssignment?.attachmentUrl,
+    },
+    subjectState: {
+      mySubjects: mySubjects || [],
+      isLoading: isMySubjectsLoading,
     },
   };
 }

@@ -20,10 +20,12 @@ import { PageBreadcrumb } from "@/components/custom/dashboard/PageBreadcrumb";
 import { useAssignmentDetailViewModel } from "../viewModel/useAssignmentDetailViewModel";
 import { cn } from "@/lib/utils";
 import { ROUTENAME } from "@/core/Constants/RouteName";
-import { getPreviewUrl } from "@/lib/file-utils";
+import { forceFileDownload, getPreviewUrl } from "@/lib/file-utils";
 import { SecureDeleteModal } from "@/components/custom/model-secure-delete";
+import { useAppSelector } from "@/store/hook";
+import { ROLES } from "@/core/Constants/enums/role-enum-value";
 
-// 🚀 HELPER FUNCTION: DOWNLOAD - Cloudinary Native Renaming
+//  HELPER FUNCTION: DOWNLOAD - Cloudinary Native Renaming
 const getDownloadUrl = (
   url: string | null | undefined,
   originalFilename: string | null | undefined,
@@ -44,8 +46,13 @@ const getDownloadUrl = (
 };
 
 export default function AssignmentDetailView() {
+  const { user } = useAppSelector((state) => state.auth);
+
   const vm = useAssignmentDetailViewModel();
   const { assignment, isLoading, canEditOrDelete, navigate } = vm;
+  const isCreator = user?.id === assignment?.createdBy;
+  const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
+  const canModify = isSuperAdmin || isCreator;
 
   if (isLoading) {
     return (
@@ -98,8 +105,7 @@ export default function AssignmentDetailView() {
             </span>
           </div>
         </div>
-
-        {canEditOrDelete && (
+        {canEditOrDelete && canModify && (
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -168,7 +174,7 @@ export default function AssignmentDetailView() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* 🚀 FIXED BUTTON 1: PREVIEW (Using the raw, working URL) */}
+                  {/*  FIXED BUTTON 1: PREVIEW (Using the raw, working URL) */}
                   <Button variant="outline" type="button" asChild>
                     <a
                       href={getPreviewUrl(assignment.attachmentUrl)}
@@ -180,7 +186,6 @@ export default function AssignmentDetailView() {
                     </a>
                   </Button>
 
-                  {/* 🚀 FIXED BUTTON 2: DOWNLOAD (Using Cloudinary's fl_attachment flag) */}
                   <Button type="button" asChild>
                     <a
                       href={getDownloadUrl(
@@ -190,6 +195,22 @@ export default function AssignmentDetailView() {
                       target="_blank"
                       rel="noopener noreferrer"
                       download
+                      onClick={(e) => {
+                        // 🚀 Intercept the click ONLY for PDFs
+                        if (
+                          assignment.attachmentUrl
+                            ?.toLowerCase()
+                            .endsWith(".pdf")
+                        ) {
+                          e.preventDefault(); // Stop the browser from just opening a new tab
+
+                          // Force the secure Blob download
+                          forceFileDownload(
+                            assignment.attachmentUrl,
+                            assignment.originalFilename || "assignment.pdf",
+                          );
+                        }
+                      }}
                     >
                       <Download className="w-4 h-4 mr-2" />
                       Download

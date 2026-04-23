@@ -65,12 +65,12 @@ export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
         link: ROUTENAME.ADD_ASSIGNMENT,
         allowedRoles: [ROLES.HOD, ROLES.PROFESSOR],
       },
-      {
-        label: "My Assignments",
-        icon: "User",
-        link: ROUTENAME.MY_ASSIGNMENT,
-        allowedRoles: [ROLES.PROFESSOR],
-      },
+      // {
+      //   label: "My Assignments",
+      //   icon: "User",
+      //   link: ROUTENAME.MY_ASSIGNMENT,
+      //   allowedRoles: [ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR],
+      // },
     ],
   },
   {

@@ -39,6 +39,7 @@ export interface AssignmentDTO {
   academicYearId: number;
   attachmentId?: number | null;
   originalFilename?: string | null;
+  academicYear?: string;
 }
 
 export type AssignmentFormValues = z.infer<typeof assignmentFormSchema>;

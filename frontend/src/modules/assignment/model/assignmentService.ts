@@ -86,3 +86,21 @@ export const deleteUploadedFile = async (fileId: number) => {
   const response = await axiosInstance.delete(API_ENDPOINT.FILE.DELETE(fileId));
   return response.data;
 };
+
+export const fetchMyActiveSubjects = async (academicYearId: number) => {
+  if (!academicYearId) return [];
+  const response = await axiosInstance.get(
+    `/professor-subject/my-active-subjects`,
+    { params: { academicYearId } },
+  );
+  return response.data.data;
+};
+
+export const fetchMyAssignments = async (
+  params: SearchParams,
+): Promise<PaginatedResponse<AssignmentDTO>> => {
+  const response = await axiosInstance.get<{
+    data: PaginatedResponse<AssignmentDTO>;
+  }>(`/assignment/me`, { params });
+  return response.data.data;
+};

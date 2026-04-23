@@ -94,16 +94,23 @@ export default function AssignmentCreateView() {
 
     vm.form.setValue("subjectId", subjectId, { shouldValidate: true });
 
-    // Auto-fill Semester based on the selected Subject's data
-    if (rawData?.semester && semesters) {
+    if (rawData?.semesterId) {
+      // CASE 1: Professor / HOD (Data comes from your new my-active-subjects API)
+      // We already have the exact ID, so just plug it directly into the form!
+      vm.form.setValue("semesterId", rawData.semesterId, {
+        shouldValidate: true,
+      });
+    } else if (rawData?.semester && semesters) {
+      // CASE 2: Super Admin (Data comes from the Global Search Combobox)
+      // We have to match the string name to find the ID
       const semString =
         typeof rawData.semester === "string"
           ? rawData.semester
           : (rawData.semester as any).value;
-
       const matchedSem = semesters.find(
         (s) => s.key === semString || s.value === semString,
       );
+
       if (matchedSem) {
         vm.form.setValue("semesterId", matchedSem.id, { shouldValidate: true });
       }
@@ -278,7 +285,7 @@ export default function AssignmentCreateView() {
                 </div>
               )}
 
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <FieldLabel className="text-xs font-bold text-muted-foreground uppercase">
                   Subject *
                 </FieldLabel>
@@ -290,6 +297,63 @@ export default function AssignmentCreateView() {
                   fetchOptions={fetchSubjectsMemoized}
                   disabled={!activeBranchId} // Must have a branch first
                 />
+              </div> */}
+              <div className="space-y-2">
+                <FieldLabel className="text-xs font-bold text-muted-foreground uppercase">
+                  Subject *
+                </FieldLabel>
+
+                {isSuperAdmin ? (
+                  // SUPER ADMIN: Keep the Global Search Combobox
+                  <AsyncCombobox
+                    key={`sub-combo-${activeBranchId || "all"}`}
+                    placeholder="Search subject globally..."
+                    value={vm.form.watch("subjectId")}
+                    onChange={handleSubjectSelect}
+                    fetchOptions={fetchSubjectsMemoized}
+                    disabled={!activeBranchId}
+                  />
+                ) : (
+                  <Select
+                    disabled={
+                      vm.subjectState.isLoading ||
+                      vm.subjectState.mySubjects.length === 0
+                    }
+                    value={
+                      vm.form.watch("subjectId")
+                        ? String(vm.form.watch("subjectId"))
+                        : undefined
+                    }
+                    onValueChange={(val) => {
+                      const selectedSub = vm.subjectState.mySubjects.find(
+                        (s: any) => s.subjectId === Number(val),
+                      );
+                      handleSubjectSelect(Number(val), selectedSub);
+                    }}
+                  >
+                    <SelectTrigger className="bg-background">
+                      <SelectValue
+                        placeholder={
+                          vm.subjectState.isLoading
+                            ? "Loading your subjects..."
+                            : vm.subjectState.mySubjects.length === 0
+                              ? "No assigned subjects found"
+                              : "Select an assigned subject"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {vm.subjectState.mySubjects.map((sub: any) => (
+                        <SelectItem
+                          key={sub.subjectId}
+                          value={sub.subjectId.toString()}
+                        >
+                          {sub.subjectCode} - {sub.subjectName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <div className="space-y-2">

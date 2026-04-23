@@ -15,6 +15,9 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [tailwindcss()],
+  server: {
+    port: 4173,
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

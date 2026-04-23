@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { BookOpen, Plus, Eye, FileText, Search } from "lucide-react";
+import { BookOpen, Plus, Eye, FileText, Search, History } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +30,7 @@ import { ROLES } from "@/core/Constants/enums/role-enum-value";
 import { ROUTENAME } from "@/core/Constants/RouteName";
 import { getPreviewUrl } from "@/lib/file-utils";
 
-// 🚀 Imports for Filters
+//  Imports for Filters
 import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
 import { EnumCategory } from "@/modules/enums/types/enum.schemas";
 import { useBranchViewModel } from "@/modules/branch/viewModel/useBranchViewModel";
@@ -69,16 +69,28 @@ export default function AssignmentListView() {
             View, manage, and grade student assignments.
           </p>
         </div>
+        <div className="flex gap-3 shrink-0">
+          {vm.hasCreatedAssignments && (
+            <Button
+              variant="secondary"
+              // Assuming your route is /assignments/me, adjust if needed
+              onClick={() => navigate("/assignments/me")}
+            >
+              <History className="w-4 h-4 mr-2" />
+              My Assignments
+            </Button>
+          )}
 
-        {canCreate && (
-          <Button
-            onClick={() => navigate(ROUTENAME.ADD_ASSIGNMENT)}
-            className="shrink-0"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create Assignment
-          </Button>
-        )}
+          {canCreate && (
+            <Button
+              onClick={() => navigate(ROUTENAME.ADD_ASSIGNMENT)}
+              className="shrink-0"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Assignment
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* 🚀 NEW: FILTER BAR */}

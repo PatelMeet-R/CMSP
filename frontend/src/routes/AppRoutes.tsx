@@ -19,6 +19,7 @@ import AssignmentListView from "@/modules/assignment/view/AssignmentListView";
 import AssignmentCreateView from "@/modules/assignment/view/AssignmentCreateView";
 import AssignmentDetailView from "@/modules/assignment/view/AssignmentDetailView";
 import AssignmentEditView from "@/modules/assignment/view/AssignmentEditView";
+import MyAssignmentsView from "@/modules/assignment/view/MyAssignmentsView";
 
 const AppRoutes = () => {
   return (
@@ -61,7 +62,7 @@ const AppRoutes = () => {
           <Route path={ROUTENAME.SETTING} element={<SystemSettingsView />} />
           <Route
             path={ROUTENAME.MY_ASSIGNMENT}
-            element={<div>MY_ASSIGNMENT Page</div>}
+            element={<MyAssignmentsView />}
           />
           <Route path={ROUTENAME.BRANCH} element={<div>BRANCH Page</div>} />
           <Route
