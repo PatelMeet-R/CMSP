@@ -9,6 +9,8 @@
     "Sems",
     "streamifier",
     "SUCCESSMSG",
-    "USERNOTEXIST"
+    "USERNOTEXIST",
+    "ROUTENAME",
+    "VIEWMODEL"
   ]
 }
