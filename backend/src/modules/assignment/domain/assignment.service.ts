@@ -114,6 +114,7 @@ export class AssignmentService {
       throw new NotFoundException(
         ERRORMESSAGE.ASSIGNMENT_MESSAGE.NOT_FOUND(assignmentId),
       );
+
     if (userRole === ROLES.PROFESSOR && oldAssignment.createdBy !== userId) {
       throw new ForbiddenException(
         ERRORMESSAGE.ASSIGNMENT_MESSAGE.FORBIDDEN.NOT_OWNER,
@@ -121,18 +122,16 @@ export class AssignmentService {
     }
 
     let fileEntity: FileEntity | null | undefined = undefined;
+    let oldFileIdToDelete: number | null = null;
 
-    // 2. Handle Attachment Logic (Cases A, B, and C)
     if (dto.attachmentId !== undefined) {
-      // If dto.attachmentId is null, it means user wants to REMOVE the file
-      // If it's a number, they want to REPLACE/ADD a file
-
-      // Cleanup old file if it exists and is being replaced or removed
       if (
         oldAssignment.attachment &&
         oldAssignment.attachment.id !== dto.attachmentId
       ) {
-        await this.fileUploadService.remove(oldAssignment.attachment.id);
+        // await this.fileUploadService.remove(oldAssignment.attachment.id);
+
+        oldFileIdToDelete = oldAssignment.attachment.id;
       }
 
       // Prepare the new entity link
@@ -165,9 +164,19 @@ export class AssignmentService {
       semester,
       fileEntity, // Now passing the actual Entity or null,
     );
+
+    const savedAssignment =
+      await this.assignmentRepository.saveAssignment(entity);
+
+    if (oldFileIdToDelete) {
+      await this.fileUploadService.remove(oldFileIdToDelete);
+    }
+
     await this.assignmentRepository.clearSingleAssignmentCache(entity.id);
+
     await this.assignmentRepository.clearPaginationCache();
-    return await this.assignmentRepository.saveAssignment(entity);
+
+    return savedAssignment;
   }
 
   //RemoveAssignment
@@ -270,6 +279,22 @@ export class AssignmentService {
         query,
         effectiveBranchId,
         userRole,
+      );
+
+    return {
+      items: AssignmentResponseMapper.toResponseDtoArray(rawData.items),
+      meta: rawData.meta,
+    };
+  }
+  // =========================
+
+  async getMyAssignments(query: FindAssignmentQueryDto, userId: number) {
+    const rawData =
+      await this.assignmentRepository.findAllAssignmentsWithFilters(
+        query,
+        undefined,
+        undefined,
+        userId,
       );
 
     return {

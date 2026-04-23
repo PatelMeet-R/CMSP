@@ -46,10 +46,10 @@ import { SettingsModule } from 'src/core/system-setting/settings.module';
         type: 'postgres',
         url: config.get<string>('DATABASE_URL'),
 
-        ssl: {
-          rejectUnauthorized: false,
-        },
-
+        // ssl: {
+        //   rejectUnauthorized: false,
+        // },
+        ssl: false,
         autoLoadEntities: true,
         synchronize: true,
       }),

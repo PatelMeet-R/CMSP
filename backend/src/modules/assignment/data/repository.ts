@@ -95,14 +95,16 @@ export class AssignmentRepository {
     query: FindAssignmentQueryDto,
     effectiveBranchId?: number,
     role?: string,
+    creatorId?: number,
   ): Promise<PaginatedResponse<Assignment>> {
-    const cacheKey = this.generateCacheKey(query, effectiveBranchId, role);
+    const cacheKey =
+      this.generateCacheKey(query, effectiveBranchId, role) +
+      `_c${creatorId || ''}`;
 
     // 1. Check Cache
     const getCachedData =
       await this.cacheManager.get<PaginatedResponse<Assignment>>(cacheKey);
     if (getCachedData) {
-
       return getCachedData;
     }
 
@@ -116,6 +118,10 @@ export class AssignmentRepository {
       .leftJoinAndSelect('assignment.attachment', 'attachment')
       .leftJoinAndSelect('assignment.academicYear', 'academicYear')
       .orderBy('assignment.createdAt', 'DESC');
+
+    if (creatorId) {
+      queryBuilder.andWhere('assignment.createdBy = :creatorId', { creatorId });
+    }
 
     if (effectiveBranchId) {
       queryBuilder.andWhere('branch.id = :branchId', {

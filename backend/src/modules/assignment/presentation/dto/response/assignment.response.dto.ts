@@ -24,4 +24,6 @@ export class AssignmentResponseArrayDto {
   branchName: string;
   semester: string;
   attachmentUrl?: string;
+  academicYearId: number;
+  academicYear: string;
 }

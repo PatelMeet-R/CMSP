@@ -43,6 +43,8 @@ export class AssignmentResponseMapper {
     dto.branchName = entity.branch?.name;
     dto.semester = entity.semester?.key;
     dto.attachmentUrl = entity.attachment?.url;
+    dto.academicYearId = entity.academicYear.id;
+    dto.academicYear = entity.academicYear.key;
 
     return dto;
   }

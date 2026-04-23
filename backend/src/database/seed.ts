@@ -21,7 +21,12 @@ import { StaffProfile } from 'src/modules/users/domain/entities/staff-profile.en
 const AppDataSource = new DataSource({
   type: 'postgres',
   url: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  // ssl: { rejectUnauthorized: false },
+  ssl: false,
+  extra: {
+    ssl: false, // 🔥 force pg driver
+  },
+
   entities: [
     User,
     EnumValue,

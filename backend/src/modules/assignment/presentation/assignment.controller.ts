@@ -59,9 +59,21 @@ export class AssignmentController {
     };
   }
 
+  @Get('me')
+  @HttpCode(HttpStatus.OK)
+  @Roles(ROLES.PROFESSOR, ROLES.HOD, ROLES.SUPER_ADMIN)
+  async getMyAssignments(
+    @Query() query: FindAssignmentQueryDto,
+    @CurrentUser() rawUser: User,
+  ) {
+    const user = UserMapper.toResponseDto(rawUser);
+    const data = await this.assignmentService.getMyAssignments(query, user.id);
+    return { data };
+  }
+
   @Post('create')
   @HttpCode(HttpStatus.CREATED)
-  @Roles(ROLES.HOD, ROLES.PROFESSOR)
+  @Roles(ROLES.HOD, ROLES.PROFESSOR, ROLES.SUPER_ADMIN)
   async create(@Body() dto: CreateAssignmentDto, @CurrentUser() rawUser: User) {
     const user = UserMapper.toResponseDto(rawUser);
     if (!user.branchId) {
