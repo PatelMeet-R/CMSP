@@ -9,7 +9,7 @@ export class UpdateAssignmentMapper {
   static toEntity(
     entity: Assignment,
     dto: UpdateAssignmentDto,
-    userId: number,
+    userId: string,
     subject?: Subject,
     semester?: EnumValue,
     fileEntity?: FileEntity | null, // Accept File for update, null for removal

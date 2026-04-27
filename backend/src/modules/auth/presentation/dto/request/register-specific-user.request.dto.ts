@@ -5,6 +5,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   MinDate,
   MinLength,
@@ -16,9 +17,10 @@ export class RegisterSpecificUserDto {
   @IsNotEmpty({ message: AUTH_DTO_MESSAGE.EMAIL.REQUIRED })
   @IsEmail({}, { message: AUTH_DTO_MESSAGE.EMAIL.INVALID })
   email: string;
-  @IsInt({ message: AUTH_DTO_MESSAGE.BRANCH_ID.INTEGER })
+
+  @IsUUID(4, { message: AUTH_DTO_MESSAGE.BRANCH_ID.STRING })
   @IsNotEmpty({ message: AUTH_DTO_MESSAGE.BRANCH_ID.REQUIRED })
-  branchId: number;
+  branchId: string;
 
   @MinLength(2, { message: AUTH_DTO_MESSAGE.NAME.MIN_LENGTH('first', 2) })
   @MaxLength(50, { message: AUTH_DTO_MESSAGE.NAME.MAX_LENGTH('first', 50) })
@@ -32,9 +34,11 @@ export class RegisterSpecificUserDto {
   @IsString({ message: PI_DTO_MESSAGE.LAST_NAME.STRING })
   lastName: string;
 
-  @IsInt({ message: 'Role ID must be an integer' })
+  @IsUUID(4, { message: 'Role ID must be a valid UUID' })
+  
   @IsNotEmpty({ message: 'Role ID is required' })
-  roleId: number;
+  roleId: string;
+
   @IsString()
   @IsNotEmpty({ message: 'Designation is required for staff members.' })
   designation: string;

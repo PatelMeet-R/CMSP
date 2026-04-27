@@ -1,5 +1,6 @@
 import { User } from 'src/modules/auth/domain/entities/user.entity';
 import { UserResponseDto } from './user.response.dto';
+import { UserMapper } from 'src/modules/auth/data/mappers/user.response.mapper';
 
 export class AuthResponseDto {
   readonly user: UserResponseDto;
@@ -8,10 +9,14 @@ export class AuthResponseDto {
 
   constructor(params: {
     user: User;
+    permissionSlugs: string[];
     accessToken: string;
     refreshToken: string;
   }) {
-    this.user = new UserResponseDto(params.user);
+    this.user = UserMapper.toResponseDto(
+      params.user,
+      params.permissionSlugs
+    );
     this.accessToken = params.accessToken;
     this.refreshToken = params.refreshToken;
   }

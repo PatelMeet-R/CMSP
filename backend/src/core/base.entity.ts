@@ -7,9 +7,9 @@ import {
 } from 'typeorm';
 
 export abstract class BaseEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-  
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -19,10 +19,24 @@ export abstract class BaseEntity {
   @DeleteDateColumn()
   deletedAt: Date;
 }
-export abstract class AuditableEntity extends BaseEntity {
-  @Column({ nullable: true })
-  createdBy: number;
+export abstract class UuidBaseEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column({ nullable: true })
-  updatedBy: number;
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
+}
+
+export abstract class AuditableEntity extends UuidBaseEntity {
+  @Column({ type: 'varchar', length: 36, nullable: true })
+  createdBy: string;
+
+  @Column({ type: 'varchar', length: 36, nullable: true })
+  updatedBy: string;
 }

@@ -4,6 +4,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
 } from 'class-validator';
 import { ASSIGNMENT_DTO_MESSAGE } from 'src/common/constants/dto/assignment.dto.message';
 
@@ -21,22 +22,22 @@ export class CreateAssignmentDto {
   dueDate: string;
 
   @IsNotEmpty({ message: ASSIGNMENT_DTO_MESSAGE.SUBJECT_ID.REQUIRED })
-  @IsNumber({}, { message: ASSIGNMENT_DTO_MESSAGE.SUBJECT_ID.INVALID })
-  subjectId: number;
+  @IsUUID(4, { message: 'Subject ID must be a valid UUID' })
+  subjectId: string;
 
   @IsNotEmpty({ message: ASSIGNMENT_DTO_MESSAGE.BRANCH_ID.REQUIRED })
-  @IsNumber({}, { message: ASSIGNMENT_DTO_MESSAGE.BRANCH_ID.INVALID })
-  branchId: number;
+  @IsUUID(4, { message: 'Branch ID must be a valid UUID' })
+  branchId: string;
 
   @IsNotEmpty({ message: ASSIGNMENT_DTO_MESSAGE.SEMESTER_ID.REQUIRED })
-  @IsNumber({}, { message: ASSIGNMENT_DTO_MESSAGE.SEMESTER_ID.INVALID })
-  semesterId: number;
+  @IsUUID(4, { message: 'Semester ID must be a valid UUID' })
+  semesterId: string;
 
   @IsNotEmpty({ message: ASSIGNMENT_DTO_MESSAGE.ACADEMIC_YEAR_ID.REQUIRED })
-  @IsNumber({}, { message: ASSIGNMENT_DTO_MESSAGE.ACADEMIC_YEAR_ID.INVALID })
-  academicYearId: number;
+  @IsUUID(4, { message: 'acedemic Year ID must be a valid UUID' })
+  academicYearId: string;
 
   @IsOptional()
-  @IsNumber({}, { message: ASSIGNMENT_DTO_MESSAGE.ATTACHMENT_ID.INVALID })
-  attachmentId?: number;
+  @IsUUID(4, { message: 'Attachment ID must be a valid UUID' })
+  attachmentId?: string;
 }

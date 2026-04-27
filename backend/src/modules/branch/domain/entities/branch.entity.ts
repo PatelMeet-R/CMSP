@@ -1,8 +1,8 @@
 import { Column, Entity } from 'typeorm';
-import { BaseEntity } from 'src/core/base.entity';
+import { AuditableEntity, BaseEntity } from 'src/core/base.entity';
 
 @Entity('branch')
-export class Branch extends BaseEntity {
+export class Branch extends AuditableEntity {
   @Column({ unique: true })
   code: string;
 

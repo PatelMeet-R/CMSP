@@ -28,7 +28,7 @@ export class PersonalInfo extends AuditableEntity {
   enrollmentNumber: string;
 
   @Index()
-  @Column({ length: 50 })
+  @Column({ name: 'first_name', length: 50 })
   firstName: string;
 
   @Index()

@@ -15,12 +15,12 @@ import { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-quer
 import { SubjectResponseMapper } from 'src/modules/subject/data/mappers/subject/subject-response.mapper';
 import { SubjectRequestMapper } from 'src/modules/subject/data/mappers/subject/subject-request.mapper';
 import type { User } from 'src/modules/auth/domain/entities/user.entity';
+import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 
 @Injectable()
 export class SubjectService {
   constructor(
     private readonly subjectRepository: SubjectRepository,
-
     private readonly branchService: BranchService,
     private readonly enumService: EnumService,
   ) {}
@@ -28,7 +28,7 @@ export class SubjectService {
   //register
   // ======================================
 
-  async registerSubject(dto: CreateSubjectDto, currentUser: User) {
+  async registerSubject(dto: CreateSubjectDto, currentUser: UserResponseDto) {
     //  check duplicate subject code
     const isSubjectExist = await this.subjectRepository.IsSubjectWithCodeExist(
       dto.code,
@@ -52,20 +52,23 @@ export class SubjectService {
       throw new NotFoundException(ERRORMESSAGE.SEMESTER_INVALID_CREDENTIALS);
     }
 
-    //  AUTHORIZATION CHECK
-    const userRoleString = currentUser.role?.key || currentUser.role;
-    const userBranchId = currentUser.personalInfo?.branch?.id;
+    // PBAC AUTHORIZATION CHECK
+    const canManageGlobal =
+      currentUser.permissions.includes('subject:manage-global') ||
+      currentUser.permissions.includes('*:*');
 
-    if (userRoleString !== ROLES.SUPER_ADMIN && userBranchId !== branch.id) {
-      throw new ForbiddenException(ERRORMESSAGE.SUBJECT_CHANGE_NOT_AUTHORIZED);
+    if (!canManageGlobal && currentUser.branchId !== branch.id) {
+      throw new ForbiddenException(
+        'You are not authorized to create subjects outside your branch.',
+      );
     }
 
-    //  Map and Save
     const subjectData = SubjectRequestMapper.toCreateEntity(
       dto,
       branch,
       semester,
     );
+    subjectData.createdBy = currentUser.id;
 
     const toBeSaved = await this.subjectRepository.saveSubject(subjectData);
     return SubjectResponseMapper.toResponse(toBeSaved);
@@ -74,7 +77,11 @@ export class SubjectService {
   //update
   // ======================================
 
-  async updateSubject(id: number, dto: UpdateSubjectDto, currentUser: User) {
+  async updateSubject(
+    id: string,
+    dto: UpdateSubjectDto,
+    currentUser: UserResponseDto,
+  ) {
     const subject = await this.subjectRepository.findSubjectById(id);
 
     if (!subject) {
@@ -100,11 +107,14 @@ export class SubjectService {
       }
     }
 
-    const userRoleString = currentUser.role?.key || currentUser.role;
-    const userBranchId = currentUser.personalInfo?.branch?.id;
-
-    if (userRoleString !== ROLES.SUPER_ADMIN && userBranchId !== branch?.id) {
-      throw new ForbiddenException(ERRORMESSAGE.SUBJECT_CHANGE_NOT_AUTHORIZED);
+    // PBAC AUTHORIZATION CHECK
+    const canManageGlobal =
+      currentUser.permissions.includes('subject:manage-global') ||
+      currentUser.permissions.includes('*:*');
+    if (!canManageGlobal && currentUser.branchId !== branch?.id) {
+      throw new ForbiddenException(
+        'You are not authorized to update subjects outside your branch.',
+      );
     }
 
     // Only fetch new semester if it was changed
@@ -129,7 +139,7 @@ export class SubjectService {
   }
   // ======================================
 
-  async getSubjectById(subjectId: number) {
+  async getSubjectById(subjectId: string) {
     const subject = await this.subjectRepository.findSubjectById(subjectId);
 
     if (!subject) {
@@ -142,25 +152,29 @@ export class SubjectService {
 
   async getAllSubject(
     query: FindSubjectQueryDto,
-    currentUserRole,
-    currentUserBranchId,
+    currentUser: UserResponseDto,
   ) {
+    const canAccessAll =
+      currentUser.permissions.includes('subject:read-all-branches') ||
+      currentUser.permissions.includes('*:*');
+    const branchConstraint = canAccessAll ? undefined : currentUser.branchId;
+
     const rawData = await this.subjectRepository.findAll(
       query,
-      currentUserRole,
-      currentUserBranchId,
+      canAccessAll,
+      branchConstraint ?? undefined,
     );
+
     return {
       items: SubjectResponseMapper.toPaginatedResponse(rawData.items),
       meta: rawData.meta,
     };
   }
   // ======================================
-
   async searchSubjectsForAssignment(
     searchTerm: string,
-    semesterId?: number,
-    branchId?: number,
+    semesterId?: string,
+    branchId?: string,
     limit: number = 10,
   ) {
     const rawItems = await this.subjectRepository.searchSubjectsForCombobox(
@@ -169,7 +183,6 @@ export class SubjectService {
       branchId,
       limit,
     );
-
     return rawItems.map((subject) => ({
       id: subject.id,
       name: subject.name,

@@ -15,7 +15,7 @@ export class JwtTokenService {
   ) {}
 
   verifyRefreshToken(Token: string): RefreshTokenPayload {
-    return this.jwtService.verify<{ sub: number }>(Token, {
+    return this.jwtService.verify<{ sub: string }>(Token, {
       secret: this.configService.get<string>('JWT_REFRESH_SECRET')!,
     });
   }
@@ -32,7 +32,7 @@ export class JwtTokenService {
   }
 
   verifyEmailToken(token) {
-    return this.jwtService.verify<{ sub: number }>(token, {
+    return this.jwtService.verify<{ sub: string }>(token, {
       secret: this.configService.get('JWT_EMAIL_SECRET'),
     });
   }
@@ -50,7 +50,7 @@ export class JwtTokenService {
     const payload: AccessTokenPayload = {
       email: user.email,
       sub: user.id,
-      role: user.role.key,
+      role: user.role?.name,
       branchId: user.personalInfo?.branch?.id ?? null,
     };
     return this.jwtService.sign(payload, {

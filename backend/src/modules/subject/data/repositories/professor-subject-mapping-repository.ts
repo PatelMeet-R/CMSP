@@ -5,29 +5,31 @@ import { ProfessorSubMapping } from '../../domain/entities/professors-subject.en
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { FindSubjectMappingQueryDto } from 'src/common/pagination/dto/find-subject-mapping-query.dto';
-import { ROLES } from 'src/common/constants/roles.constant';
 import { paginate } from 'src/common/pagination/utils/pagination.util';
+import { In } from 'typeorm';
 import type { PaginatedResponse } from 'src/common/pagination/interface/paginated-response.interface';
 
 @Injectable()
 export class ProfessorSubMappingRepository {
-  private MappingListCacheKeys: Set<string> = new Set();
   constructor(
     @InjectRepository(ProfessorSubMapping)
     private readonly repo: Repository<ProfessorSubMapping>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
+  // ==================================
 
   async saveAssignedSubject(data: ProfessorSubMapping) {
     const saved = await this.repo.save(data);
     await this.clearPaginationCache();
     return saved;
   }
+  // ==================================
+
   async findExisting(
-    professorId: number,
-    subjectId: number,
-    semesterId: number,
-    yearId: number,
+    professorId: string,
+    subjectId: string,
+    semesterId: string,
+    yearId: string,
   ) {
     return this.repo.findOne({
       where: {
@@ -38,13 +40,18 @@ export class ProfessorSubMappingRepository {
       },
     });
   }
-  async findAssignSubjectByIdWithRelations(id: number) {
+
+  // ==================================
+
+  async findAssignSubjectByIdWithRelations(id: string) {
     return this.repo.findOne({
       where: { id },
       relations: [
         'professor',
         'professor.personalInfo',
+        'professor.personalInfo.branch',
         'subject',
+        'subject.branch',
         'semester',
         'academicYear',
         'assignedBy',
@@ -52,7 +59,10 @@ export class ProfessorSubMappingRepository {
       ],
     });
   }
-  async findAssignSubjectByProfessorId(professorId: number) {
+
+  // ==================================
+
+  async findAssignSubjectByProfessorId(professorId: string) {
     return this.repo
       .createQueryBuilder('mapping')
       .leftJoinAndSelect('mapping.subject', 'subject')
@@ -61,11 +71,14 @@ export class ProfessorSubMappingRepository {
       .where('mapping.professorId = :professorId', { professorId })
       .getMany();
   }
+
+  // ==================================
+
   async findAllAssignSubjectDetails(
     query: FindSubjectMappingQueryDto,
-    currentUserId: number,
-    currentUserRole?: string,
-    currentUserBranchId?: number,
+    canAccessAllBranches: boolean,
+    branchIdConstraint?: string,
+    isSelfConstraintId?: string,
   ): Promise<PaginatedResponse<ProfessorSubMapping>> {
     const {
       page = 1,
@@ -75,19 +88,20 @@ export class ProfessorSubMappingRepository {
       semesterId,
       academicYearId,
     } = query;
-    const cacheKey = `mapping_p${page}_l${limit}_s${search}_b${branchId}_sem${semesterId}_a${academicYearId}`;
+    const cacheKey = `mapping_p${page}_l${limit}_s${search || ''}_b${branchId || ''}_sem${semesterId || ''}_a${academicYearId || ''}`;
 
-    this.MappingListCacheKeys.add(cacheKey);
     const getCachedData =
       await this.cacheManager.get<PaginatedResponse<ProfessorSubMapping>>(
         cacheKey,
       );
+
     if (getCachedData) {
       console.log(
         `Cache Hit -------> Returning Mapping list from Cache ${cacheKey}`,
       );
       return getCachedData;
     }
+
     console.log(`Cache Miss------> Returning Mapping list from database`);
 
     const queryBuilder = this.repo
@@ -135,31 +149,28 @@ export class ProfessorSubMappingRepository {
       ])
       .orderBy('mapping.createdAt', 'DESC');
 
-    if (currentUserRole === ROLES.HOD && currentUserBranchId) {
-      queryBuilder.andWhere('subject.branchId = :branchId', {
-        branchId: currentUserBranchId,
+    // ====== PBAC DATA ISOLATION ======
+    if (isSelfConstraintId) {
+      queryBuilder.andWhere('professor.id = :isSelfConstraintId', {
+        isSelfConstraintId,
       });
-    } else if (currentUserRole === ROLES.PROFESSOR) {
-      queryBuilder.andWhere('professor.id = :userId', {
-        userId: currentUserId,
+    } else if (!canAccessAllBranches && branchIdConstraint) {
+      queryBuilder.andWhere('subject.branchId = :branchIdConstraint', {
+        branchIdConstraint,
       });
     }
 
     // ====== DYNAMIC FILTERS ======
-
-    if (branchId) {
+    if (branchId)
       queryBuilder.andWhere('subject.branchId = :filteredBranchId', {
         filteredBranchId: branchId,
       });
-    }
-    if (semesterId) {
+    if (semesterId)
       queryBuilder.andWhere('semester.id = :semesterId', { semesterId });
-    }
-    if (academicYearId) {
+    if (academicYearId)
       queryBuilder.andWhere('mapping.academicYearId = :academicYearId', {
         academicYearId,
       });
-    }
 
     // ====== SEARCH ======
 
@@ -184,7 +195,7 @@ export class ProfessorSubMappingRepository {
   }
 
   // ==========================
-  async findMyActiveSubjects(professorId: number, academicYearId: number) {
+  async findMyActiveSubjects(professorId: string, academicYearId: string) {
     return await this.repo.find({
       where: {
         professor: { id: professorId },
@@ -200,20 +211,13 @@ export class ProfessorSubMappingRepository {
   }
   // ==========================
   // ==========================
-  async clearPaginationCache() {
-    for (const key of this.MappingListCacheKeys) {
-      await this.cacheManager.del(key);
-    }
-    this.MappingListCacheKeys.clear();
-  }
-  // ==========================
   async softRemoveMapping(mapping: ProfessorSubMapping) {
     const removed = await this.repo.softRemove(mapping);
     await this.clearPaginationCache();
     return removed;
   }
   // ==========================
-  async findHistoryByProfessorId(professorId: number) {
+  async findHistoryByProfessorId(professorId: string) {
     return this.repo.find({
       where: { professor: { id: professorId } },
       relations: ['subject', 'semester', 'academicYear'],
@@ -223,6 +227,53 @@ export class ProfessorSubMappingRepository {
         semester: { value: 'DESC' },
       },
     });
+  }
+  // ===========================
+  // ===========================
+  async clearPaginationCache() {
+    const cacheStores = (this.cacheManager as any).stores || [
+      (this.cacheManager as any).store,
+    ];
+    for (const store of cacheStores) {
+      if (store && typeof store.keys === 'function') {
+        try {
+          const keys = await store.keys('mapping_p*');
+          for (const key of keys) await this.cacheManager.del(key);
+        } catch (e) {}
+      }
+    }
+  }
+  // ===========================
+  async findMappingsByIdsWithDeleted(mappingIds: string[]) {
+    return this.repo.find({
+      where: {
+        id: In(mappingIds),
+      },
+      relations: ['professor', 'subject', 'subject.branch', 'semester'],
+      withDeleted: true, //  CRITICAL: Because they were archived!
+    });
+  }
+  // ==========================
+  // BULK ARCHIVE FOR NEW ACADEMIC YEAR
+  // ==========================
+  async archiveAssignmentsByAcademicYear(
+    oldAcademicYearId: string,
+    updatedById: string,
+  ) {
+    // 1. Perform   bulk update at the database level
+    await this.repo
+      .createQueryBuilder()
+      .update(ProfessorSubMapping)
+      .set({
+        updatedBy: updatedById,
+        deletedAt: new Date(), // This officially "Soft Deletes" them
+      })
+      .where('academicYearId = :oldAcademicYearId', { oldAcademicYearId })
+      .andWhere('deletedAt IS NULL') // Only target currently active ones
+      .execute();
+
+    // 2. Clear the cache so the UI updates immediately
+    await this.clearPaginationCache();
   }
   // ===========================
 }

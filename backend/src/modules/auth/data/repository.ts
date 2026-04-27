@@ -15,7 +15,7 @@ export class AuthRepository {
       relations: ['personalInfo', 'personalInfo.branch'],
     });
   }
-  async findById(id: number): Promise<User | null> {
+  async findById(id: string): Promise<User | null> {
     return this.repo.findOne({
       where: { id },
       relations: ['personalInfo', 'personalInfo.branch'],
@@ -37,13 +37,13 @@ export class AuthRepository {
       },
     });
   }
-  async findByIdWithPersonalInfoRelation(id: number) {
+  async findByIdWithPersonalInfoRelation(id: string) {
     return this.repo.findOne({
       where: { id: id },
       relations: ['personalInfo', 'personalInfo.branch'],
     });
   }
-  async update(id: number, partialEntity: Partial<User>) {
+  async update(id: string, partialEntity: Partial<User>) {
     return this.repo.update(id, partialEntity);
   }
 }

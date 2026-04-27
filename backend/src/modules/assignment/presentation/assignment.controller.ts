@@ -15,10 +15,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
-import { RolesGuard } from 'src/core/guards/roles-guard';
 import { AssignmentService } from '../domain/assignment.service';
-import { Roles } from 'src/core/decorators/roles.decorators';
-import { ROLES } from 'src/common/constants/roles.constant';
 import { CreateAssignmentDto } from './dto/request/create-assignment.request.dto';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
@@ -29,31 +26,31 @@ import { SUCCESSMSG } from 'src/common/constants/success.message';
 import type { User } from 'src/modules/auth/domain/entities/user.entity';
 import { UserMapper } from 'src/modules/auth/data/mappers/user.response.mapper';
 import { FindAssignmentQueryDto } from 'src/common/pagination/dto/find-assignment-query.dto';
+import { PermissionsGuard } from 'src/core/guards/permissions.guard';
+import { Permissions } from 'src/core/decorators/permissions.decorator';
 
 @Controller('assignment')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class AssignmentController {
   constructor(private readonly assignmentService: AssignmentService) {}
 
   @Get('all')
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR, ROLES.STUDENT)
+  @Permissions('assignment:read', 'assignment:read-self')
   async getAll(
     @Query() query: FindAssignmentQueryDto,
-    @CurrentUser() rawUser: User,
+    @CurrentUser() user: UserResponseDto,
   ) {
-    const user = UserMapper.toResponseDto(rawUser);
-
-    if (!user.branchId && user.role !== ROLES.SUPER_ADMIN) {
+    const hasGlobalAccess =
+      user.permissions.includes('*:*') ||
+      user.permissions.includes('assignment:read-all-branches');
+    if (!user.branchId && !hasGlobalAccess) {
       throw new ForbiddenException(
         ERRORMESSAGE.ASSIGNMENT_MESSAGE.FORBIDDEN.BRANCH_MISSING,
       );
     }
-    const data = await this.assignmentService.getAllAssignments(
-      query,
-      user.role,
-      user.branchId ?? undefined,
-    );
+
+    const data = await this.assignmentService.getAllAssignments(query, user);
     return {
       data: data,
     };
@@ -61,32 +58,28 @@ export class AssignmentController {
 
   @Get('me')
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.PROFESSOR, ROLES.HOD, ROLES.SUPER_ADMIN)
+  @Permissions('assignment:read-self')
   async getMyAssignments(
     @Query() query: FindAssignmentQueryDto,
-    @CurrentUser() rawUser: User,
+    @CurrentUser() user: UserResponseDto,
   ) {
-    const user = UserMapper.toResponseDto(rawUser);
     const data = await this.assignmentService.getMyAssignments(query, user.id);
     return { data };
   }
 
   @Post('create')
   @HttpCode(HttpStatus.CREATED)
-  @Roles(ROLES.HOD, ROLES.PROFESSOR, ROLES.SUPER_ADMIN)
-  async create(@Body() dto: CreateAssignmentDto, @CurrentUser() rawUser: User) {
-    const user = UserMapper.toResponseDto(rawUser);
+  @Permissions('assignment:create')
+  async create(
+    @Body() dto: CreateAssignmentDto,
+    @CurrentUser() user: UserResponseDto,
+  ) {
     if (!user.branchId) {
       throw new UnauthorizedException(
         ERRORMESSAGE.DATA_NOT_FOUND(`branch with Id ${user.branchId}`),
       );
     }
-    const res = await this.assignmentService.create(
-      dto,
-      user.id,
-      user.branchId,
-      user.role,
-    );
+    const res = await this.assignmentService.create(dto, user);
     return {
       message: SUCCESSMSG.ASSIGNMENT.CREATED,
       data: AssignmentResponseMapper.toResponseDto(res),
@@ -95,19 +88,13 @@ export class AssignmentController {
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.HOD, ROLES.PROFESSOR)
+  @Permissions('assignment:update')
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() dto: UpdateAssignmentDto,
-    @CurrentUser() rawUser: User,
+    @CurrentUser() user: UserResponseDto,
   ) {
-    const user = UserMapper.toResponseDto(rawUser);
-    const res = await this.assignmentService.update(
-      id,
-      dto,
-      user.id,
-      user.role,
-    );
+    const res = await this.assignmentService.update(id, dto, user);
     return {
       message: SUCCESSMSG.ASSIGNMENT.UPDATED,
       data: AssignmentResponseMapper.toResponseDto(res),
@@ -116,25 +103,18 @@ export class AssignmentController {
 
   @Delete(':assignmentId')
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR)
+  @Permissions('assignment:delete')
   async remove(
-    @Param('assignmentId', ParseIntPipe) id: number,
-    @CurrentUser() rawUser: User,
+    @Param('assignmentId') id: string,
+    @CurrentUser() user: UserResponseDto,
   ) {
-    const user = UserMapper.toResponseDto(rawUser);
-    if (!user.branchId && user.role !== ROLES.SUPER_ADMIN) {
-      throw new ForbiddenException(
-        ERRORMESSAGE.ASSIGNMENT_MESSAGE.FORBIDDEN.BRANCH_MISSING,
-      );
-    }
-    await this.assignmentService.remove(id, user.id, user.role, user.branchId);
+    await this.assignmentService.remove(id, user);
     return { message: SUCCESSMSG.ASSIGNMENT.DELETED };
   }
 
   @Get(':assignmentId')
-  @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR, ROLES.STUDENT)
-  async getSpecificAssignment(@Param('assignmentId', ParseIntPipe) id: number) {
+  @Permissions('assignment:read', 'assignment:read-self')
+  async getSpecificAssignment(@Param('assignmentId') id: string) {
     const res =
       await this.assignmentService.findAssignmentByIdWithAllRelation(id);
 

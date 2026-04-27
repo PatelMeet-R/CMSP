@@ -1,12 +1,18 @@
-import { IsOptional, IsString, IsNumber, Length } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  Length,
+  IsUUID,
+} from 'class-validator';
 import { PI_DTO_MESSAGE } from 'src/common/constants/dto/users-dto/personal-info.dto.message';
 
 export class UpdatePersonalInfoDto {
   // BASIC FIELDS (Anyone can update these)
 
   @IsOptional()
-  @IsNumber({}, { message: PI_DTO_MESSAGE.GENDER_ID.NUMBER })
-  genderId?: number;
+  @IsUUID(4, { message: 'Gender ID must be a valid UUID' })
+  genderId?: string;
 
   @IsOptional()
   @IsString({ message: PI_DTO_MESSAGE.PRIMARY_MOBILE_NUMBER.STRING })
@@ -36,8 +42,8 @@ export class UpdatePersonalInfoDto {
   postalCode?: string;
 
   @IsOptional()
-  @IsNumber({}, { message: PI_DTO_MESSAGE.JOINED_ACADEMIC_YEAR_ID.NUMBER })
-  joinedAcademicYearId?: number;
+  @IsUUID(4, { message: 'joinedAcademicYearId ID must be a valid UUID' })
+  joinedAcademicYearId?: string;
 
   // ADMIN-ONLY FIELDS
 
@@ -54,14 +60,14 @@ export class UpdatePersonalInfoDto {
   enrollmentNumber?: string;
 
   @IsOptional()
-  @IsNumber({}, { message: PI_DTO_MESSAGE.USER_ACCOUNT_STATUS_ID.NUMBER })
-  userAccountStatusId?: number;
+  @IsUUID(4, { message: 'userAccountStatusId ID must be a valid UUID' })
+  userAccountStatusId?: string;
 
   @IsOptional()
-  @IsNumber({}, { message: PI_DTO_MESSAGE.EXPECTED_GRADUATE_YEAR_ID.NUMBER })
-  expectedGraduateYearId?: number;
+  @IsUUID(4, { message: 'expectedGraduateYearId ID must be a valid UUID' })
+  expectedGraduateYearId?: string;
 
   @IsOptional()
-  @IsNumber({}, { message: PI_DTO_MESSAGE.BRANCH_ID.NUMBER })
-  branchId?: number;
+  @IsUUID(4, { message: 'branchId ID must be a valid UUID' })
+  branchId?: string;
 }

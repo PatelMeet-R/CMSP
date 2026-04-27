@@ -1,10 +1,10 @@
 export interface AccessTokenPayload {
-  sub: number;
+  sub: string;
   email: string;
   role: string;
-  branchId?: number;
+  branchId?: string;
 }
 
 export interface RefreshTokenPayload {
-  sub: number;
+  sub: string;
 }

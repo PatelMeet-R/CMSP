@@ -20,7 +20,7 @@ export class PersonalInfoResponseMapper {
       secondaryMobileNumber: entity.secondaryMobileNumber,
 
       email: entity.user?.email || null,
-      role: entity.user?.role?.key || null,
+      role: entity.user?.role?.name || null,
 
       branch: entity.branch?.name || null,
       gender: entity.gender?.key || null,

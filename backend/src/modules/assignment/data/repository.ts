@@ -10,17 +10,23 @@ import { paginate } from 'src/common/pagination/utils/pagination.util';
 
 @Injectable()
 export class AssignmentRepository {
-  private readonly AssignmentListCacheKeys = new Set<string>();
+  // private readonly AssignmentListCacheKeys = new Set<string>();
   constructor(
     @InjectRepository(Assignment)
     private readonly repo: Repository<Assignment>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
+
+  // ==================================
+
   async saveAssignment(data: Assignment): Promise<Assignment> {
     return this.repo.save(data);
   }
+
+  // ==================================
+
   async findAssignmentByIdWithAttachmentRelation(
-    assignmentId: number,
+    assignmentId: string,
   ): Promise<Assignment | null> {
     return this.repo.findOne({
       where: { id: assignmentId },
@@ -28,26 +34,16 @@ export class AssignmentRepository {
     });
   }
 
+  // ==================================
+
   async removeAssignment(assignment: Assignment): Promise<void> {
     await this.repo.remove(assignment);
   }
 
-  // async findAllByFilter(
-  //   branchId: number,
-  //   semesterId: number,
-  // ): Promise<Assignment[]> {
-  //   return await this.repo.find({
-  //     where: {
-  //       branch: { id: branchId },
-  //       semester: { id: semesterId },
-  //     },
-  //     relations: ['subject', 'branch', 'semester', 'attachment'],
-  //     order: { createdAt: 'DESC' },
-  //   });
-  // }
+  // ==================================
 
   async findAssignmentByIdWithAllRelation(
-    id: number,
+    id: string,
   ): Promise<Assignment | null> {
     return await this.repo.findOne({
       where: { id },
@@ -60,6 +56,9 @@ export class AssignmentRepository {
       ],
     });
   }
+
+  // ==================================
+
   async findAllAssignment(): Promise<Assignment[]> {
     return await this.repo.find({
       relations: [
@@ -71,6 +70,9 @@ export class AssignmentRepository {
       ],
     });
   }
+
+  // ==================================
+
   // async findAllAssignmentByBranchId(branchId: number): Promise<Assignment[]> {
   //   return await this.repo.find({
   //     where: { branch: { id: branchId } },
@@ -83,32 +85,33 @@ export class AssignmentRepository {
   //     ],
   //   });
   // }
+
+  // ==================================
+
   private generateCacheKey(
     query: FindAssignmentQueryDto,
-    branchId?: number,
-    role?: string,
+    branchIdConstraint?: string,
+    isSelfConstraintId?: string,
   ): string {
-    return `assignments_p${query.page}_l${query.limit}_s${query.search || ''}_b${branchId || ''}_y${query.academicYearId || ''}_r${role || ''}`;
+    return `assignments_p${query.page || 1}_l${query.limit || 10}_s${query.search || ''}_b${branchIdConstraint || ''}_y${query.academicYearId || ''}_c${isSelfConstraintId || ''}`;
   }
 
   async findAllAssignmentsWithFilters(
     query: FindAssignmentQueryDto,
-    effectiveBranchId?: number,
-    role?: string,
-    creatorId?: number,
+    canAccessAllBranches: boolean,
+    branchIdConstraint?: string,
+    isSelfConstraintId?: string,
   ): Promise<PaginatedResponse<Assignment>> {
-    const cacheKey =
-      this.generateCacheKey(query, effectiveBranchId, role) +
-      `_c${creatorId || ''}`;
+    const cacheKey = this.generateCacheKey(
+      query,
+      branchIdConstraint,
+      isSelfConstraintId,
+    );
 
-    // 1. Check Cache
     const getCachedData =
       await this.cacheManager.get<PaginatedResponse<Assignment>>(cacheKey);
-    if (getCachedData) {
-      return getCachedData;
-    }
+    if (getCachedData) return getCachedData;
 
-    // 2. Build Query
     const { search, academicYearId } = query;
     const queryBuilder = this.repo
       .createQueryBuilder('assignment')
@@ -119,13 +122,22 @@ export class AssignmentRepository {
       .leftJoinAndSelect('assignment.academicYear', 'academicYear')
       .orderBy('assignment.createdAt', 'DESC');
 
-    if (creatorId) {
-      queryBuilder.andWhere('assignment.createdBy = :creatorId', { creatorId });
+    // ====== PBAC DATA ISOLATION ======
+    if (isSelfConstraintId) {
+      queryBuilder.andWhere('assignment.createdBy = :isSelfConstraintId', {
+        isSelfConstraintId,
+      });
+    } else if (!canAccessAllBranches && branchIdConstraint) {
+      queryBuilder.andWhere('branch.id = :branchIdConstraint', {
+        branchIdConstraint,
+      });
     }
 
-    if (effectiveBranchId) {
-      queryBuilder.andWhere('branch.id = :branchId', {
-        branchId: effectiveBranchId,
+    // ====== DYNAMIC FILTERS ======
+
+    if (query['branchId']) {
+      queryBuilder.andWhere('branch.id = :filteredBranchId', {
+        filteredBranchId: query['branchId'],
       });
     }
 
@@ -145,24 +157,27 @@ export class AssignmentRepository {
       );
     }
 
-    // 3. Paginate and Store
     const responseResult = await paginate(queryBuilder, query);
-
-    this.AssignmentListCacheKeys.add(cacheKey);
-    await this.cacheManager.set(cacheKey, responseResult, 30000); // 30s cache like your subject
-
+    await this.cacheManager.set(cacheKey, responseResult, 30000);
     return responseResult;
   }
 
   // =====  CACHE HELPERS  =====
-  async clearSingleAssignmentCache(id: number) {
+  async clearSingleAssignmentCache(id: string) {
     await this.cacheManager.del(`assignment_${id}`);
   }
 
   async clearPaginationCache() {
-    for (const key of this.AssignmentListCacheKeys) {
-      await this.cacheManager.del(key);
+    const cacheStores = (this.cacheManager as any).stores || [
+      (this.cacheManager as any).store,
+    ];
+    for (const store of cacheStores) {
+      if (store && typeof store.keys === 'function') {
+        try {
+          const keys = await store.keys('assignments_p*');
+          for (const key of keys) await this.cacheManager.del(key);
+        } catch (e) {}
+      }
     }
-    this.AssignmentListCacheKeys.clear();
   }
 }

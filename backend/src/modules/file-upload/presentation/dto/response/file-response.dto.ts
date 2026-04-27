@@ -1,5 +1,5 @@
 export class FileResponseDto {
-  id: number;
+  id: string;
   originalName: string;
   url: string;
   mimeType: string;

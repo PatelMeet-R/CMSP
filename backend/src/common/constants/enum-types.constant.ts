@@ -12,5 +12,6 @@ export const ENUM_VALUES = {
     DROPOFF: 'DROPOFF',
     SUSPENDED: 'SUSPENDED',
     INACTIVE: 'INACTIVE',
+    PENDING_USER: 'PENDING_USER',
   },
 };

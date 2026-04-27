@@ -17,7 +17,7 @@ export class FileRepository {
   async save(data: File): Promise<File> {
     return await this.fileRepository.save(data);
   }
-  async findFileById(id: number): Promise<File | null> {
+  async findFileById(id: string): Promise<File | null> {
     return await this.fileRepository.findOne({ where: { id } });
   }
   async RemoveFileEntity(entity: File): Promise<void> {

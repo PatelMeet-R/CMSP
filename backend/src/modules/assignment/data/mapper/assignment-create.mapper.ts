@@ -8,7 +8,7 @@ import { File } from 'src/modules/file-upload/domain/entity/file.entity';
 export class CreateAssignmentMapper {
   static toEntity(
     dto: CreateAssignmentDto,
-    userId: number,
+    userId: string,
     subject: Subject,
     branch: Branch,
     semester: EnumValue,

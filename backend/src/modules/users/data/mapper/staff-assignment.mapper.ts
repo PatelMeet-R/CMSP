@@ -8,8 +8,7 @@ export class StaffAssignmentMapper {
       firstName: entity.firstName,
       lastName: entity.lastName,
       fullName: `${entity.firstName} ${entity.lastName}`,
-      roleKey: entity.user?.role?.key || null,
-      roleValue: entity.user?.role?.value || null,
+      roleKey: entity.user?.role?.name || null,
     }));
   }
 }

@@ -4,7 +4,7 @@ export class EmailedUserResponse {
   static toResponseDto(data: User, noHashPassword: string, creator: User) {
     return {
       email: data.email,
-      role: data.role?.key,
+      role: data.role.name,
       password: noHashPassword,
       branch: data.personalInfo.branch.name,
       createdBy: creator.personalInfo.fullName,

@@ -5,16 +5,13 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
   Patch,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
-import { RolesGuard } from 'src/core/guards/roles-guard';
+import { Permissions } from 'src/core/decorators/permissions.decorator';
 import { PersonalInfoService } from '../../domain/services/personal-info.service';
-import { Roles } from 'src/core/decorators/roles.decorators';
-import { ROLES } from 'src/common/constants/roles.constant';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 import { EmailVerifiedGuard } from 'src/core/guards/email-verified.guard';
@@ -28,13 +25,15 @@ import {
 } from 'src/modules/users/presentation/dto/request/update-User.dto';
 import { UpdateProfileImageDto } from 'src/modules/users/presentation/dto/request/update-profile-image.dto';
 import { UserMapper } from 'src/modules/auth/data/mappers/user.response.mapper';
+import { PermissionsGuard } from 'src/core/guards/permissions.guard';
 
 @Controller('personal-info')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class PersonalInfoController {
   constructor(private readonly personalInfoService: PersonalInfoService) {}
+
   @Get('profile')
-  @Roles(ROLES.STUDENT, ROLES.PROFESSOR, ROLES.HOD, ROLES.SUPER_ADMIN)
+  @Permissions('profile:read')
   async profile(@CurrentUser() user: UserResponseDto) {
     const res = await this.personalInfoService.getPersonalProfileByAuthId(
       user.id,
@@ -43,43 +42,42 @@ export class PersonalInfoController {
       data: res,
     };
   }
+
   @Get('search-staff-combobox')
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
+  @Permissions('user:read', 'assignment:manage')
   async searchStaffForCombobox(
     @CurrentUser() rawUser: User,
     @Query('search') search: string,
     @Query('branchId') branchId: string,
     @Query('limit') limit: string,
   ) {
-    const currentUser = UserMapper.toResponseDto(rawUser);
-    let finalBranchId = branchId ? parseInt(branchId, 10) : undefined;
+    const user = UserMapper.toResponseDto(rawUser);
+    const hasGlobalAccess =
+      user.permissions.includes('user:read-all-branches') ||
+      user.permissions.includes('*:*');
 
-    if (currentUser.role === ROLES.HOD) {
-      finalBranchId = currentUser.branchId ?? undefined;
-    }
+    const finalBranchId = hasGlobalAccess ? branchId : user.branchId;
 
     const parsedLimit = limit ? parseInt(limit, 10) : 15;
-    const safeSearch = search || '';
-
     const data = await this.personalInfoService.searchStaffForAssignment(
-      safeSearch,
+      search || '',
       parsedLimit,
-      finalBranchId,
+      finalBranchId ?? undefined,
     );
 
     return {
-      message: 'Staff retrieved securely for assignment',
-      data: data,
+      message: 'Staff retrieved securely',
+      data,
     };
   }
 
   @Patch('update/:personalInfoId')
   @UseGuards(EmailVerifiedGuard)
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR, ROLES.STUDENT)
+  @Permissions('profile:update')
   async updatePersonalInfo(
-    @Param('personalInfoId', ParseIntPipe) targetProfileId: number,
+    @Param('personalInfoId') targetProfileId: string,
     @Body() dto: UpdatePersonalInfoDto,
     @CurrentUser() currentUser: UserResponseDto,
   ) {
@@ -96,44 +94,32 @@ export class PersonalInfoController {
   }
 
   @Get()
+  @Permissions('user:read') // Granular permission check
   @HttpCode(HttpStatus.OK)
-  @Roles(
-    ROLES.PROFESSOR,
-    ROLES.HOD,
-    ROLES.SUPER_ADMIN,
-    ROLES.PROFESSOR,
-    ROLES.STUDENT,
-  )
   async findAll(
     @Query() query: FindUsersPersonalInfoQueryDto,
     @CurrentUser() rawUser: User,
   ) {
-    const mappedUser = UserMapper.toResponseDto(rawUser);
-    return this.personalInfoService.findAll(
-      query,
-      mappedUser.role,
-      mappedUser.branchId,
-    );
+    const user = UserMapper.toResponseDto(rawUser);
+    return this.personalInfoService.findAll(query, user);
   }
 
   @Get(':personalInfoId')
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR)
+  @Permissions('user:read-detail')
   async getUserProfile(
-    @Param('personalInfoId', ParseIntPipe) personalInfoId: number,
+    @Param('personalInfoId') personalInfoId: string,
     @CurrentUser() currentUser: User,
   ) {
-    const res = await this.personalInfoService.getDetailedProfile(
-      personalInfoId,
-      currentUser,
-    );
-    return { data: res };
+    const user = UserMapper.toResponseDto(currentUser);
+    return this.personalInfoService.getDetailedProfile(personalInfoId, user);
   }
+
   @Patch('status/:personalInfoId')
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
+  @Permissions('user:manage-status')
   async toggleAccountStatus(
-    @Param('personalInfoId', ParseIntPipe) personalInfoId: number,
+    @Param('personalInfoId') personalInfoId: string,
     @Body() dto: ToggleStatusDto,
     @CurrentUser() currentUser: UserResponseDto,
   ) {
@@ -148,30 +134,28 @@ export class PersonalInfoController {
       data: res,
     };
   }
+
   @Patch('role/:personalInfoId')
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
+  @Permissions('user:manage-role')
   async changeUserRole(
-    @Param('personalInfoId', ParseIntPipe) personalInfoId: number,
+    @Param('personalInfoId') personalInfoId: string,
     @Body() dto: ChangeUserRoleDto,
     @CurrentUser() currentUser: UserResponseDto,
   ) {
-    const res = await this.personalInfoService.changeUserRole(
+    return await this.personalInfoService.changeUserRole(
       personalInfoId,
       dto,
       currentUser,
     );
-
-    return {
-      message: res.message,
-    };
   }
+
   @Patch('update-image/:personalInfoId')
   @UseGuards(EmailVerifiedGuard)
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR, ROLES.STUDENT)
+  @Permissions('profile:update-image')
   async updateProfileImage(
-    @Param('personalInfoId', ParseIntPipe) targetProfileId: number,
+    @Param('personalInfoId') targetProfileId: string,
     @Body() dto: UpdateProfileImageDto,
     @CurrentUser() currentUser: UserResponseDto,
   ) {

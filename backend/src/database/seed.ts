@@ -17,6 +17,11 @@ import { seedAdminUser } from 'src/database/seeds/updated-super-admin.seed';
 import { PersonalInfo } from 'src/modules/users/domain/entities/personal-info.entity';
 import { File } from 'src/modules/file-upload/domain/entity/file.entity';
 import { StaffProfile } from 'src/modules/users/domain/entities/staff-profile.entity';
+import { Role } from 'src/modules/rbac/domain/entities/role.entity';
+import { Permission } from 'src/modules/rbac/domain/entities/permission.entity';
+import { UserPermission } from 'src/modules/rbac/domain/entities/user-permission.entity';
+import { seedRbac } from 'src/modules/rbac/seeds/rbac-seed.runner';
+
 
 const AppDataSource = new DataSource({
   type: 'postgres',
@@ -36,20 +41,27 @@ const AppDataSource = new DataSource({
     PersonalInfo,
     File,
     StaffProfile,
+    Role,
+    Permission,
+    UserPermission,
   ],
   synchronize: true,
 });
 
 async function runSeed() {
   await AppDataSource.initialize();
-  await seedUserRoleEnums(AppDataSource);
-  await seedSemsEnum(AppDataSource);
-  await seedBranches(AppDataSource);
-  await seedSubjects(AppDataSource);
-  await seedAcademicYearEnums(AppDataSource);
-  await seedGenderEnums(AppDataSource);
-  await seedUserAccountStatusEnums(AppDataSource);
-  await seedAdminUser(AppDataSource);
+  await seedRbac(AppDataSource);
+
+
+
+  // await seedUserRoleEnums(AppDataSource);
+  // await seedSemsEnum(AppDataSource);
+  // await seedBranches(AppDataSource);
+  // await seedSubjects(AppDataSource);
+  // await seedAcademicYearEnums(AppDataSource);
+  // await seedGenderEnums(AppDataSource);
+  // await seedUserAccountStatusEnums(AppDataSource);
+  // await seedAdminUser(AppDataSource);
   console.log('----------------------------');
   console.log('Seeding completed');
   console.log('----------------------------');

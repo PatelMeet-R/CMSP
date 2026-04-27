@@ -7,7 +7,7 @@ import { FindUsersPersonalInfoQueryDto } from 'src/common/pagination/dto/find-us
 import type { PaginatedResponse } from 'src/common/pagination/interface/paginated-response.interface';
 import type { Cache } from 'cache-manager';
 import { paginate } from 'src/common/pagination/utils/pagination.util';
-import { ROLES } from 'src/common/constants/roles.constant';
+// import { ROLES } from 'src/common/constants/roles.constant';
 
 @Injectable()
 export class PersonalInfoRepository {
@@ -21,7 +21,7 @@ export class PersonalInfoRepository {
   async saveInfo(personalInfo: PersonalInfo): Promise<PersonalInfo> {
     const savedEntity = await this.repo.save(personalInfo);
 
-    await this.clearPaginationCache();
+    await this.clearCachePattern('users_p*');
 
     if (personalInfo.user?.id) {
       await this.clearSingleUserCache(personalInfo.user.id);
@@ -32,57 +32,16 @@ export class PersonalInfoRepository {
 
   //===================================
   async findPersonalInfoById(
-    personalInfoId: number,
+    personalInfoId: string,
   ): Promise<PersonalInfo | null> {
     return await this.repo
       .createQueryBuilder('profile')
-      // see their Email and Role
-      .leftJoin('profile.user', 'user')
-      .leftJoin('user.role', 'role')
-
-      //  Join Branch
-      .leftJoin('profile.branch', 'branch')
-
-      //  Join Eager Enums
-      .leftJoin('profile.gender', 'gender')
-      .leftJoin('profile.joinedAcademicYear', 'joinedYear')
-      .leftJoin('profile.expectedGraduateYear', 'gradYear')
-      .leftJoin('profile.userAccountStatus', 'status')
-      .leftJoin('profile.profileImage', 'profileImage')
-      //   Detail View
-      .select([
-        'profile.id',
-        'profile.firstName',
-        'profile.lastName',
-        'profile.enrollmentNumber',
-        'profile.primaryMobileNumber',
-        'profile.secondaryMobileNumber',
-        'profile.city',
-        'profile.state',
-        'profile.country',
-        'profile.postalCode',
-        'profile.createdAt',
-        // User Info
-        'user.id',
-        'user.email',
-        'role.id',
-        'role.key',
-        // Relations
-        'branch.id',
-        'branch.name',
-        'gender.id',
-        'gender.key',
-        'joinedYear.id',
-        'joinedYear.key',
-        'gradYear.id',
-        'gradYear.key',
-        'status.id',
-        'status.key',
-        //  profile Image
-        'profileImage.id',
-        'profileImage.url',
-        'profileImage.publicId',
-      ])
+      .leftJoinAndSelect('profile.user', 'user')
+      .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('profile.branch', 'branch')
+      .leftJoinAndSelect('profile.gender', 'gender')
+      .leftJoinAndSelect('profile.userAccountStatus', 'status')
+      .leftJoinAndSelect('profile.profileImage', 'profileImage')
       .where('profile.id = :id', { id: personalInfoId })
       .getOne();
   }
@@ -94,6 +53,8 @@ export class PersonalInfoRepository {
     });
     return data;
   }
+  // ==========================================
+
   async findGraduatedStudents(currentYear: number): Promise<PersonalInfo[]> {
     return this.repo
       .createQueryBuilder('pi')
@@ -115,7 +76,8 @@ export class PersonalInfoRepository {
 
     return exists;
   }
-  async getPersonalProfileByAuthId(userId: number) {
+
+  async getPersonalProfileByAuthId(userId: string) {
     const cacheKey = `user_pi${userId}`;
     const cachedPI = await this.cacheManager.get<PersonalInfo>(cacheKey);
 
@@ -168,149 +130,89 @@ export class PersonalInfoRepository {
     return profile;
   }
 
-  private generateUsersPIListCacheKey(
-    query: FindUsersPersonalInfoQueryDto,
-  ): string {
-    const { page = 1, limit = 10, search, branchId, genderId, roleId } = query;
-    return `users_p${page}_l${limit}_s${search || 'all'}_b${branchId || 'all'}_g${genderId || 'all'}_r${roleId || 'all'}`;
-  }
+  // private generateUsersPIListCacheKey(
+  //   query: FindUsersPersonalInfoQueryDto,
+  // ): string {
+  //   const { page = 1, limit = 10, search, branchId, genderId, roleId } = query;
+  //   return `users_p${page}_l${limit}_s${search || 'all'}_b${branchId || 'all'}_g${genderId || 'all'}_r${roleId || 'all'}`;
+  // }
+
   // =========================================================
   async FindAll(
     query: FindUsersPersonalInfoQueryDto,
-    currentUserRole?: string,
-    currentUserBranchId?: number,
+    canAccessAllBranches: boolean = false,
+    branchIdConstraint?: string,
   ): Promise<PaginatedResponse<PersonalInfo>> {
-    const cacheKey = this.generateUsersPIListCacheKey(query);
-
-    this.UsersPIListCacheKeys.add(cacheKey);
-
-    const getCachedData =
+    const cacheKey = this.generateUsersPIListCacheKey(
+      query,
+      branchIdConstraint,
+    );
+    const cached =
       await this.cacheManager.get<PaginatedResponse<PersonalInfo>>(cacheKey);
+    if (cached) return cached;
 
-    if (getCachedData) {
-      console.log(
-        `Cache Hit -------> Returning users PI list from Cache ${cacheKey}`,
-      );
-      return getCachedData;
-    }
-    console.log(`Cache Miss------> Returning users PI list from database`);
-
-    const { search, genderId, roleId } = query;
-    let { branchId } = query;
+    const { search, genderId, roleId, branchId: queryBranchId } = query;
 
     const queryBuilder = this.repo
       .createQueryBuilder('profile')
-      .leftJoin('profile.user', 'user')
-      .leftJoin('user.role', 'role')
-      .leftJoin('profile.gender', 'gender')
-      .leftJoin('profile.branch', 'branch')
-      .leftJoin('profile.joinedAcademicYear', 'joinedYear')
-      .leftJoin('profile.expectedGraduateYear', 'gradYear')
-      .leftJoin('profile.userAccountStatus', 'status')
-      .select([
-        'profile.id',
-        'profile.firstName',
-        'profile.lastName',
-        'profile.enrollmentNumber',
-        'profile.primaryMobileNumber',
-        'profile.city',
-        'profile.state',
-        'profile.country',
-        'profile.createdAt',
-        // -----------------------
-        'user.id',
-        'gender.id',
-        'gender.key',
-        'branch.id',
-        'branch.name',
-        'joinedYear.id',
-        'joinedYear.key',
-        'gradYear.id',
-        'gradYear.key',
-        'status.id',
-        'status.key',
-        // -----------------------
-        'role.id',
-        'role.key',
-        'role.value',
-      ])
+      .leftJoinAndSelect('profile.user', 'user')
+      .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('profile.branch', 'branch')
+      .leftJoinAndSelect('profile.gender', 'gender')
+      .leftJoinAndSelect('profile.userAccountStatus', 'status')
       .orderBy('profile.createdAt', 'DESC');
 
     // ==========================================
-    //  GATE 1: BASE SECURITY (Hide Super Admins)
+    // GATE 1: PBAC DATA ISOLATION
     // ==========================================
-
-    if (currentUserRole === ROLES.HOD || currentUserRole === ROLES.PROFESSOR) {
-      queryBuilder.andWhere('role.key != :adminRole', {
-        adminRole: ROLES.SUPER_ADMIN,
+    // If not super admin, restrict to their branch
+    if (!canAccessAllBranches && branchIdConstraint) {
+      queryBuilder.andWhere('profile.branchId = :branchIdConstraint', {
+        branchIdConstraint,
       });
     }
 
     // ==========================================
-    //  GATE 2: DATA ISOLATION (HOD & PROFESSOR)
+    // GATE 2: FILTERS
     // ==========================================
-    if (currentUserRole !== ROLES.SUPER_ADMIN && currentUserBranchId) {
-      branchId = currentUserBranchId;
-
-      if (currentUserRole === ROLES.PROFESSOR) {
-        queryBuilder.andWhere(
-          'role.key IN (:studentRole, :profRole,:hodRole)',
-          {
-            studentRole: ROLES.STUDENT,
-            profRole: ROLES.PROFESSOR,
-            hodRole: ROLES.HOD,
-          },
-        );
-      }
-    }
-
-    // ==========================================
-    //  GATE 3: DYNAMIC FRONTEND FILTERS
-    // ==========================================
-    if (branchId) {
-      queryBuilder.andWhere('profile.branchId = :filteredBranchId', {
-        filteredBranchId: branchId,
+    if (queryBranchId) {
+      queryBuilder.andWhere('profile.branchId = :queryBranchId', {
+        queryBranchId,
       });
     }
-
     if (genderId) {
       queryBuilder.andWhere('profile.genderId = :genderId', { genderId });
     }
-
     if (roleId) {
       queryBuilder.andWhere('user.roleId = :roleId', { roleId });
     }
 
+    // Optimized Search using ILIKE (ensure pg_trgm index exists on name/enrollment)
     if (search) {
       queryBuilder.andWhere(
-        new Brackets((qb) => {
-          qb.where('profile.enrollmentNumber ILIKE :search', {
-            search: `%${search}%`,
-          })
-            .orWhere('profile.firstName ILIKE :search', {
-              search: `%${search}%`,
-            })
-            .orWhere('profile.lastName ILIKE :search', {
-              search: `%${search}%`,
-            })
-            .orWhere('profile.city ILIKE :search', {
-              search: `%${search}%`,
-            })
-            .orWhere(
-              "CONCAT(profile.firstName, ' ', profile.lastName) ILIKE :search",
-              { search: `%${search}%` },
-            );
-        }),
+        "(profile.firstName || ' ' || profile.lastName ILIKE :search OR profile.enrollmentNumber ILIKE :search)",
+        { search: `%${search}%` },
       );
     }
 
     const responseResult = await paginate(queryBuilder, query);
-    await this.cacheManager.set(cacheKey, responseResult, 30000);
+    await this.cacheManager.set(cacheKey, responseResult, 30000); // 30s cache
     return responseResult;
   }
-  async clearSingleUserCache(userId: number) {
+  // ==============================
+  private generateUsersPIListCacheKey(
+    query: FindUsersPersonalInfoQueryDto,
+    branchConstraint?: string,
+  ): string {
+    return `users_p${query.page}_l${query.limit}_b${branchConstraint || 'all'}_s${query.search || ''}`;
+  }
+
+  // ======================================
+
+  async clearSingleUserCache(userId: string) {
     await this.cacheManager.del(`user_pi${userId}`);
   }
+  // ======================================
 
   async clearPaginationCache() {
     for (const key of this.UsersPIListCacheKeys) {
@@ -326,7 +228,7 @@ export class PersonalInfoRepository {
   async searchStaffForCombobox(
     searchTerm: string,
     limit: number = 15,
-    branchId?: number,
+    branchId?: string,
   ) {
     const queryBuilder = this.repo
       .createQueryBuilder('profile')
@@ -362,5 +264,46 @@ export class PersonalInfoRepository {
     return queryBuilder.getMany();
   }
 
+  // ======================================
+  // async clearCachePattern(pattern: string) {
+  //   const store = this.cacheManager.stores;
+  //   if ('keys' in store) {
+  //     const keys = await (store as any).keys(pattern);
+  //     for (const key of keys) {
+  //       await this.cacheManager.del(key);
+  //     }
+  //   }
+  // }
+  // ======================================
+  async clearCachePattern(pattern: string) {
+    // Access 'stores' as per your error message suggestion
+    const cacheStores = (this.cacheManager as any).stores;
+
+    if (Array.isArray(cacheStores)) {
+      for (const store of cacheStores) {
+        // Check if the store supports pattern searching (like Redis)
+        if (typeof store.keys === 'function') {
+          try {
+            const keys = await store.keys(pattern);
+            for (const key of keys) {
+              await this.cacheManager.del(key);
+            }
+          } catch (error) {
+            console.error(`Failed to clear cache pattern ${pattern}:`, error);
+          }
+        }
+      }
+    } else {
+      // Fallback for older versions or single store configurations
+      const store = (this.cacheManager as any).store;
+      if (store && typeof store.keys === 'function') {
+        const keys = await store.keys(pattern);
+        for (const key of keys) {
+          await this.cacheManager.del(key);
+        }
+      }
+    }
+  }
+  // ======================================
   // ======================================
 }

@@ -10,9 +10,10 @@ export class StaffProfileRepository {
     private readonly repo: Repository<StaffProfile>,
   ) {}
 
-  async findByUserId(userId: number): Promise<StaffProfile | null> {
+  async findByUserId(userId: string): Promise<StaffProfile | null> {
     return this.repo.findOne({
       where: { user: { id: userId } },
+      relations: ['user', 'user.personalInfo', 'user.personalInfo.branch'],
     });
   }
 

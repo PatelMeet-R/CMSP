@@ -11,7 +11,7 @@ import { paginate } from 'src/common/pagination/utils/pagination.util';
 
 @Injectable()
 export class SubjectRepository {
-  private SubjectsListCacheKeys: Set<string> = new Set();
+  // private SubjectsListCacheKeys: Set<string> = new Set();
   constructor(
     @InjectRepository(Subject)
     private readonly repo: Repository<Subject>,
@@ -21,10 +21,11 @@ export class SubjectRepository {
   async saveSubject(subject: Subject): Promise<Subject> {
     const SavedEntity = await this.repo.save(subject);
     await this.clearPaginationCache();
+    await this.clearSingleSubjectCache(SavedEntity.id);
     return SavedEntity;
   }
 
-  async findSubjectById(subjectId: number): Promise<Subject | null> {
+  async findSubjectById(subjectId: string): Promise<Subject | null> {
     const cacheKey = `subject_${subjectId}`;
 
     const cachedSubject = await this.cacheManager.get<Subject>(cacheKey);
@@ -39,31 +40,31 @@ export class SubjectRepository {
     });
 
     // STORE THE SUBJECT IN CACHE
-    await this.cacheManager.set(cacheKey, subject, 30000);
+    if (subject) await this.cacheManager.set(cacheKey, subject, 30000);
     return subject;
   }
 
   async IsSubjectWithCodeExist(code: string): Promise<boolean> {
-    const exists = await this.repo
+    return await this.repo
       .createQueryBuilder('subject')
       .where('subject.code = :code', { code })
       .getExists();
-
-    return exists;
   }
 
+  // private generateSubjectsListCacheKey(query: FindSubjectQueryDto): string {
+  //   const { page = 1, limit = 20, search, branchId, semesterId } = query;
+  //   return `subjects_p${page}_l${limit}_s${search || 'all'}_b${branchId || 'all'}_sem${semesterId || 'all'}`;
+  // }
   private generateSubjectsListCacheKey(query: FindSubjectQueryDto): string {
-    const { page = 1, limit = 20, search, branchId, semesterId } = query;
-    return `subjects_p${page}_l${limit}_s${search || 'all'}_b${branchId || 'all'}_sem${semesterId || 'all'}`;
+    return `subjects_p${query.page || 1}_l${query.limit || 20}_s${query.search || 'all'}_b${query.branchId || 'all'}_sem${query.semesterId || 'all'}`;
   }
 
   async findAll(
     query: FindSubjectQueryDto,
-    currentUserRole?: string,
-    currentUserBranchId?: number,
+    canAccessAllBranches: boolean = false,
+    branchIdConstraint?: string,
   ): Promise<PaginatedResponse<Subject>> {
     const cacheKey = this.generateSubjectsListCacheKey(query);
-    this.SubjectsListCacheKeys.add(cacheKey);
 
     const getCachedData =
       await this.cacheManager.get<PaginatedResponse<Subject>>(cacheKey);
@@ -96,15 +97,10 @@ export class SubjectRepository {
       ])
       .orderBy('subject.createdAt', 'DESC');
 
-    //======  OWN BRANCH GATE ======
-    if (
-      (currentUserRole === ROLES.HOD ||
-        currentUserRole === ROLES.PROFESSOR ||
-        currentUserRole === ROLES.STUDENT) &&
-      currentUserBranchId
-    ) {
-      queryBuilder.andWhere('subject.branchId = :branchId', {
-        branchId: currentUserBranchId,
+    // ====== PBAC DATA ISOLATION ======
+    if (!canAccessAllBranches && branchIdConstraint) {
+      queryBuilder.andWhere('subject.branchId = :branchIdConstraint', {
+        branchIdConstraint,
       });
     }
 
@@ -134,24 +130,12 @@ export class SubjectRepository {
     return responseResult;
   }
 
-  async clearSingleSubjectCache(subjectId: number) {
-    await this.cacheManager.del(`subject_${subjectId}`);
-  }
-  async clearPaginationCache() {
-    for (const key of this.SubjectsListCacheKeys) {
-      await this.cacheManager.del(key);
-    }
-    this.SubjectsListCacheKeys.clear();
-    console.log('======');
-    console.log('Subject Pagination Cache Cleared!');
-    console.log('======');
-  }
-  // ======================================
+  //===========================================
 
   async searchSubjectsForCombobox(
     searchTerm: string,
-    semesterId?: number,
-    branchId?: number,
+    semesterId?: string,
+    branchId?: string,
     limit: number = 10,
   ) {
     const queryBuilder = this.repo
@@ -181,5 +165,32 @@ export class SubjectRepository {
     queryBuilder.limit(limit);
     return queryBuilder.getMany();
   }
+  // ======================================
+  async clearSingleSubjectCache(subjectId: string) {
+    await this.cacheManager.del(`subject_${subjectId}`);
+  }
+  // ======================================
+  async clearPaginationCache() {
+    const cacheStores = (this.cacheManager as any).stores;
+    const pattern = 'subjects_p*';
+
+    if (Array.isArray(cacheStores)) {
+      for (const store of cacheStores) {
+        if (typeof store.keys === 'function') {
+          try {
+            const keys = await store.keys(pattern);
+            for (const key of keys) await this.cacheManager.del(key);
+          } catch (e) {}
+        }
+      }
+    } else {
+      const store = (this.cacheManager as any).store;
+      if (store && typeof store.keys === 'function') {
+        const keys = await store.keys(pattern);
+        for (const key of keys) await this.cacheManager.del(key);
+      }
+    }
+  }
+  // ======================================
   // ======================================
 }

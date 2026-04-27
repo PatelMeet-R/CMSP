@@ -2,63 +2,65 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { ProfessorSubMappingService } from '../../domain/services/professor-subject-mapping.service';
-import { RolesGuard } from 'src/core/guards/roles-guard';
 import { AssignSubjectDto } from '../dto/request/professor-subjects.request.dto';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
-import { ROLES } from 'src/common/constants/roles.constant';
-import { Roles } from 'src/core/decorators/roles.decorators';
 import { UpdateAssignSubjectDto } from '../dto/request/professor-subjects-update.request.dto';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
 import { FindSubjectMappingQueryDto } from 'src/common/pagination/dto/find-subject-mapping-query.dto';
+import { PermissionsGuard } from 'src/core/guards/permissions.guard';
+import { Permissions } from 'src/core/decorators/permissions.decorator';
+import { BulkCloneAssignmentsDto } from 'src/modules/subject/presentation/dto/request/bulk-clone.dto';
 
 @Controller('professor-subject')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class ProfessorSubMappingController {
   constructor(
     private readonly professorSubMappingService: ProfessorSubMappingService,
   ) {}
+  // ==================================
+
   @Post('assign-subject')
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
+  @Permissions('assignment:create')
   async saveAssignedSubjectToProfessor(
     @Body() dto: AssignSubjectDto,
     @CurrentUser() user: UserResponseDto,
   ) {
     const res = await this.professorSubMappingService.saveAssignedSubject(
       dto,
-      user.id,
+      user,
     );
     return {
       message: SUCCESSMSG.SUBJECT.ASSIGNMENT_CREATED,
       data: res,
     };
   }
-  @Patch('assign-subject/:professorId')
+  // ==================================
+
+  @Patch('assign-subject/:mappingId')
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
+  @Permissions('assignment:update')
   async updateAssignSubjectToProfessor(
-    @Param('professorId', ParseIntPipe) professorId: number,
+    @Param('mappingId') mappingId: string,
     @Body() dto: UpdateAssignSubjectDto,
     @CurrentUser() user: UserResponseDto,
   ) {
     const res = await this.professorSubMappingService.updateAssignSubject(
-      professorId,
+      mappingId,
       dto,
-      user.id,
+      user,
     );
     return {
       message: SUCCESSMSG.SUBJECT.ASSIGNMENT_UPDATED,
@@ -66,9 +68,11 @@ export class ProfessorSubMappingController {
     };
   }
 
+  // ==================================
+
   @Get()
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR)
+  @Permissions('assignment:read', 'assignment:read-self') // Allows both admins and professors to hit this endpoint
   async getAssignedSubjects(
     @Query() query: FindSubjectMappingQueryDto,
     @CurrentUser() user: UserResponseDto,
@@ -76,9 +80,7 @@ export class ProfessorSubMappingController {
     const res =
       await this.professorSubMappingService.getAllAssignSubjectDetails(
         query,
-        user.id,
-        user.role,
-        user.branchId,
+        user,
       );
 
     return {
@@ -86,39 +88,38 @@ export class ProfessorSubMappingController {
       data: res,
     };
   }
+
   // ==============================
+
   @Delete('unassign/:mappingId')
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
+  @Permissions('assignment:delete')
   async unassignSubject(
-    @Param('mappingId', ParseIntPipe) mappingId: number,
+    @Param('mappingId') mappingId: string,
     @CurrentUser() user: UserResponseDto,
   ) {
     const res = await this.professorSubMappingService.unassignSubject(
       mappingId,
-      user.id,
+      user,
     );
     return {
       message: res.message,
     };
   }
 
+  // ==================================
+
   @Get('history/:professorId')
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR)
+  @Permissions('assignment:read', 'assignment:read-self')
   async getProfessorHistory(
-    @Param('professorId', ParseIntPipe) professorId: number,
+    @Param('professorId') professorId: string,
     @CurrentUser() user: UserResponseDto,
   ) {
-    if (user.role === ROLES.PROFESSOR && user.id !== professorId) {
-      throw new ForbiddenException(
-        "You cannot view another professor's history.",
-      );
-    }
-
     const history =
       await this.professorSubMappingService.getProfessorSubjectHistory(
         professorId,
+        user,
       );
     return {
       message: 'Professor subject history retrieved successfully',
@@ -128,9 +129,9 @@ export class ProfessorSubMappingController {
   // ===================
   @Get('my-active-subjects')
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.PROFESSOR, ROLES.HOD)
+  @Permissions('assignment:read-self')
   async getMyActiveSubjects(
-    @Query('academicYearId', ParseIntPipe) academicYearId: number,
+    @Query('academicYearId') academicYearId: string,
     @CurrentUser() user: UserResponseDto,
   ) {
     const res = await this.professorSubMappingService.getMyActiveSubjects(
@@ -143,5 +144,21 @@ export class ProfessorSubMappingController {
     };
   }
   // ===================
+  // Add this to ProfessorSubMappingController
+  @Post('bulk-clone')
+  @HttpCode(HttpStatus.OK)
+  @Permissions('assignment:create') // Requires create permissions
+  async bulkCloneAssignments(
+    @Body() dto: BulkCloneAssignmentsDto,
+    @CurrentUser() user: UserResponseDto,
+  ) {
+    const res = await this.professorSubMappingService.bulkCloneAssignments(
+      dto,
+      user,
+    );
+    return {
+      message: res.message,
+    };
+  }
   // ===================
 }

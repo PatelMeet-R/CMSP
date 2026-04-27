@@ -5,7 +5,7 @@ export class FileCreateMapper {
   static toCreateEntity(
     file: Express.Multer.File,
     cloudinaryResponse: UploadApiResponse,
-    userId: number,
+    userId: string,
   ): FileEntity {
     const entity = new FileEntity();
     entity.originalName = file.originalname;

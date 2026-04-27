@@ -3,18 +3,18 @@ import {
   IsString,
   MaxLength,
   MinLength,
-  IsInt,
+  IsUUID,
 } from 'class-validator';
 import { SUBJECT_DTO_MESSAGE } from 'src/common/constants/dto/subject.dto.message';
 
 export class CreateSubjectDto {
-  @IsInt({ message: SUBJECT_DTO_MESSAGE.SEMESTER_ID.INTEGER })
+  @IsUUID(4, { message: 'semester ID must be a valid UUID' })
   @IsNotEmpty({ message: SUBJECT_DTO_MESSAGE.SEMESTER_ID.REQUIRED })
-  semesterId: number;
+  semesterId: string;
 
-  @IsInt({ message: SUBJECT_DTO_MESSAGE.BRANCH_ID.INTEGER })
+  @IsUUID(4, { message: 'branch ID must be a valid UUID' })
   @IsNotEmpty({ message: SUBJECT_DTO_MESSAGE.BRANCH_ID.REQUIRED })
-  branchId: number;
+  branchId: string;
 
   @IsString({ message: SUBJECT_DTO_MESSAGE.NAME.STRING })
   @IsNotEmpty({ message: SUBJECT_DTO_MESSAGE.NAME.REQUIRED })

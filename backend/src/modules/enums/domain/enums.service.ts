@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { EnumRepository } from '../data/repositories/repository';
 import { EnumValue } from './entities/enumValue.entity';
-import { EnumMapper } from '../data/repositories/mapper/enum.mapper';
 
 @Injectable()
 export class EnumService {
@@ -18,10 +17,9 @@ export class EnumService {
       throw new NotFoundException(`Enum value not found: ${type} - ${key}`);
     }
 
-    // return enumValue;
     return enumValue;
   }
-  async getEnumValueById(id: number) {
+  async getEnumValueById(id: string) {
     const enumValue = await this.enumRepository.findEnumById(id);
 
     if (!enumValue) {

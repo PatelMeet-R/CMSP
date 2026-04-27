@@ -1,9 +1,10 @@
 import { AuditableEntity } from 'src/core/base.entity';
-import { EnumValue } from 'src/modules/enums/domain/entities/enumValue.entity';
+import { Role } from 'src/modules/rbac/domain/entities/role.entity';
+import { UserPermission } from 'src/modules/rbac/domain/entities/user-permission.entity';
 import { PersonalInfo } from 'src/modules/users/domain/entities/personal-info.entity';
 import { StaffProfile } from 'src/modules/users/domain/entities/staff-profile.entity';
 
-import { Column, Entity, Index, ManyToOne, OneToOne } from 'typeorm';
+import { Column, Entity, Index, ManyToOne, OneToMany, OneToOne } from 'typeorm';
 
 @Entity('users')
 export class User extends AuditableEntity {
@@ -14,8 +15,8 @@ export class User extends AuditableEntity {
   @Column()
   password: string;
 
-  @ManyToOne(() => EnumValue, { eager: true }) //Why eager: true? --> because TypeORM automatically loads role.
-  role: EnumValue;
+  @ManyToOne(() => Role, { eager: true })
+  role: Role;
 
   @Column({ default: false })
   isEmailVerified: boolean;
@@ -37,4 +38,7 @@ export class User extends AuditableEntity {
     eager: false,
   })
   staffProfile: StaffProfile;
+
+  @OneToMany(() => UserPermission, (userPermission) => userPermission.user)
+  userPermissions: UserPermission[];
 }

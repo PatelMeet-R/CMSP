@@ -19,17 +19,16 @@ import { ForgetPassMailReq } from '../dto/request/forget-password.dto';
 import { ResetPasswordDto } from '../dto/request/reset-password.dto';
 import { UserResponseDto } from '../dto/response/user.response.dto';
 import { RolesGuard } from 'src/core/guards/roles-guard';
-import { Roles } from 'src/core/decorators/roles.decorators';
-import { ROLES } from 'src/common/constants/roles.constant';
+import { Permissions } from 'src/core/decorators/permissions.decorator';
 import { RegisterSpecificUserDto } from '../dto/request/register-specific-user.request.dto';
 import { LoginThrottlerGuard } from 'src/core/guards/login-throttler.guard';
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
 import { VerificationEmailThrottlerGuard } from 'src/core/guards/verification-email-throttler.guard';
+import { PermissionsGuard } from 'src/core/guards/permissions.guard';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
-
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() dto: RegisterStudentDto) {
@@ -38,9 +37,9 @@ export class AuthController {
       data: await this.authService.register(dto),
     };
   }
-  @UseGuards(LoginThrottlerGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(LoginThrottlerGuard)
   async login(@Body() dto: LoginDto) {
     return {
       message: SUCCESSMSG.AUTH.LOGIN_SUCCESS,
@@ -75,6 +74,7 @@ export class AuthController {
   async forgetPassword(@Body() dto: ForgetPassMailReq) {
     return await this.authService.forgetPassword(dto);
   }
+
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   async resetPassword(
@@ -87,16 +87,8 @@ export class AuthController {
     return await this.authService.resetPassword(token, dto);
   }
 
-  // protected Route
-  @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.OK)
-  @Get('profile')
-  getProfile(@CurrentUser() user: UserResponseDto) {
-    return { data: user };
-  }
-
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('auth:register-staff')
   @HttpCode(HttpStatus.CREATED)
   @Post('register/staff')
   async registerStaff(
@@ -112,7 +104,7 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   async logout() {
     return { message: 'Logout successful' };
   }

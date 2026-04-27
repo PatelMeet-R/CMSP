@@ -27,6 +27,7 @@ import { File as FileEntity } from 'src/modules/file-upload/domain/entity/file.e
 import { ROLES } from 'src/common/constants/roles.constant';
 import { ProfessorSubMappingService } from 'src/modules/subject/domain/services/professor-subject-mapping.service';
 import { FindAssignmentQueryDto } from 'src/common/pagination/dto/find-assignment-query.dto';
+import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 
 @Injectable()
 export class AssignmentService {
@@ -42,36 +43,41 @@ export class AssignmentService {
   //createAssignment
   async create(
     dto: CreateAssignmentDto,
-    userId: number,
-    branchId: number,
-    userRole: string,
+    currentUser: UserResponseDto,
   ): Promise<Assignment> {
-    if (userRole === ROLES.PROFESSOR) {
+    if (!currentUser.branchId)
+      throw new UnauthorizedException(
+        'User branch is required to create assignments.',
+      );
+
+    const canManageGlobal =
+      currentUser.permissions.includes('assignment:manage-global') ||
+      currentUser.permissions.includes('*:*');
+    if (!canManageGlobal) {
       const isAuthorized =
         await this.profSubMappingService.isProfessorAssignedToSubject(
-          userId,
+          currentUser.id,
           dto.subjectId,
           dto.semesterId,
           dto.academicYearId,
         );
-      if (!isAuthorized) {
+      if (!isAuthorized)
         throw new ForbiddenException(
           ERRORMESSAGE.ASSIGNMENT_MESSAGE.FORBIDDEN.NOT_AUTHORIZED_SUBJECT,
         );
-      }
     }
+
     const [user, subject, branch, semester, academicYear, fileRaw] =
       await Promise.all([
-        this.authService.findUserEntityById(userId),
+        this.authService.findUserEntityById(currentUser.id),
         this.subjectService.getSubjectById(dto.subjectId),
-        this.branchService.getBranchEntityById(branchId),
+        this.branchService.getBranchEntityById(currentUser.branchId),
         this.enumService.getEnumValueById(dto.semesterId),
         this.enumService.getEnumValueById(dto.academicYearId),
         dto.attachmentId
           ? this.fileUploadService.findFileEntityById(dto.attachmentId)
           : undefined,
       ]);
-    const file = fileRaw ?? undefined;
     if (!user) {
       throw new UnauthorizedException(ERRORMESSAGE.USERNOTEXIST);
     }
@@ -80,18 +86,18 @@ export class AssignmentService {
         ERRORMESSAGE.ASSIGNMENT_MESSAGE.INVALID_RELATION,
       );
     }
-    if (dto.attachmentId && !file) {
+    if (dto.attachmentId && !fileRaw) {
       throw new NotFoundException(ERRORMESSAGE.DATA_NOT_FOUND('file'));
     }
     //Mapping and Saving
     const entity = CreateAssignmentMapper.toEntity(
       dto,
-      userId,
+      currentUser.id,
       subject,
       branch,
       semester,
       academicYear,
-      file,
+      fileRaw ?? undefined,
     );
     await this.assignmentRepository.clearPaginationCache();
     return await this.assignmentRepository.saveAssignment(entity);
@@ -99,10 +105,9 @@ export class AssignmentService {
 
   //updateAssignment
   async update(
-    assignmentId: number,
+    assignmentId: string,
     dto: UpdateAssignmentDto,
-    userId: number,
-    userRole: string,
+    currentUser: UserResponseDto,
   ) {
     // 1. Fetch the existing assignment with its attachment
     const oldAssignment =
@@ -115,22 +120,37 @@ export class AssignmentService {
         ERRORMESSAGE.ASSIGNMENT_MESSAGE.NOT_FOUND(assignmentId),
       );
 
-    if (userRole === ROLES.PROFESSOR && oldAssignment.createdBy !== userId) {
-      throw new ForbiddenException(
-        ERRORMESSAGE.ASSIGNMENT_MESSAGE.FORBIDDEN.NOT_OWNER,
-      );
+    const canManageGlobal =
+      currentUser.permissions.includes('assignment:manage-global') ||
+      currentUser.permissions.includes('*:*');
+    const canManageOthers = currentUser.permissions.includes(
+      'assignment:manage-others',
+    );
+    const isOwner = oldAssignment.createdBy === currentUser.id;
+
+    // 1. Permission Check: Must be owner, global, or have permission to manage others
+    if (!isOwner && !canManageOthers && !canManageGlobal) {
+      throw new ForbiddenException('You can only modify your own assignments.');
     }
 
+    // 2. Branch Isolation Check: If they are managing someone else, they must be in the same branch (unless global)
+    if (
+      !isOwner &&
+      !canManageGlobal &&
+      oldAssignment.branch.id !== currentUser.branchId
+    ) {
+      throw new ForbiddenException(
+        ERRORMESSAGE.ASSIGNMENT_MESSAGE.FORBIDDEN.HOD_BRANCH_MISMATCH,
+      );
+    }
     let fileEntity: FileEntity | null | undefined = undefined;
-    let oldFileIdToDelete: number | null = null;
+    let oldFileIdToDelete: string | null = null;
 
     if (dto.attachmentId !== undefined) {
       if (
         oldAssignment.attachment &&
         oldAssignment.attachment.id !== dto.attachmentId
       ) {
-        // await this.fileUploadService.remove(oldAssignment.attachment.id);
-
         oldFileIdToDelete = oldAssignment.attachment.id;
       }
 
@@ -159,7 +179,7 @@ export class AssignmentService {
     const entity = UpdateAssignmentMapper.toEntity(
       oldAssignment,
       dto,
-      userId,
+      currentUser.id,
       subject,
       semester,
       fileEntity, // Now passing the actual Entity or null,
@@ -169,7 +189,7 @@ export class AssignmentService {
       await this.assignmentRepository.saveAssignment(entity);
 
     if (oldFileIdToDelete) {
-      await this.fileUploadService.remove(oldFileIdToDelete);
+      await this.fileUploadService.systemRemove(oldFileIdToDelete);
     }
 
     await this.assignmentRepository.clearSingleAssignmentCache(entity.id);
@@ -181,10 +201,8 @@ export class AssignmentService {
 
   //RemoveAssignment
   async remove(
-    assignmentId: number,
-    userId: number,
-    userRole: string,
-    userBranchId?: number | null,
+    assignmentId: string,
+    currentUser: UserResponseDto,
   ): Promise<void> {
     const assignment =
       await this.assignmentRepository.findAssignmentByIdWithAttachmentRelation(
@@ -196,27 +214,33 @@ export class AssignmentService {
         ERRORMESSAGE.ASSIGNMENT_MESSAGE.NOT_FOUND(assignmentId),
       );
     }
-    // RESOURCE AUTHORIZATION CHECK FOR DELETE
 
-    if (userRole === ROLES.PROFESSOR) {
-      //Own Assignment Check
-      if (assignment.createdBy !== userId) {
-        throw new ForbiddenException(
-          ERRORMESSAGE.ASSIGNMENT_MESSAGE.FORBIDDEN.DELETE_NOT_OWNER,
-        );
-      }
-    } else if (userRole === ROLES.HOD) {
-      if (!userBranchId) {
-        throw new ForbiddenException(
-          ERRORMESSAGE.ASSIGNMENT_MESSAGE.FORBIDDEN.BRANCH_MISSING,
-        );
-      }
-      if (assignment.branch.id !== userBranchId) {
-        throw new ForbiddenException(
-          ERRORMESSAGE.ASSIGNMENT_MESSAGE.FORBIDDEN.HOD_BRANCH_MISMATCH,
-        );
-      }
+    const canManageGlobal =
+      currentUser.permissions.includes('assignment:manage-global') ||
+      currentUser.permissions.includes('*:*');
+    const canManageOthers = currentUser.permissions.includes(
+      'assignment:manage-others',
+    );
+    const isOwner = assignment.createdBy === currentUser.id;
+
+    // 1. Permission Check
+    if (!isOwner && !canManageOthers && !canManageGlobal) {
+      throw new ForbiddenException(
+        ERRORMESSAGE.ASSIGNMENT_MESSAGE.FORBIDDEN.DELETE_NOT_OWNER,
+      );
     }
+
+    // 2. Branch Isolation Check
+    if (
+      !isOwner &&
+      !canManageGlobal &&
+      assignment.branch.id !== currentUser.branchId
+    ) {
+      throw new ForbiddenException(
+        ERRORMESSAGE.ASSIGNMENT_MESSAGE.FORBIDDEN.HOD_BRANCH_MISMATCH,
+      );
+    }
+
     const attachmentIdToRemove = assignment.attachment?.id;
 
     await this.assignmentRepository.removeAssignment(assignment);
@@ -224,7 +248,7 @@ export class AssignmentService {
     //Super_Admin can do anything
     if (attachmentIdToRemove) {
       try {
-        await this.fileUploadService.remove(attachmentIdToRemove);
+        await this.fileUploadService.systemRemove(attachmentIdToRemove);
         await this.assignmentRepository.clearSingleAssignmentCache(
           attachmentIdToRemove,
         );
@@ -253,7 +277,7 @@ export class AssignmentService {
 
   // ==============
   async findAssignmentByIdWithAllRelation(
-    id: number,
+    id: string,
   ): Promise<AssignmentResponseDto> {
     const assignment =
       await this.assignmentRepository.findAssignmentByIdWithAllRelation(id);
@@ -268,17 +292,24 @@ export class AssignmentService {
   // =========================
   async getAllAssignments(
     query: FindAssignmentQueryDto,
-    userRole: string,
-    userBranchId?: number,
+    currentUser: UserResponseDto,
   ) {
-    const effectiveBranchId =
-      userRole === ROLES.SUPER_ADMIN ? query.branchId : userBranchId;
+    const canAccessAll =
+      currentUser.permissions.includes('assignment:read-all-branches') ||
+      currentUser.permissions.includes('*:*');
+    const isSelfOnly =
+      !currentUser.permissions.includes('assignment:read') &&
+      currentUser.permissions.includes('assignment:read-self');
+
+    const branchConstraint = canAccessAll ? undefined : currentUser.branchId;
+    const isSelfConstraintId = isSelfOnly ? currentUser.id : undefined;
 
     const rawData =
       await this.assignmentRepository.findAllAssignmentsWithFilters(
         query,
-        effectiveBranchId,
-        userRole,
+        canAccessAll,
+        branchConstraint ?? undefined,
+        isSelfConstraintId,
       );
 
     return {
@@ -288,11 +319,11 @@ export class AssignmentService {
   }
   // =========================
 
-  async getMyAssignments(query: FindAssignmentQueryDto, userId: number) {
+  async getMyAssignments(query: FindAssignmentQueryDto, userId: string) {
     const rawData =
       await this.assignmentRepository.findAllAssignmentsWithFilters(
         query,
-        undefined,
+        false,
         undefined,
         userId,
       );

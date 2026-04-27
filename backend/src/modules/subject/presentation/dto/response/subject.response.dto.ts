@@ -1,5 +1,5 @@
 export class SubjectResponseDto {
-  id: number;
+  id: string;
   name: string;
   code: string;
   branch: string;

@@ -17,6 +17,7 @@ import { StaffProfileService } from 'src/modules/users/domain/services/staff-pro
 import { StaffProfileRepository } from 'src/modules/users/data/repository/staff-profile.repository';
 import { StaffProfileController } from 'src/modules/users/presentation/controllers/staff-profile.controller';
 import { StaffProfile } from 'src/modules/users/domain/entities/staff-profile.entity';
+import { RbacModule } from 'src/modules/rbac/rbac.module';
 
 @Module({
   imports: [
@@ -28,13 +29,10 @@ import { StaffProfile } from 'src/modules/users/domain/entities/staff-profile.en
   ],
   controllers: [PersonalInfoController, StaffProfileController],
   providers: [
+    PersonalInfoService,
     PersonalInfoRepository,
     StaffProfileService,
     StaffProfileRepository,
-    PersonalInfoService,
-    JwtAuthGuard,
-    RolesGuard,
-    EmailVerifiedGuard,
   ],
   exports: [PersonalInfoRepository, StaffProfileService],
 })

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { File } from './entity/file.entity';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
@@ -6,21 +10,22 @@ import { FileRepository } from '../data/repository';
 import { FileCreateMapper } from '../data/mapper/file-create.mapper';
 import { FileResponseDto } from '../presentation/dto/response/file-response.dto';
 import { FileResponse } from '../data/mapper/file.response';
+import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 
 @Injectable()
 export class FileUploadService {
   constructor(
     private readonly fileRepository: FileRepository,
 
-    private readonly CloudinaryService: CloudinaryService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async uploadFile(
     file: Express.Multer.File,
-    userId: number,
+    userId: string,
     folder: string,
   ): Promise<File> {
-    const cloudinaryResponse = await this.CloudinaryService.uploadFile(
+    const cloudinaryResponse = await this.cloudinaryService.uploadFile(
       file,
       folder,
     );
@@ -32,15 +37,26 @@ export class FileUploadService {
     return await this.fileRepository.save(newlyCreatedFile);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string, currentUser: UserResponseDto): Promise<void> {
     const fileToBeDeleted = await this.fileRepository.findFileById(id);
     if (!fileToBeDeleted) {
       throw new NotFoundException(
         ERRORMESSAGE.DATA_NOT_FOUND(`file with ID ${id}`),
       );
     }
+    const isOwner = fileToBeDeleted.createdBy === currentUser.id;
+    const canDeleteGlobal =
+      currentUser.permissions.includes('file:manage-global') ||
+      currentUser.permissions.includes('*:*');
+
+    if (!isOwner && !canDeleteGlobal) {
+      throw new ForbiddenException(
+        'Access denied: You can only delete your own uploaded files.',
+      );
+    }
+
     //delete from cloudinary
-    await this.CloudinaryService.deleteFile(fileToBeDeleted.publicId);
+    await this.cloudinaryService.deleteFile(fileToBeDeleted.publicId);
     //delete from database
 
     await this.fileRepository.RemoveFileEntity(fileToBeDeleted);
@@ -52,8 +68,15 @@ export class FileUploadService {
     }
     return FileResponse.toResponseDtoArray(fileDetails);
   }
-  async findFileEntityById(id: number): Promise<File | undefined> {
+  async findFileEntityById(id: string): Promise<File | undefined> {
     const file = await this.fileRepository.findFileById(id);
     return file ?? undefined;
+  }
+  async systemRemove(id: string): Promise<void> {
+    const fileToBeDeleted = await this.fileRepository.findFileById(id);
+    if (fileToBeDeleted) {
+      await this.cloudinaryService.deleteFile(fileToBeDeleted.publicId);
+      await this.fileRepository.RemoveFileEntity(fileToBeDeleted);
+    }
   }
 }

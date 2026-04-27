@@ -16,7 +16,14 @@ export async function seedUserAccountStatusEnums(dataSource: DataSource) {
     });
   }
 
-  const values = ['ACTIVE', 'GRADUATED', 'DROPOFF', 'SUSPENDED', 'INACTIVE'];
+  const values = [
+    'ACTIVE',
+    'GRADUATED',
+    'DROPOFF',
+    'SUSPENDED',
+    'INACTIVE',
+    'PENDING_USER',
+  ];
 
   for (const v of values) {
     const exists = await enumValueRepo.findOne({

@@ -3,12 +3,13 @@ import { RegisterStudentDto } from '../../presentation/dto/request/register.dto'
 import { EnumValue } from 'src/modules/enums/domain/entities/enumValue.entity';
 import { User } from '../../domain/entities/user.entity';
 import { PersonalInfo } from 'src/modules/users/domain/entities/personal-info.entity';
+import type { Role } from 'src/modules/rbac/domain/entities/role.entity';
 
 export class UserRegisterMapper {
   static toRegisterStudentEntity(
     dto: RegisterStudentDto,
     hashedPassword: string,
-    role: EnumValue,
+    role: Role,
     userAccountStatus: EnumValue,
     branch: Branch,
   ): User {

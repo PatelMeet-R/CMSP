@@ -1,5 +1,5 @@
 export class BranchResponseDto {
-  readonly id: number;
+  readonly id: string;
   readonly code: string;
   readonly name: string;
 }

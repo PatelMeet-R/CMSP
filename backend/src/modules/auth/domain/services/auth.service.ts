@@ -2,7 +2,6 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   forwardRef,
   Inject,
   Injectable,
@@ -18,7 +17,6 @@ import { ForgetPassMailReq } from '../../presentation/dto/request/forget-passwor
 import { LoginDto } from '../../presentation/dto/request/login.dto';
 import { RegisterStudentDto } from '../../presentation/dto/request/register.dto';
 import { ResetPasswordDto } from '../../presentation/dto/request/reset-password.dto';
-
 import { BcyptService } from '../../../../common/utils/bcypt/bcypt.service';
 import { JwtTokenService } from 'src/common/utils/jwt/jwt.service';
 import { MessageResponseDto } from '../../presentation/dto/response/verify-email-message.response.dto';
@@ -26,12 +24,10 @@ import { RefreshTokenResponseDto } from '../../presentation/dto/response/refresh
 import { CryptoService } from 'src/common/utils/crypto/crypto.service';
 import { RESET_PASSWORD_TOKEN_EXPIRY } from 'src/common/constants/token.constants';
 import { UserMapper } from '../../data/mappers/user.response.mapper';
-import { AuthMapper } from '../../data/mappers/auth.mapper';
 import {
   ENUM_TYPES,
   ENUM_VALUES,
 } from 'src/common/constants/enum-types.constant';
-import { ROLES } from 'src/common/constants/roles.constant';
 import { EnumService } from 'src/modules/enums/domain/enums.service';
 import { EmailedUserResponse } from '../../data/mappers/emailed-user.response.mapper';
 import { BranchService } from 'src/modules/branch/domain/branch.service';
@@ -41,7 +37,8 @@ import { RegisterSpecificUserMapper } from '../../data/mappers/register-specific
 import type { App } from 'src/config/app.config';
 import { PersonalInfoRepository } from 'src/modules/users/data/repository/personal-info-repository';
 import { DataSource } from 'typeorm';
-import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
+import { PermissionComputeService } from 'src/modules/rbac/domain/services/permission-compute.service';
+import { RoleService } from 'src/modules/rbac/domain/services/role.service';
 
 @Injectable()
 export class AuthService {
@@ -56,6 +53,8 @@ export class AuthService {
     private readonly bcryptService: BcyptService,
     private readonly enumService: EnumService,
     private readonly branchService: BranchService,
+    private readonly permissionComputeService: PermissionComputeService,
+    private readonly roleService: RoleService,
     @InjectDataSource()
     private dataSource: DataSource,
   ) {}
@@ -66,16 +65,19 @@ export class AuthService {
     if (existingUser) {
       throw new ConflictException(ERRORMESSAGE.EMAIL_ALREADY_EXISTS);
     }
+    const pendingRole =
+      await this.roleService.findEntityByRoleName('PENDING_USER');
+    if (!pendingRole) {
+      throw new InternalServerErrorException(
+        'Default registration role not found. Please run seeds.',
+      );
+    }
     const hashedPassword = await this.bcryptService.hashPassword(dto.password);
-    const role = await this.enumService.getMeEnumValueIfExist(
-      ENUM_TYPES.ROLE,
-      ROLES.STUDENT,
-    );
     const userAccountStatus = await this.enumService.getMeEnumValueIfExist(
       ENUM_TYPES.USER_ACC_STATUS,
-      ENUM_VALUES.USER_ACC_STATUS.ACTIVE,
+      ENUM_VALUES.USER_ACC_STATUS.PENDING_USER,
     );
-    if (!role && !userAccountStatus) {
+    if (!userAccountStatus) {
       throw new NotFoundException(ERRORMESSAGE.DATA_NOT_FOUND('Enum Value'));
     }
     const branch = await this.branchService.getBranchEntityById(dto.branchId);
@@ -93,7 +95,7 @@ export class AuthService {
     const entity = UserRegisterMapper.toRegisterStudentEntity(
       dto,
       hashedPassword,
-      role,
+      pendingRole,
       userAccountStatus,
       branch,
     );
@@ -114,10 +116,16 @@ export class AuthService {
       throw new UnauthorizedException(ERRORMESSAGE.USERNOTEXIST);
     }
 
+    const effectivePermissions =
+      await this.permissionComputeService.getEffectivePermissions(user.id);
+    const permissionSlugs = Array.from(effectivePermissions);
+    const userResponse = UserMapper.toResponseDto(user, permissionSlugs);
     const { accessToken, refreshToken } =
       this.JwtTokenService.generateToken(user);
-    return AuthMapper.toAuthResponse(user, accessToken, refreshToken);
+
+    return { user: userResponse, accessToken, refreshToken };
   }
+  // =====================================
 
   async refreshToken(refreshToken: string) {
     const payload = this.JwtTokenService.verifyRefreshToken(refreshToken);
@@ -131,7 +139,7 @@ export class AuthService {
   }
   // =====================================
 
-  async getUserByIdWithPersonalInfo(userId: number) {
+  async getUserByIdWithPersonalInfo(userId: string) {
     const user =
       await this.authRepository.findByIdWithPersonalInfoRelation(userId);
     if (!user) {
@@ -142,7 +150,7 @@ export class AuthService {
   // =====================================
   // find the current user by id
   // only role extract purpose for jwt Strategy
-  async findUserEntityById(userId: number) {
+  async findUserEntityById(userId: string) {
     const user = await this.authRepository.findById(userId);
     if (!user) {
       throw new UnauthorizedException(ERRORMESSAGE.USERNOTEXIST);
@@ -152,7 +160,7 @@ export class AuthService {
   // send the mail with token for verify purpose
   // =====================================
 
-  async sendVerifyEmailLink(userId: number) {
+  async sendVerifyEmailLink(userId: string) {
     try {
       const user = await this.authRepository.findById(userId);
 
@@ -254,7 +262,10 @@ export class AuthService {
 
       const branch = await this.branchService.getBranchEntityById(dto.branchId);
 
-      const roleToAssign = await this.enumService.getEnumValueById(dto.roleId);
+      const roleToAssign = await this.roleService.findEntityByRoleId(
+        dto.roleId,
+      );
+
       const userAccountStatus = await this.enumService.getMeEnumValueIfExist(
         ENUM_TYPES.USER_ACC_STATUS,
         ENUM_VALUES.USER_ACC_STATUS.ACTIVE,
@@ -263,32 +274,8 @@ export class AuthService {
       if (!branch || !roleToAssign || !creator || !userAccountStatus)
         throw new NotFoundException('Required data not found');
 
-      const isCreatorSuperAdmin = creatorDto.role?.key === ROLES.SUPER_ADMIN;
-      const isCreatorHOD = creatorDto.role?.key === ROLES.HOD;
-      if (isCreatorHOD) {
-        const creatorBranchId = creator.personalInfo?.branch?.id;
-
-        if (!creatorBranchId) {
-          throw new BadRequestException(
-            "Could not determine the HOD's branch.",
-          );
-        }
-        dto.branchId = creatorBranchId;
-      }
-
-      // If they are trying to create an HOD, the creator MUST be a Super Admin
-      if (roleToAssign.key === ROLES.HOD && !isCreatorSuperAdmin) {
-        throw new ForbiddenException('Only Super Admins can register HODs.');
-      }
-
-      // Prevent this route from being used to create Students or Admins directly
-      if (
-        roleToAssign.key !== ROLES.HOD &&
-        roleToAssign.key !== ROLES.PROFESSOR
-      ) {
-        throw new BadRequestException(
-          'Invalid role assignment for this endpoint.',
-        );
+      if (creator.personalInfo?.branch?.id) {
+        dto.branchId = String(creator.personalInfo.branch.id);
       }
 
       const password = this.cryptoService.generateRandomPassword();
@@ -330,4 +317,5 @@ export class AuthService {
       await queryRunner.release();
     }
   }
+  // =====================================
 }

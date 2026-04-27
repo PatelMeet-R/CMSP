@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -10,7 +9,6 @@ import {
   MaxFileSizeValidator,
   Param,
   ParseFilePipe,
-  ParseIntPipe,
   Post,
   UploadedFile,
   UseGuards,
@@ -22,16 +20,17 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 import { FileResponse } from '../data/mapper/file.response';
-import { Roles } from 'src/core/decorators/roles.decorators';
-import { ROLES } from 'src/common/constants/roles.constant';
-import { RolesGuard } from 'src/core/guards/roles-guard';
+import { PermissionsGuard } from 'src/core/guards/permissions.guard';
+import { Permissions } from 'src/core/decorators/permissions.decorator';
 
 @Controller('file-upload')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class FileUploadController {
   constructor(private readonly fileUploadService: FileUploadService) {}
+
   @Post()
-  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
+  @Permissions('file:upload')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
     @UploadedFile(
@@ -46,9 +45,7 @@ export class FileUploadController {
         ],
       }),
     )
-    @UploadedFile()
     file: Express.Multer.File,
-    // @Body() uploadfileDto :UploadFileDto,
     @Body('folder') folder: string,
     @CurrentUser() user: UserResponseDto,
   ): Promise<any> {
@@ -58,7 +55,7 @@ export class FileUploadController {
     };
   }
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @Permissions('file:read-all')
   async allFile() {
     const res = await this.fileUploadService.findAllFile();
     return {
@@ -66,10 +63,9 @@ export class FileUploadController {
     };
   }
   @Delete(':id')
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR, ROLES.STUDENT)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    await this.fileUploadService.remove(id);
+  @Permissions('file:delete')
+  async remove(@Param('id') id: string, @CurrentUser() user: UserResponseDto) {
+    await this.fileUploadService.remove(id, user);
     return {
       message: 'File delete successfully',
     };

@@ -1,9 +1,9 @@
-import { BaseEntity } from 'src/core/base.entity';
+import { AuditableEntity } from 'src/core/base.entity';
 import { User } from 'src/modules/auth/domain/entities/user.entity';
 import { Column, Entity, JoinColumn, OneToOne } from 'typeorm';
 
 @Entity('staff_profiles')
-export class StaffProfile extends BaseEntity {
+export class StaffProfile extends AuditableEntity {
   @OneToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;

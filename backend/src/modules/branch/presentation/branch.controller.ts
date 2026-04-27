@@ -5,7 +5,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   UseGuards,
@@ -14,10 +13,11 @@ import { BranchService } from '../domain/branch.service';
 import { BranchRegisterDto } from './dto/request/branch-register.request.dto';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
 import { BranchUpdateDto } from './dto/request/branch-update.request.dto';
-import { RolesGuard } from 'src/core/guards/roles-guard';
-import { Roles } from 'src/core/decorators/roles.decorators';
 import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
-import { ROLES } from 'src/common/constants/roles.constant';
+import { PermissionsGuard } from 'src/core/guards/permissions.guard';
+import { Permissions } from 'src/core/decorators/permissions.decorator';
+import { CurrentUser } from 'src/core/decorators/current-user.decorator';
+import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 
 @Controller('branch')
 export class BranchController {
@@ -32,25 +32,32 @@ export class BranchController {
     };
   }
   @Post('register')
-  @Roles(ROLES.SUPER_ADMIN)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('branch:create')
   @HttpCode(HttpStatus.CREATED)
-  async register(@Body() dto: BranchRegisterDto) {
-    const newlyCreatedBranch = await this.branchService.registerBranch(dto);
+  async register(
+    @Body() dto: BranchRegisterDto,
+    @CurrentUser() user: UserResponseDto,
+  ) {
+    const newlyCreatedBranch = await this.branchService.registerBranch(
+      dto,
+      user,
+    );
     return {
       message: SUCCESSMSG.BRANCH.REGISTERED,
       data: newlyCreatedBranch,
     };
   }
   @Patch(':id')
-  @Roles(ROLES.SUPER_ADMIN)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Permissions('branch:update')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @HttpCode(HttpStatus.OK)
   async update(
     @Body() dto: BranchUpdateDto,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
+    @CurrentUser() user: UserResponseDto,
   ) {
-    const updatedBranch = await this.branchService.updateBranch(id, dto);
+    const updatedBranch = await this.branchService.updateBranch(id, dto, user);
     return {
       message: SUCCESSMSG.BRANCH.UPDATED,
       data: updatedBranch,

@@ -19,6 +19,6 @@ export const AUTH_DTO_MESSAGE = {
   },
   BRANCH_ID: {
     REQUIRED: 'Branch is required! Please provide branchId',
-    INTEGER: 'Branch must be a valid integer',
+    STRING: 'Branch must be a valid UUID',
   },
 };

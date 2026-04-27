@@ -10,37 +10,47 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
-import { RolesGuard } from 'src/core/guards/roles-guard';
-import { Roles } from 'src/core/decorators/roles.decorators';
-import { CurrentUser } from 'src/core/decorators/current-user.decorator';
-import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
-import { ROLES } from 'src/common/constants/roles.constant';
 import { StaffProfileService } from '../../domain/services/staff-profile.service';
 import { UpsertStaffProfileDto } from '../dto/request/staff-profile.dto';
+import { PermissionsGuard } from 'src/core/guards/permissions.guard';
+import { Permissions } from 'src/core/decorators/permissions.decorator';
+import { CurrentUser } from 'src/core/decorators/current-user.decorator';
+import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 
 @Controller('staff-profile')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class StaffProfileController {
   constructor(private readonly staffProfileService: StaffProfileService) {}
 
   //    View a specific staff profile
   @Get(':userId')
+  @Permissions('staff:read')
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR)
-  async getProfile(@Param('userId', ParseIntPipe) userId: number) {
-    const data = await this.staffProfileService.getProfileByUserId(userId);
+  async getProfile(
+    @Param('userId') userId: string,
+    @CurrentUser() currentUser: UserResponseDto,
+  ) {
+    const data = await this.staffProfileService.getProfileByUserId(
+      userId,
+      currentUser,
+    );
     return { message: 'Profile retrieved successfully', data };
   }
 
   //    Update/Create a staff profile
   @Patch('update/:userId')
+  @Permissions('staff:update')
   @HttpCode(HttpStatus.OK)
-  @Roles(ROLES.SUPER_ADMIN, ROLES.HOD)
   async updateProfile(
-    @Param('userId', ParseIntPipe) userId: number,
+    @Param('userId') userId: string,
     @Body() dto: UpsertStaffProfileDto,
+    @CurrentUser() currentUser: UserResponseDto,
   ) {
-    const data = await this.staffProfileService.upsertStaffProfile(userId, dto);
+    const data = await this.staffProfileService.upsertStaffProfile(
+      userId,
+      dto,
+      currentUser,
+    );
     return { message: 'Professional profile updated successfully', data };
   }
 }

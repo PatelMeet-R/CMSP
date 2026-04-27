@@ -16,11 +16,15 @@ import { AssignmentModule } from './modules/assignment/assignment.module';
 import cloudinaryConfig from './config/cloudinary.config';
 import { CacheModule } from '@nestjs/cache-manager';
 import { SettingsModule } from 'src/core/system-setting/settings.module';
+import { RbacModule } from './modules/rbac/rbac.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     CacheModule.register({ isGlobal: true, ttl: 30000, max: 100 }),
     AuthModule,
+    RbacModule,
     BranchModule,
     EnumsModule,
     SubjectModule,

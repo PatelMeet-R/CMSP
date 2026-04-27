@@ -31,7 +31,7 @@ export const ERRORMESSAGE = {
   MANY_ATTEMPTS: (n: number) =>
     `too many attemps.please try again after ${n} min`,
   ASSIGNMENT_MESSAGE: {
-    NOT_FOUND: (id: number) => `Assignment with ID ${id} not found`,
+    NOT_FOUND: (id: string) => `Assignment with ID ${id} not found`,
     INVALID_RELATION: 'Invalid subject, branch, semester, or academic year',
 
     FORBIDDEN: {
