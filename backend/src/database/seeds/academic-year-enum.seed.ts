@@ -20,7 +20,7 @@ export async function seedAcademicYearEnums(dataSource: DataSource) {
     });
   }
 
-  const values = ['2024', '2025', '2026', '2027'];
+  const values = ['2024', '2025', '2026', '2027', '2028'];
 
   for (const year of values) {
     const exists = await enumValueRepo.findOne({
@@ -36,4 +36,5 @@ export async function seedAcademicYearEnums(dataSource: DataSource) {
       });
     }
   }
+  console.log('=====  done with the academic year =====');
 }

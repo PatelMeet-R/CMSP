@@ -7,22 +7,21 @@ import {
   Param,
   Patch,
   Post,
-  UseGuards,
 } from '@nestjs/common';
 import { BranchService } from '../domain/branch.service';
 import { BranchRegisterDto } from './dto/request/branch-register.request.dto';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
 import { BranchUpdateDto } from './dto/request/branch-update.request.dto';
-import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
-import { PermissionsGuard } from 'src/core/guards/permissions.guard';
 import { Permissions } from 'src/core/decorators/permissions.decorator';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
-import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
+import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
+import { Public } from 'src/core/decorators/public.decorator';
 
 @Controller('branch')
 export class BranchController {
   constructor(private branchService: BranchService) {}
 
+  @Public()
   @Get('all')
   @HttpCode(HttpStatus.OK)
   async getMeAllBranch() {
@@ -31,8 +30,8 @@ export class BranchController {
       data: branches,
     };
   }
+
   @Post('register')
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('branch:create')
   @HttpCode(HttpStatus.CREATED)
   async register(
@@ -48,9 +47,9 @@ export class BranchController {
       data: newlyCreatedBranch,
     };
   }
+
   @Patch(':id')
   @Permissions('branch:update')
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @HttpCode(HttpStatus.OK)
   async update(
     @Body() dto: BranchUpdateDto,

@@ -14,7 +14,7 @@ import { UpsertSettingDto } from 'src/core/system-setting/system-setting.dto';
 import { PermissionsGuard } from 'src/core/guards/permissions.guard';
 import { Permissions } from 'src/core/decorators/permissions.decorator';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
-import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
+import  { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 
 @Controller('settings')
 @UseGuards(JwtAuthGuard, PermissionsGuard)

@@ -4,7 +4,7 @@ import { Repository, Brackets } from 'typeorm';
 import { PersonalInfo } from '../../domain/entities/personal-info.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { FindUsersPersonalInfoQueryDto } from 'src/common/pagination/dto/find-users-personal-query.dto';
-import type { PaginatedResponse } from 'src/common/pagination/interface/paginated-response.interface';
+import { PaginatedResponse } from 'src/common/pagination/interface/paginated-response.interface';
 import type { Cache } from 'cache-manager';
 import { paginate } from 'src/common/pagination/utils/pagination.util';
 // import { ROLES } from 'src/common/constants/roles.constant';
@@ -151,7 +151,13 @@ export class PersonalInfoRepository {
       await this.cacheManager.get<PaginatedResponse<PersonalInfo>>(cacheKey);
     if (cached) return cached;
 
-    const { search, genderId, roleId, branchId: queryBranchId } = query;
+    const {
+      search,
+      genderId,
+      roleId,
+      branchId: queryBranchId,
+      statusKey,
+    } = query;
 
     const queryBuilder = this.repo
       .createQueryBuilder('profile')
@@ -186,9 +192,11 @@ export class PersonalInfoRepository {
     if (roleId) {
       queryBuilder.andWhere('user.roleId = :roleId', { roleId });
     }
-
-    // Optimized Search using ILIKE (ensure pg_trgm index exists on name/enrollment)
+    if (statusKey) {
+      queryBuilder.andWhere('status.key = :statusKey', { statusKey });
+    }
     if (search) {
+      // Optimized Search using ILIKE (ensure pg_trgm index exists on name/enrollment)
       queryBuilder.andWhere(
         "(profile.firstName || ' ' || profile.lastName ILIKE :search OR profile.enrollmentNumber ILIKE :search)",
         { search: `%${search}%` },
@@ -204,7 +212,16 @@ export class PersonalInfoRepository {
     query: FindUsersPersonalInfoQueryDto,
     branchConstraint?: string,
   ): string {
-    return `users_p${query.page}_l${query.limit}_b${branchConstraint || 'all'}_s${query.search || ''}`;
+    return (
+      `users_p${query.page || 1}` +
+      `_l${query.limit || 10}` +
+      `_bc${branchConstraint || 'all'}` + // Branch Constraint (PBAC)
+      `_qb${query.branchId || ''}` + // Query Branch Filter
+      `_g${query.genderId || ''}` + // Gender Filter
+      `_r${query.roleId || ''}` + // Role Filter
+      `_st${query.statusKey || ''}` +
+      `_s${query.search || ''}`
+    );
   }
 
   // ======================================
@@ -303,6 +320,17 @@ export class PersonalInfoRepository {
         }
       }
     }
+  }
+  // ======================================
+
+  async findDormantActiveUsers(thresholdDate: Date): Promise<PersonalInfo[]> {
+    return this.repo
+      .createQueryBuilder('pi')
+      .leftJoinAndSelect('pi.userAccountStatus', 'status')
+      .leftJoinAndSelect('pi.user', 'user')
+      .where('status.key = :activeKey', { activeKey: 'ACTIVE' }) 
+      .andWhere('user.lastLoginAt < :thresholdDate', { thresholdDate }) // Logged in before the threshold
+      .getMany();
   }
   // ======================================
   // ======================================

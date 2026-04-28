@@ -5,7 +5,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -19,17 +18,19 @@ import { CreateSubjectDto } from '../dto/request/subject-register.request.dto';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
 import { SubjectService } from '../../domain/services/subject.service';
 import { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-query.dto';
-import type { User } from 'src/modules/auth/domain/entities/user.entity';
-import { UserMapper } from 'src/modules/auth/data/mappers/user.response.mapper';
 import { PermissionsGuard } from 'src/core/guards/permissions.guard';
 import { Permissions } from 'src/core/decorators/permissions.decorator';
+import { StatusGuard } from 'src/core/guards/status.guard';
+import { Public } from 'src/core/decorators/public.decorator';
+import { AllowInactive } from 'src/core/decorators/allow-inactive.decorator';
 
 @Controller('subject')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class SubjectController {
   constructor(private readonly subjectService: SubjectService) {}
   // ======================================
 
+  @Public()
+  @AllowInactive()
   @Get()
   @HttpCode(HttpStatus.OK)
   @Permissions('subject:read')
@@ -103,6 +104,8 @@ export class SubjectController {
   }
   // ======================================
 
+  @Public()
+  @AllowInactive()
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @Permissions('subject:read-detail')

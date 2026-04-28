@@ -5,7 +5,8 @@ import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user
 export const CurrentUser = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    return UserMapper.toResponseDto(request.user);
+    // return UserMapper.toResponseDto(request.user);
     // return request.user;
+    return request.user as UserResponseDto;
   },
 );

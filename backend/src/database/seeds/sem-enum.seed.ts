@@ -29,4 +29,6 @@ export async function seedSemsEnum(dataSource: DataSource) {
     { key: 'SEM07', value: '7', type: SEM_ENUM_Type },
     { key: 'SEM08', value: '8', type: SEM_ENUM_Type },
   ]);
+
+  console.log('=====  done with the semester seeding  =====');
 }

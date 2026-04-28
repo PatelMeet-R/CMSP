@@ -6,4 +6,5 @@ export class UserResponseDto {
   readonly branchId: string | null;
   readonly permissions: string[];
   readonly mustChangePassword: boolean;
+  readonly status: string;
 }

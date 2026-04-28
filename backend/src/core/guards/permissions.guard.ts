@@ -8,6 +8,7 @@ import { Reflector } from '@nestjs/core';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
 import { PermissionComputeService } from 'src/modules/rbac/domain/services/permission-compute.service';
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
+import { IS_PUBLIC_KEY } from 'src/core/decorators/public.decorator';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -17,7 +18,15 @@ export class PermissionsGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // 1. Read required permissions from @Permissions() decorator
+    //  Is it a @Public() route? (Level 1: No JWT needed)
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) return true;
+
+    //  Read required permissions from @Permissions() decorator
+
     const requiredPermissions = this.reflector.getAllAndOverride<string[]>(
       PERMISSIONS_KEY,
       [context.getHandler(), context.getClass()],
@@ -28,22 +37,22 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
-    // 2. Get the authenticated user from request
+    //  Get the authenticated user from request
     const { user } = context.switchToHttp().getRequest();
     if (!user) {
       throw new ForbiddenException(ERRORMESSAGE.USER_NOT_AUTHENTICATED);
     }
 
-    // 3. Compute the user's effective permissions
+    //  Compute the user's effective permissions
     const effectivePermissions =
       await this.permissionComputeService.getEffectivePermissions(user.id);
 
-    // 4. Wildcard check — Super Admin bypass
+    //  Wildcard check — Super Admin bypass
     if (effectivePermissions.has('*:*')) {
       return true;
     }
 
-    // 5. Check if user has ALL required permissions
+    //  Check if user has ALL required permissions
     const hasAllPermissions = requiredPermissions.every((perm) =>
       effectivePermissions.has(perm),
     );

@@ -18,17 +18,19 @@ import { LoginDto } from '../dto/request/login.dto';
 import { ForgetPassMailReq } from '../dto/request/forget-password.dto';
 import { ResetPasswordDto } from '../dto/request/reset-password.dto';
 import { UserResponseDto } from '../dto/response/user.response.dto';
-import { RolesGuard } from 'src/core/guards/roles-guard';
 import { Permissions } from 'src/core/decorators/permissions.decorator';
 import { RegisterSpecificUserDto } from '../dto/request/register-specific-user.request.dto';
 import { LoginThrottlerGuard } from 'src/core/guards/login-throttler.guard';
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
 import { VerificationEmailThrottlerGuard } from 'src/core/guards/verification-email-throttler.guard';
-import { PermissionsGuard } from 'src/core/guards/permissions.guard';
+import { Public } from 'src/core/decorators/public.decorator';
+import { AllowInactive } from 'src/core/decorators/allow-inactive.decorator';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
+
+  @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() dto: RegisterStudentDto) {
@@ -37,6 +39,8 @@ export class AuthController {
       data: await this.authService.register(dto),
     };
   }
+
+  @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(LoginThrottlerGuard)
@@ -47,6 +51,7 @@ export class AuthController {
     };
   }
 
+  @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refreshToken(@Body('refreshToken') refreshToken: string) {
@@ -56,25 +61,32 @@ export class AuthController {
     };
   }
 
+  @AllowInactive()
   @Post('send-verification-mail')
+  @UseGuards(VerificationEmailThrottlerGuard)
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard, VerificationEmailThrottlerGuard)
   async sendVerificationMail(@CurrentUser() user: UserResponseDto) {
     return await this.authService.sendVerifyEmailLink(user.id);
   }
 
+  @Public()
+  @AllowInactive()
   @Get('verify-email')
   @HttpCode(HttpStatus.OK)
   async verifyEmail(@Query('token') token: string) {
     return await this.authService.verifyEmail(token);
   }
 
+  @Public()
+  @AllowInactive()
   @Post('forget-password')
   @HttpCode(HttpStatus.OK)
   async forgetPassword(@Body() dto: ForgetPassMailReq) {
     return await this.authService.forgetPassword(dto);
   }
 
+  @Public()
+  @AllowInactive()
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   async resetPassword(
@@ -87,7 +99,6 @@ export class AuthController {
     return await this.authService.resetPassword(token, dto);
   }
 
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('auth:register-staff')
   @HttpCode(HttpStatus.CREATED)
   @Post('register/staff')
@@ -104,7 +115,6 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
   async logout() {
     return { message: 'Logout successful' };
   }

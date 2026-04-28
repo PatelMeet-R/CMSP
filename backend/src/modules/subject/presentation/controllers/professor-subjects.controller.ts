@@ -15,16 +15,13 @@ import { ProfessorSubMappingService } from '../../domain/services/professor-subj
 import { AssignSubjectDto } from '../dto/request/professor-subjects.request.dto';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
-import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
 import { UpdateAssignSubjectDto } from '../dto/request/professor-subjects-update.request.dto';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
 import { FindSubjectMappingQueryDto } from 'src/common/pagination/dto/find-subject-mapping-query.dto';
-import { PermissionsGuard } from 'src/core/guards/permissions.guard';
 import { Permissions } from 'src/core/decorators/permissions.decorator';
 import { BulkCloneAssignmentsDto } from 'src/modules/subject/presentation/dto/request/bulk-clone.dto';
 
 @Controller('professor-subject')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class ProfessorSubMappingController {
   constructor(
     private readonly professorSubMappingService: ProfessorSubMappingService,
@@ -144,7 +141,6 @@ export class ProfessorSubMappingController {
     };
   }
   // ===================
-  // Add this to ProfessorSubMappingController
   @Post('bulk-clone')
   @HttpCode(HttpStatus.OK)
   @Permissions('assignment:create') // Requires create permissions

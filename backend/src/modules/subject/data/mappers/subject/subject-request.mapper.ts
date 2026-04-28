@@ -1,8 +1,8 @@
 import { Branch } from 'src/modules/branch/domain/entities/branch.entity';
 import { EnumValue } from 'src/modules/enums/domain/entities/enumValue.entity';
 import { Subject } from 'src/modules/subject/domain/entities/subject.entity';
-import type { CreateSubjectDto } from 'src/modules/subject/presentation/dto/request/subject-register.request.dto';
-import type { UpdateSubjectDto } from 'src/modules/subject/presentation/dto/request/subject-update.request.dto';
+import  { CreateSubjectDto } from 'src/modules/subject/presentation/dto/request/subject-register.request.dto';
+import  { UpdateSubjectDto } from 'src/modules/subject/presentation/dto/request/subject-update.request.dto';
 
 export class SubjectRequestMapper {
   static toCreateEntity(

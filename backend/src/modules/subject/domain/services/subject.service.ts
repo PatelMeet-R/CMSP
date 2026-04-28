@@ -14,8 +14,7 @@ import { BranchService } from 'src/modules/branch/domain/branch.service';
 import { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-query.dto';
 import { SubjectResponseMapper } from 'src/modules/subject/data/mappers/subject/subject-response.mapper';
 import { SubjectRequestMapper } from 'src/modules/subject/data/mappers/subject/subject-request.mapper';
-import type { User } from 'src/modules/auth/domain/entities/user.entity';
-import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
+import  { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 
 @Injectable()
 export class SubjectService {

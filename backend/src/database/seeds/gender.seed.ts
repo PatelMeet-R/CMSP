@@ -32,4 +32,5 @@ export async function seedGenderEnums(dataSource: DataSource) {
       });
     }
   }
+  console.log('=====  done with genders =====');
 }

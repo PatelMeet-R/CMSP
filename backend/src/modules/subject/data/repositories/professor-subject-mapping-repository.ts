@@ -7,7 +7,7 @@ import type { Cache } from 'cache-manager';
 import { FindSubjectMappingQueryDto } from 'src/common/pagination/dto/find-subject-mapping-query.dto';
 import { paginate } from 'src/common/pagination/utils/pagination.util';
 import { In } from 'typeorm';
-import type { PaginatedResponse } from 'src/common/pagination/interface/paginated-response.interface';
+import  { PaginatedResponse } from 'src/common/pagination/interface/paginated-response.interface';
 
 @Injectable()
 export class ProfessorSubMappingRepository {

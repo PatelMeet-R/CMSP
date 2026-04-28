@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PersonalInfoRepository } from '../../data/repository/personal-info-repository';
@@ -15,7 +16,10 @@ import { UpdatePersonalInfoMapper } from 'src/modules/users/data/mapper/users.re
 import { UpdatePersonalInfoDto } from 'src/modules/users/presentation/dto/request/update-personal-info.dto';
 import { PersonalInfoResponseMapper } from 'src/modules/users/data/mapper/users-response.mapper';
 import { FindUsersPersonalInfoQueryDto } from 'src/common/pagination/dto/find-users-personal-query.dto';
-import { ENUM_TYPES } from 'src/common/constants/enum-types.constant';
+import {
+  ENUM_TYPES,
+  ENUM_VALUES,
+} from 'src/common/constants/enum-types.constant';
 import { AuthRepository } from 'src/modules/auth/data/repository';
 import {
   ChangeUserRoleDto,
@@ -25,6 +29,7 @@ import { FileUploadService } from 'src/modules/file-upload/domain/file-upload.se
 import { Inject, forwardRef } from '@nestjs/common';
 import { UpdateProfileImageDto } from 'src/modules/users/presentation/dto/request/update-profile-image.dto';
 import { RoleService } from 'src/modules/rbac/domain/services/role.service';
+import { ApproveUserDto } from 'src/modules/users/presentation/dto/request/approve-user.dto';
 
 @Injectable()
 export class PersonalInfoService {
@@ -300,23 +305,25 @@ export class PersonalInfoService {
     }
 
     // 4. Fetch the Enum Status
-    const status = await this.enumService.getMeEnumValueIfExist(
-      ENUM_TYPES.USER_ACC_STATUS,
-      dto.statusKey,
-    );
-    if (!status) throw new BadRequestException('Invalid Status Key');
+    const status = await this.enumService.getEnumValueById(dto.statusId);
+
+    if (!status) throw new BadRequestException('Invalid Status ID');
 
     profile.userAccountStatus = status;
+
     await this.personalInfoRepo.saveInfo(profile);
 
-    return { message: 'Account status updated successfully.' };
+    return {
+      message: 'Account status updated successfully to ${status.value}.',
+      data: { feedback: profile.statusFeedback },
+    };
   }
 
   // ================================
   async searchStaffForAssignment(
     searchTerm: string,
     limit: number = 15,
-    branchIdConstraint?: string, // UUID Fix
+    branchIdConstraint?: string,
   ) {
     const rawItems = await this.personalInfoRepo.searchStaffForCombobox(
       searchTerm,
@@ -332,6 +339,110 @@ export class PersonalInfoService {
     }));
   }
   // ================================
+  // ==========================================
+  // GET PENDING USERS (For the HOD Dashboard)
+  // ==========================================
+  async getPendingUsers(
+    query: FindUsersPersonalInfoQueryDto,
+    currentUser: UserResponseDto,
+  ) {
+    const canAccessAll =
+      currentUser.permissions.includes('user:read-all-branches') ||
+      currentUser.permissions.includes('*:*');
+    const branchConstraint = canAccessAll ? undefined : currentUser.branchId;
+
+    query.statusKey = ENUM_VALUES.USER_ACC_STATUS.PENDING;
+
+    const paginatedResult = await this.personalInfoRepo.FindAll(
+      query,
+      canAccessAll,
+      branchConstraint ?? undefined,
+    );
+
+    return {
+      items: PersonalInfoResponseMapper.toPaginatedResponse(
+        paginatedResult.items,
+      ),
+      meta: paginatedResult.meta,
+    };
+  }
   // ================================
+  // ==========================================
+  // APPROVE PENDING USER
+  // ==========================================
+  async approveUser(
+    personalInfoId: string,
+    dto: ApproveUserDto,
+    currentUser: UserResponseDto,
+  ) {
+    const profile =
+      await this.personalInfoRepo.findPersonalInfoById(personalInfoId);
+    if (!profile || !profile.user)
+      throw new NotFoundException('User profile not found');
+
+    // 1. PBAC & Branch Checks (Needs permission to manage status AND roles)
+    const canManageStatusAndRoles =
+      currentUser.permissions.includes('user:manage-status') &&
+      currentUser.permissions.includes('user:manage-role');
+    const hasGlobalAccess =
+      currentUser.permissions.includes('*:*') ||
+      currentUser.permissions.includes('user:manage-global');
+
+    if (!canManageStatusAndRoles && !hasGlobalAccess) {
+      throw new ForbiddenException(
+        'Insufficient permissions to approve users.',
+      );
+    }
+
+    if (!hasGlobalAccess && profile.branch?.id !== currentUser.branchId) {
+      throw new ForbiddenException(
+        'You can only approve users within your own branch.',
+      );
+    }
+
+    // 2. Validate current status is actually Pending
+    if (
+      profile.userAccountStatus?.key !== ENUM_VALUES.USER_ACC_STATUS.PENDING
+    ) {
+      throw new BadRequestException('This user is not in a pending state.');
+    }
+
+    // 3. Fetch the new Role & Active Status
+    const newRole = await this.roleService.findEntityByRoleId(dto.roleId);
+    if (!newRole)
+      throw new BadRequestException('Invalid Role ID provided for approval.');
+
+    if (newRole.name === 'SUPER_ADMIN' && !hasGlobalAccess) {
+      throw new ForbiddenException(
+        'You cannot approve someone as a SUPER_ADMIN.',
+      );
+    }
+
+    const activeStatus = await this.enumService.getMeEnumValueIfExist(
+      ENUM_TYPES.USER_ACC_STATUS,
+      ENUM_VALUES.USER_ACC_STATUS.ACTIVE,
+    );
+    if (!activeStatus)
+      throw new InternalServerErrorException(
+        'Active status enum missing from database.',
+      );
+
+    // 4. Apply the Upgrades
+    profile.user.role = newRole;
+    profile.userAccountStatus = activeStatus;
+    profile.statusFeedback = null; // Clear any old rejection notes
+
+    // 5. Save & Clear Caches
+    await this.authRepository.save(profile.user);
+    const savedProfile = await this.personalInfoRepo.saveInfo(profile);
+
+    await this.personalInfoRepo.clearSingleUserCache(profile.user.id);
+
+    // (Optional) Here you can trigger this.mailService.sendApprovalEmail(profile.user.email)
+
+    return {
+      message: `User successfully approved and upgraded to ${newRole.name}.`,
+    };
+  }
   // ================================
 }

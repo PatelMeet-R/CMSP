@@ -16,7 +16,7 @@ import { EnumsModule } from '../enums/enums.module';
 import { AuthModule } from '../auth/auth.module';
 import { ProfessorSubMapping } from './domain/entities/professors-subject.entity';
 import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
-import { RolesGuard } from 'src/core/guards/roles-guard';
+import { RolesGuard } from 'src/core/guards/roles.guard';
 import { UsersModule } from 'src/modules/users/users.module';
 
 @Module({

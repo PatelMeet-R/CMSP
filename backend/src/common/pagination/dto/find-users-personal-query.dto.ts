@@ -1,5 +1,11 @@
 import { Type } from 'class-transformer';
-import { IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 import { PaginationQueryDto } from 'src/common/pagination/dto/pagination-query.dto';
 
 export class FindUsersPersonalInfoQueryDto extends PaginationQueryDto {
@@ -10,17 +16,18 @@ export class FindUsersPersonalInfoQueryDto extends PaginationQueryDto {
 
   // ====== FILTER  ======
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  branchId?: number;
+  @IsUUID()
+  branchId?: string;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  genderId?: number;
+  @IsUUID()
+  genderId?: string;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  roleId?: number;
+  @IsUUID()
+  roleId?: string;
+
+  @IsOptional()
+  @IsString()
+  statusKey: string;
 }

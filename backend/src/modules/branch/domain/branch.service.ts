@@ -9,7 +9,7 @@ import { ERRORMESSAGE } from 'src/common/constants/error.message';
 import { BranchMapper } from '../data/mappers/branch.mapper';
 import { BranchUpdateDto } from '../presentation/dto/request/branch-update.request.dto';
 import { Branch } from './entities/branch.entity';
-import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
+import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 
 @Injectable()
 export class BranchService {
@@ -57,7 +57,7 @@ export class BranchService {
       await this.branchRepository.createOrUpdateAndSave(branch);
     return BranchMapper.toBranchResponse(updatedBranch);
   }
-  
+
   async getBranchEntityById(branchId: string): Promise<Branch> {
     const branch = await this.branchRepository.findById(branchId);
 

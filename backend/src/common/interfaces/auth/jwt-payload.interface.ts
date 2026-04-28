@@ -3,6 +3,7 @@ export interface AccessTokenPayload {
   email: string;
   role: string;
   branchId?: string;
+  status?: string;
 }
 
 export interface RefreshTokenPayload {

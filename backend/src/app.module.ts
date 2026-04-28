@@ -18,6 +18,10 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { SettingsModule } from 'src/core/system-setting/settings.module';
 import { RbacModule } from './modules/rbac/rbac.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { StatusGuard } from 'src/core/guards/status.guard';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
+import { PermissionsGuard } from 'src/core/guards/permissions.guard';
 
 @Module({
   imports: [
@@ -60,6 +64,23 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // 1. Identify the user
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    // 2. Check if they are banned
+    {
+      provide: APP_GUARD,
+      useClass: StatusGuard,
+    },
+    // 3. Check what they are allowed to do
+    {
+      provide: APP_GUARD,
+      useClass: PermissionsGuard,
+    },
+  ],
 })
 export class AppModule {}

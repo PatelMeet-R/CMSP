@@ -8,4 +8,7 @@ export class Branch extends AuditableEntity {
 
   @Column({ unique: true })
   name: string;
+
+  @Column({ default: false })
+  isSystem: boolean;
 }

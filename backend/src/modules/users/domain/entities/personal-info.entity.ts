@@ -1,4 +1,3 @@
-import { IsOptional } from 'class-validator';
 import { AuditableEntity } from 'src/core/base.entity';
 import { User } from 'src/modules/auth/domain/entities/user.entity';
 import { Branch } from 'src/modules/branch/domain/entities/branch.entity';
@@ -39,7 +38,7 @@ export class PersonalInfo extends AuditableEntity {
   @JoinColumn({ name: 'genderId' })
   gender: EnumValue;
 
-  @ManyToOne(() => Branch, { nullable: true })
+  @ManyToOne(() => Branch, { nullable: false })
   @JoinColumn({ name: 'branchId' })
   branch: Branch;
 
@@ -61,6 +60,9 @@ export class PersonalInfo extends AuditableEntity {
   @ManyToOne(() => EnumValue, { eager: true })
   @JoinColumn({ name: 'userAccountStatusId' })
   userAccountStatus: EnumValue;
+
+  @Column({ type: 'text', nullable: true })
+  statusFeedback: string | null;
 
   //address
   @Column()

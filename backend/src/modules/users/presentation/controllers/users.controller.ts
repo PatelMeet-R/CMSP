@@ -9,7 +9,6 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
 import { Permissions } from 'src/core/decorators/permissions.decorator';
 import { PersonalInfoService } from '../../domain/services/personal-info.service';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
@@ -18,17 +17,14 @@ import { EmailVerifiedGuard } from 'src/core/guards/email-verified.guard';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
 import { UpdatePersonalInfoDto } from 'src/modules/users/presentation/dto/request/update-personal-info.dto';
 import { FindUsersPersonalInfoQueryDto } from 'src/common/pagination/dto/find-users-personal-query.dto';
-import type { User } from 'src/modules/auth/domain/entities/user.entity';
 import {
   ChangeUserRoleDto,
   ToggleStatusDto,
 } from 'src/modules/users/presentation/dto/request/update-User.dto';
 import { UpdateProfileImageDto } from 'src/modules/users/presentation/dto/request/update-profile-image.dto';
-import { UserMapper } from 'src/modules/auth/data/mappers/user.response.mapper';
-import { PermissionsGuard } from 'src/core/guards/permissions.guard';
+import { ApproveUserDto } from 'src/modules/users/presentation/dto/request/approve-user.dto';
 
 @Controller('personal-info')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class PersonalInfoController {
   constructor(private readonly personalInfoService: PersonalInfoService) {}
 
@@ -47,12 +43,11 @@ export class PersonalInfoController {
   @HttpCode(HttpStatus.OK)
   @Permissions('user:read', 'assignment:manage')
   async searchStaffForCombobox(
-    @CurrentUser() rawUser: User,
+    @CurrentUser() user: UserResponseDto,
     @Query('search') search: string,
     @Query('branchId') branchId: string,
     @Query('limit') limit: string,
   ) {
-    const user = UserMapper.toResponseDto(rawUser);
     const hasGlobalAccess =
       user.permissions.includes('user:read-all-branches') ||
       user.permissions.includes('*:*');
@@ -98,9 +93,8 @@ export class PersonalInfoController {
   @HttpCode(HttpStatus.OK)
   async findAll(
     @Query() query: FindUsersPersonalInfoQueryDto,
-    @CurrentUser() rawUser: User,
+    @CurrentUser() user: UserResponseDto,
   ) {
-    const user = UserMapper.toResponseDto(rawUser);
     return this.personalInfoService.findAll(query, user);
   }
 
@@ -109,9 +103,8 @@ export class PersonalInfoController {
   @Permissions('user:read-detail')
   async getUserProfile(
     @Param('personalInfoId') personalInfoId: string,
-    @CurrentUser() currentUser: User,
+    @CurrentUser() user: UserResponseDto,
   ) {
-    const user = UserMapper.toResponseDto(currentUser);
     return this.personalInfoService.getDetailedProfile(personalInfoId, user);
   }
 
@@ -168,6 +161,43 @@ export class PersonalInfoController {
     return {
       message: 'Profile image updated successfully',
       data: res,
+    };
+  }
+
+  @Get('pending')
+  @HttpCode(HttpStatus.OK)
+  // Require permissions to read users and manage statuses
+  @Permissions('user:read', 'user:manage-status')
+  async getPendingUsers(
+    @Query() query: FindUsersPersonalInfoQueryDto,
+    @CurrentUser() currentUser: UserResponseDto,
+  ) {
+    const res = await this.personalInfoService.getPendingUsers(
+      query,
+      currentUser,
+    );
+    return {
+      message: 'Pending users retrieved successfully',
+      data: res,
+    };
+  }
+
+  @Patch('approve/:personalInfoId')
+  @HttpCode(HttpStatus.OK)
+  @Permissions('user:manage-status', 'user:manage-role')
+  async approvePendingUser(
+    @Param('personalInfoId') personalInfoId: string, // UUID
+    @Body() dto: ApproveUserDto,
+    @CurrentUser() currentUser: UserResponseDto,
+  ) {
+    const res = await this.personalInfoService.approveUser(
+      personalInfoId,
+      dto,
+      currentUser,
+    );
+
+    return {
+      message: res.message,
     };
   }
 }

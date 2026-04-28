@@ -15,16 +15,13 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileUploadService } from '../domain/file-upload.service';
-import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 import { FileResponse } from '../data/mapper/file.response';
-import { PermissionsGuard } from 'src/core/guards/permissions.guard';
 import { Permissions } from 'src/core/decorators/permissions.decorator';
 
 @Controller('file-upload')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class FileUploadController {
   constructor(private readonly fileUploadService: FileUploadService) {}
 

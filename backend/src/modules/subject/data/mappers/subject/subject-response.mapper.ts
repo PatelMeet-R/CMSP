@@ -1,4 +1,4 @@
-import type { Subject } from 'src/modules/subject/domain/entities/subject.entity';
+import  { Subject } from 'src/modules/subject/domain/entities/subject.entity';
 
 export class SubjectResponseMapper {
   static toResponse(entity: Subject) {

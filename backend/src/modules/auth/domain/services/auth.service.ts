@@ -34,7 +34,7 @@ import { BranchService } from 'src/modules/branch/domain/branch.service';
 import { RegisterSpecificUserDto } from '../../presentation/dto/request/register-specific-user.request.dto';
 import { UserRegisterMapper } from '../../data/mappers/user-register.mapper';
 import { RegisterSpecificUserMapper } from '../../data/mappers/register-specific-user.mapper';
-import type { App } from 'src/config/app.config';
+import { type App } from 'src/config/app.config';
 import { PersonalInfoRepository } from 'src/modules/users/data/repository/personal-info-repository';
 import { DataSource } from 'typeorm';
 import { PermissionComputeService } from 'src/modules/rbac/domain/services/permission-compute.service';
@@ -65,17 +65,19 @@ export class AuthService {
     if (existingUser) {
       throw new ConflictException(ERRORMESSAGE.EMAIL_ALREADY_EXISTS);
     }
-    const pendingRole =
-      await this.roleService.findEntityByRoleName('PENDING_USER');
+    const pendingRole = await this.roleService.findEntityByRoleName(
+      ENUM_VALUES.USER_ACC_STATUS.PENDING || 'PENDING_USER',
+    );
     if (!pendingRole) {
       throw new InternalServerErrorException(
         'Default registration role not found. Please run seeds.',
       );
     }
+
     const hashedPassword = await this.bcryptService.hashPassword(dto.password);
     const userAccountStatus = await this.enumService.getMeEnumValueIfExist(
       ENUM_TYPES.USER_ACC_STATUS,
-      ENUM_VALUES.USER_ACC_STATUS.PENDING_USER,
+      ENUM_VALUES.USER_ACC_STATUS.PENDING,
     );
     if (!userAccountStatus) {
       throw new NotFoundException(ERRORMESSAGE.DATA_NOT_FOUND('Enum Value'));
@@ -120,6 +122,10 @@ export class AuthService {
       await this.permissionComputeService.getEffectivePermissions(user.id);
     const permissionSlugs = Array.from(effectivePermissions);
     const userResponse = UserMapper.toResponseDto(user, permissionSlugs);
+
+    user.lastLoginAt = new Date();
+    await this.authRepository.save(user);
+
     const { accessToken, refreshToken } =
       this.JwtTokenService.generateToken(user);
 
@@ -182,18 +188,31 @@ export class AuthService {
   async verifyEmail(token: string) {
     try {
       const payload = this.JwtTokenService.verifyEmailToken(token);
+      if (!payload)
+        throw new BadRequestException('Invalid or expired verification token.');
 
       const user = await this.authRepository.findById(payload.sub);
       if (!user) {
         throw new BadRequestException(ERRORMESSAGE.INVALID_TOKEN);
       }
-      if (user.isEmailVerified) {
-        return new MessageResponseDto(SUCCESSMSG.AUTH.EMAIL_ALREADY_VERIFIED);
+
+      user.isEmailVerified = true;
+
+      if (
+        user.personalInfo?.userAccountStatus?.key ===
+        ENUM_VALUES.USER_ACC_STATUS.INACTIVE
+      ) {
+        const activeStatus = await this.enumService.getMeEnumValueIfExist(
+          ENUM_TYPES.USER_ACC_STATUS,
+          ENUM_VALUES.USER_ACC_STATUS.ACTIVE,
+        );
+        if (activeStatus) {
+          user.personalInfo.userAccountStatus = activeStatus;
+        }
       }
 
-      await this.authRepository.update(user.id, {
-        isEmailVerified: true,
-      });
+      await this.authRepository.save(user);
+      await this.personalInfoRespository.clearSingleUserCache(user.id);
 
       return new MessageResponseDto(SUCCESSMSG.AUTH.EMAIL_VERIFIED_SUCCESS);
     } catch (e) {

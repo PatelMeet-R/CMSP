@@ -5,12 +5,19 @@ export async function seedBranches(dataSource: DataSource) {
   const repo = dataSource.getRepository(Branch);
 
   const branches = [
-    { name: 'Computer Engineering', code: 'CE' },
-    { name: 'Information Technology', code: 'IT' },
-    { name: 'Mechanical Engineering', code: 'ME' },
-    { name: 'Electronics and Communication Engineering', code: 'EC' },
-    { name: 'Civil Engineering', code: 'CV' },
-    { name: 'Electrical Engineering', code: 'EE' },
+    { name: 'System Administration', code: 'SYS', isSystem: true },
+
+    // Your normal branches
+    { name: 'Computer Engineering', code: 'CE', isSystem: false },
+    { name: 'Information Technology', code: 'IT', isSystem: false },
+    { name: 'Mechanical Engineering', code: 'ME', isSystem: false },
+    {
+      name: 'Electronics and Communication Engineering',
+      code: 'EC',
+      isSystem: false,
+    },
+    { name: 'Civil Engineering', code: 'CV', isSystem: false },
+    { name: 'Electrical Engineering', code: 'EE', isSystem: false },
   ];
 
   for (const branch of branches) {

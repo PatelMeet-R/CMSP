@@ -18,11 +18,11 @@ export async function seedUserAccountStatusEnums(dataSource: DataSource) {
 
   const values = [
     'ACTIVE',
-    'GRADUATED',
-    'DROPOFF',
-    'SUSPENDED',
+    'PENDING',
+    'BLOCKED',
+    'REJECTED',
     'INACTIVE',
-    'PENDING_USER',
+    'GRADUATED',
   ];
 
   for (const v of values) {
@@ -39,4 +39,7 @@ export async function seedUserAccountStatusEnums(dataSource: DataSource) {
       });
     }
   }
+  console.log('------------------------');
+  console.log('Account Statuses seeded');
+  console.log('------------------------');
 }

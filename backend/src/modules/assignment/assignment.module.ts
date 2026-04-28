@@ -10,7 +10,7 @@ import { BranchModule } from '../branch/branch.module';
 import { EnumsModule } from '../enums/enums.module';
 import { AuthModule } from '../auth/auth.module';
 import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
-import { RolesGuard } from 'src/core/guards/roles-guard';
+import { RolesGuard } from 'src/core/guards/roles.guard';
 import { AssignmentRepository } from './data/repository';
 
 @Module({

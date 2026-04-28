@@ -14,6 +14,7 @@ export class UserMapper {
       isEmailVerified: user.isEmailVerified,
       permissions: permissions,
       mustChangePassword: user.mustChangePassword,
+      status: user.personalInfo?.userAccountStatus?.key,
     };
   }
 }

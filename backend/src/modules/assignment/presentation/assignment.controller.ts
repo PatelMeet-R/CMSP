@@ -23,14 +23,13 @@ import { ERRORMESSAGE } from 'src/common/constants/error.message';
 import { AssignmentResponseMapper } from '../data/mapper/assignment-response.mapper';
 import { UpdateAssignmentDto } from './dto/request/update-assignment.request.dto';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
-import type { User } from 'src/modules/auth/domain/entities/user.entity';
-import { UserMapper } from 'src/modules/auth/data/mappers/user.response.mapper';
 import { FindAssignmentQueryDto } from 'src/common/pagination/dto/find-assignment-query.dto';
 import { PermissionsGuard } from 'src/core/guards/permissions.guard';
 import { Permissions } from 'src/core/decorators/permissions.decorator';
+import { StatusGuard } from 'src/core/guards/status.guard';
 
 @Controller('assignment')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
+@UseGuards(JwtAuthGuard, StatusGuard, PermissionsGuard)
 export class AssignmentController {
   constructor(private readonly assignmentService: AssignmentService) {}
 

@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, IsString } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class ChangeUserRoleDto {
   @IsInt()
@@ -9,5 +9,9 @@ export class ChangeUserRoleDto {
 export class ToggleStatusDto {
   @IsString()
   @IsNotEmpty()
-  statusKey: string;
+  statusId: string;
+  
+  @IsString()
+  @IsOptional()
+  feedback?: string;
 }

@@ -5,20 +5,15 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
   Patch,
-  UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
 import { StaffProfileService } from '../../domain/services/staff-profile.service';
 import { UpsertStaffProfileDto } from '../dto/request/staff-profile.dto';
-import { PermissionsGuard } from 'src/core/guards/permissions.guard';
 import { Permissions } from 'src/core/decorators/permissions.decorator';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
-import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
+import  { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 
 @Controller('staff-profile')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class StaffProfileController {
   constructor(private readonly staffProfileService: StaffProfileService) {}
 

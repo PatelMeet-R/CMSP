@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   ForbiddenException,
-  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -24,10 +23,9 @@ import { EnumService } from 'src/modules/enums/domain/enums.service';
 import { AuthService } from 'src/modules/auth/domain/services/auth.service';
 import { UpdateAssignmentMapper } from '../data/mapper/assignment-update.mapper';
 import { File as FileEntity } from 'src/modules/file-upload/domain/entity/file.entity';
-import { ROLES } from 'src/common/constants/roles.constant';
 import { ProfessorSubMappingService } from 'src/modules/subject/domain/services/professor-subject-mapping.service';
 import { FindAssignmentQueryDto } from 'src/common/pagination/dto/find-assignment-query.dto';
-import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
+import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 
 @Injectable()
 export class AssignmentService {
@@ -262,17 +260,6 @@ export class AssignmentService {
     }
   }
 
-  //findAllByFilter
-  // async findAllAssignmentByFilter(
-  //   branchId: number,
-  //   semesterId: number,
-  // ): Promise<AssignmentResponseArrayDto[]> {
-  //   const data: Assignment[] = await this.assignmentRepository.findAllByFilter(
-  //     branchId,
-  //     semesterId,
-  //   );
-  //   return AssignmentResponseMapper.toResponseDtoArray(data);
-  // }
   //findOne
 
   // ==============

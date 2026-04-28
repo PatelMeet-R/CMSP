@@ -5,7 +5,7 @@ import { Brackets, Repository } from 'typeorm';
 import { FindAssignmentQueryDto } from 'src/common/pagination/dto/find-assignment-query.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
-import type { PaginatedResponse } from 'src/common/pagination/interface/paginated-response.interface';
+import { PaginatedResponse } from 'src/common/pagination/interface/paginated-response.interface';
 import { paginate } from 'src/common/pagination/utils/pagination.util';
 
 @Injectable()

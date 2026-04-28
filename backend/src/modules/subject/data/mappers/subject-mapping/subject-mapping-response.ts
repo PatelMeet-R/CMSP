@@ -1,4 +1,4 @@
-import type { ProfessorSubMapping } from 'src/modules/subject/domain/entities/professors-subject.entity';
+import  { ProfessorSubMapping } from 'src/modules/subject/domain/entities/professors-subject.entity';
 
 export class ProfessorMappingResponseMapper {
   static toResponse(entity: ProfessorSubMapping) {

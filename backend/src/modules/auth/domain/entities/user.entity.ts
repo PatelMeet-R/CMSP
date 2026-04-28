@@ -41,4 +41,7 @@ export class User extends AuditableEntity {
 
   @OneToMany(() => UserPermission, (userPermission) => userPermission.user)
   userPermissions: UserPermission[];
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastLoginAt: Date | null;
 }

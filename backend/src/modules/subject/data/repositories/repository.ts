@@ -5,7 +5,7 @@ import { Brackets, Repository } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-query.dto';
-import type { PaginatedResponse } from 'src/common/pagination/interface/paginated-response.interface';
+import  { PaginatedResponse } from 'src/common/pagination/interface/paginated-response.interface';
 import { ROLES } from 'src/common/constants/roles.constant';
 import { paginate } from 'src/common/pagination/utils/pagination.util';
 

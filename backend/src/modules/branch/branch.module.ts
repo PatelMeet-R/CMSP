@@ -4,7 +4,7 @@ import { BranchService } from './domain/branch.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Branch } from './domain/entities/branch.entity';
 import { BranchRepository } from './data/repositories/repository';
-import { RolesGuard } from 'src/core/guards/roles-guard';
+import { RolesGuard } from 'src/core/guards/roles.guard';
 import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
 
 @Module({

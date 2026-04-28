@@ -7,7 +7,7 @@ import type { Cache } from 'cache-manager';
 import { SystemSetting } from 'src/core/system-setting/system-setting.entity';
 import { UpsertSettingDto } from 'src/core/system-setting/system-setting.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
+import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 
 @Injectable()
 export class SystemSettingService {

@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import type { Reflector } from '@nestjs/core';
 import * as throttler from '@nestjs/throttler';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
 

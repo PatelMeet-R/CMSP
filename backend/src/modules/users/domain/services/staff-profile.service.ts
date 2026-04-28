@@ -8,7 +8,7 @@ import { AuthService } from 'src/modules/auth/domain/services/auth.service';
 import { StaffProfileRepository } from 'src/modules/users/data/repository/staff-profile.repository';
 import { StaffProfileResponseMapper } from 'src/modules/users/data/mapper/staff-profile.response.mapper';
 import { StaffProfileRequestMapper } from 'src/modules/users/data/mapper/staff-profile.request.mapper';
-import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
+import  { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 
 @Injectable()
 export class StaffProfileService {

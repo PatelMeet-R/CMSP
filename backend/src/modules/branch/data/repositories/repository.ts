@@ -28,6 +28,7 @@ export class BranchRepository {
     console.log('Cache Miss -> Fetching Branches from DB');
     // 2. Fetch from DB
     const branches = await this.repo.find({
+      where: { isSystem: false },
       select: ['id', 'name', 'code'],
       order: { name: 'ASC' },
     });

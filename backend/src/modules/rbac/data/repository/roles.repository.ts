@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Role } from 'src/modules/rbac/domain/entities/role.entity';
-import type { Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class RoleRepository {
