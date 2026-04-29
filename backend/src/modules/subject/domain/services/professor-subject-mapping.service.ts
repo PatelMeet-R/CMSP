@@ -5,7 +5,11 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { hasPermission, hasAnyPermission, isSuperAdmin } from 'src/common/utils/permissions/permission.utils';
+import {
+  hasPermission,
+  hasAnyPermission,
+  isSuperAdmin,
+} from 'src/common/utils/permissions/permission.utils';
 import { ProfessorSubMappingRepository } from '../../data/repositories/professor-subject-mapping-repository';
 import { AssignSubjectDto } from '../../presentation/dto/request/professor-subjects.request.dto';
 import { AssignSubjectMapper } from '../../data/mappers/subject-mapping/subject-assign.mapper';
@@ -40,7 +44,7 @@ export class ProfessorSubMappingService {
     const [professor, subject, semester, academicYear, assignedBy] =
       await Promise.all([
         this.authService.getUserByIdWithPersonalInfo(dto.professorId),
-        this.subjectService.getSubjectById(dto.subjectId),
+        this.subjectService.getSubjectById(dto.subjectId, currentUser),
         this.enumService.getEnumValueById(dto.semesterId),
         this.enumService.getEnumValueById(dto.academicYearId),
         this.authService.getUserByIdWithPersonalInfo(currentUser.id),
@@ -181,7 +185,10 @@ export class ProfessorSubMappingService {
         dto.professorId,
       );
     if (dto.subjectId) {
-      subject = await this.subjectService.getSubjectById(dto.subjectId);
+      subject = await this.subjectService.getSubjectById(
+        dto.subjectId,
+        currentUser,
+      );
       if (!subject)
         throw new NotFoundException(ERRORMESSAGE.DATA_NOT_FOUND('Subject'));
 

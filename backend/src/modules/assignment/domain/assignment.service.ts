@@ -70,7 +70,7 @@ export class AssignmentService {
     const [user, subject, branch, semester, academicYear, fileRaw] =
       await Promise.all([
         this.authService.findUserEntityById(currentUser.id),
-        this.subjectService.getSubjectById(dto.subjectId),
+        this.subjectService.getSubjectById(dto.subjectId, currentUser),
         this.branchService.getBranchEntityById(currentUser.branchId),
         this.enumService.getEnumValueById(dto.semesterId),
         this.enumService.getEnumValueById(dto.academicYearId),
@@ -171,7 +171,7 @@ export class AssignmentService {
 
     // 3. Fetch other relations only if they are being updated (Performance)
     const subject = dto.subjectId
-      ? await this.subjectService.getSubjectById(dto.subjectId)
+      ? await this.subjectService.getSubjectById(dto.subjectId, currentUser)
       : undefined;
     const semester = dto.semesterId
       ? await this.enumService.getEnumValueById(dto.semesterId)
