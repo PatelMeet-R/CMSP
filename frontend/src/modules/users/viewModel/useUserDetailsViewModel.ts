@@ -21,16 +21,32 @@ import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
 import { fetchSystemSetting } from "@/modules/settings/model/settingsService";
 import { EnumCategory } from "@/modules/enums/types/enum.schemas";
 
+// V2 Imports
+import { usePermissions } from "@/hooks/usePermissions";
+import { ROLES } from "@/core/Constants/enums/role-enum-value";
+
 export const useUserDetailsViewModel = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const userId = id;
+  const userId = id!;
 
-  //    UI STATE
+  //  V2 PBAC Setup
+  const { hasPermission } = usePermissions();
+  const canUpdateDetails = hasPermission("user:update");
+  const canManageStatus = hasPermission("user:manage-status");
+  const canManageRole = hasPermission("user:manage-role");
+
+  // UI STATE
   const [isEditing, setIsEditing] = useState(false);
+  const [expandedYearKey, setExpandedYearKey] = useState<string | undefined>(
+    undefined,
+  );
+  const [activeYearKey, setActiveYearKey] = useState<string | undefined>(
+    undefined,
+  );
 
-  //    FETCH USER DETAILS
+  // FETCH USER DETAILS
   const {
     data: userProfile,
     isLoading,
@@ -41,49 +57,37 @@ export const useUserDetailsViewModel = () => {
     enabled: !!userId,
   });
 
-  //    NEW: ACCORDION & PROFILE STATE
-  const [expandedYearKey, setExpandedYearKey] = useState<string | undefined>(
-    undefined,
-  );
+  //  V2 Fix: userProfile.role is now a string like "PROFESSOR".
+  // We check this because Staff/History tables are specifically for teaching staff, regardless of permissions.
+  const isTeachingStaff = [
+    ROLES.PROFESSOR,
+    ROLES.HOD,
+    ROLES.SUPER_ADMIN,
+  ].includes(userProfile?.role || "");
 
-  //    NEW: FETCH STAFF PROFILE
+  // FETCH STAFF PROFILE
   const { data: staffProfile, isLoading: isStaffLoading } = useQuery({
     queryKey: ["staff-profile", userId],
     queryFn: () => fetchStaffProfile(userId),
-    enabled:
-      !!userId &&
-      (userProfile?.role === "PROFESSOR" ||
-        userProfile?.role === "HOD" ||
-        userProfile?.role?.key === "PROFESSOR" ||
-        userProfile?.role?.key === "HOD"),
-    retry: false, // Don't retry if they are a student without a profile
+    enabled: !!userId && isTeachingStaff,
+    retry: false,
   });
 
-  //    NEW: FETCH SUBJECT HISTORY
+  // FETCH SUBJECT HISTORY
   const { data: historyMap, isLoading: isHistoryLoading } = useQuery({
     queryKey: ["professor-history", userId],
     queryFn: () => fetchProfessorHistory(userId),
-    enabled:
-      !!userId &&
-      (userProfile?.role === "PROFESSOR" ||
-        userProfile?.role === "HOD" ||
-        userProfile?.role?.key === "PROFESSOR" ||
-        userProfile?.role?.key === "HOD"),
+    enabled: !!userId && isTeachingStaff,
   });
 
-  //    NEW: FETCH SETTINGS FOR AUTO-EXPAND
+  // FETCH SETTINGS FOR AUTO-EXPAND
   const { enums: academicYears } = useEnumViewModel(EnumCategory.ACADEMIC_YEAR);
   const { data: activeYearSetting } = useQuery({
     queryKey: ["system-setting", "CURRENT_ACADEMIC_YEAR_ID"],
     queryFn: () => fetchSystemSetting("CURRENT_ACADEMIC_YEAR_ID"),
   });
 
-  //    NEW: AUTO-EXPAND LOGIC
-  const [activeYearKey, setActiveYearKey] = useState<string | undefined>(
-    undefined,
-  );
-
-  //    NEW: AUTO-EXPAND LOGIC
+  // AUTO-EXPAND LOGIC
   useEffect(() => {
     if (activeYearSetting?.value && academicYears) {
       const activeYearEnum = academicYears.find(
@@ -91,9 +95,7 @@ export const useUserDetailsViewModel = () => {
       );
 
       if (activeYearEnum) {
-        setActiveYearKey(activeYearEnum.key); // Save this for student filtering!
-
-        // Only expand if the map exists and has data for this year
+        setActiveYearKey(activeYearEnum.key);
         if (historyMap && historyMap[activeYearEnum.key]) {
           setExpandedYearKey(activeYearEnum.key);
         }
@@ -101,13 +103,13 @@ export const useUserDetailsViewModel = () => {
     }
   }, [activeYearSetting, academicYears, historyMap]);
 
-  //    SETUP FORM
+  // SETUP FORM
   const form = useForm<UpdateProfileFormValues>({
     resolver: zodResolver(updateProfileSchema),
     defaultValues: {},
   });
 
-  //    Sync fetched data into the form
+  // Sync fetched data into the form
   useEffect(() => {
     if (userProfile) {
       form.reset({
@@ -123,16 +125,15 @@ export const useUserDetailsViewModel = () => {
         state: userProfile.address?.state || "",
         country: userProfile.address?.country || "",
         postalCode: userProfile.address?.postalCode || "",
-        // Relational IDs
-        branchId: userProfile.branchId,
-        genderId: userProfile.genderId,
-        joinedAcademicYearId: userProfile.joinedAcademicYearId,
-        expectedGraduateYearId: userProfile.expectedGraduateYearId,
+        branchId: userProfile.branchId || undefined,
+        genderId: userProfile.genderId || undefined,
+        joinedAcademicYearId: userProfile.joinedAcademicYearId || undefined,
+        expectedGraduateYearId: userProfile.expectedGraduateYearId || undefined,
       });
     }
   }, [userProfile, form]);
 
-  //    MUTATION: CHANGE STATUS
+  // MUTATION: CHANGE STATUS
   const statusMutation = useMutation({
     mutationFn: (statusKey: string) => updateAccountStatus(userId, statusKey),
     onSuccess: () => {
@@ -147,7 +148,7 @@ export const useUserDetailsViewModel = () => {
     },
   });
 
-  //    MUTATION: CHANGE ROLE
+  // MUTATION: CHANGE ROLE
   const roleMutation = useMutation({
     mutationFn: (newRoleId: string) => updateUserRole(userId, newRoleId),
     onSuccess: () => {
@@ -162,7 +163,7 @@ export const useUserDetailsViewModel = () => {
     },
   });
 
-  //    MUTATIONS:  SENSITIVE FIELDS
+  // MUTATIONS: SENSITIVE FIELDS
   const updateDetailsMutation = useMutation({
     mutationFn: (data: UpdateProfileFormValues) =>
       updateUserDetails(userId, data),
@@ -189,6 +190,11 @@ export const useUserDetailsViewModel = () => {
     isLoading: isLoading || isStaffLoading || isHistoryLoading,
     isError,
     navigate,
+
+    //  Export PBAC Flags to View
+    canUpdateDetails,
+    canManageStatus,
+    canManageRole,
 
     form,
     isEditing,

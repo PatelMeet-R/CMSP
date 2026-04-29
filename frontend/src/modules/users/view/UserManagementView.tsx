@@ -9,12 +9,14 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 
 import { useUserManagementViewModel } from "../viewModel/useUserManagementViewModel";
 import { DynamicSelect } from "@/components/custom/dashboard/DynamicSelect";
 import { DebouncedSearchInput } from "@/components/custom/dashboard/SearchInput";
 import { DataTablePagination } from "@/components/custom/dashboard/DataTablePagination";
 import { UsersTable } from "@/modules/users/view/UsersTable";
+import { HodProfileModal } from "@/modules/users/view/ModelHodProfile";
 
 import type { Branch } from "@/modules/branch/types/branch";
 import { useBranchViewModel } from "@/modules/branch/viewModel/useBranchViewModel";
@@ -23,53 +25,48 @@ import {
   EnumCategory,
   type EnumValueResponse,
 } from "@/modules/enums/types/enum.schemas";
-
-import { useAppSelector } from "@/store/hook";
-import { ROLES } from "@/core/Constants/enums/role-enum-value";
-import { useNavigate } from "react-router-dom";
 import { ROUTENAME } from "@/core/Constants/RouteName";
 
-import { HodProfileModal } from "@/modules/users/view/ModelHodProfile";
+//   V2 IMPORTS
+import { usePermissions } from "@/hooks/usePermissions";
+import { useAppSelector } from "@/store/hook";
+import { useRoleViewModel } from "@/modules/roles/viewModel/useRoleViewModel";
+import type { UserListItem } from "@/modules/users/types/users.schemas";
 
 export default function UserManagementView() {
   const vm = useUserManagementViewModel();
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
 
-  const currentUserRole = user?.role;
-  const isSuperAdmin = currentUserRole === ROLES.SUPER_ADMIN;
-  const isHOD = currentUserRole === ROLES.HOD;
+  //   PBAC: Check permissions instead of roles
+  const { hasPermission } = usePermissions();
+  const canFilterBranch =
+    hasPermission("*:*") || hasPermission("user:filter-branch");
+  const canManageStaff =
+    hasPermission("*:*") || hasPermission("user:manage-staff");
+  const canManageStudents =
+    hasPermission("*:*") || hasPermission("user:manage-students");
 
   const { branches, isLoading: isBranchesLoading } = useBranchViewModel();
   const { enums: genders, isLoading: isGenderLoading } = useEnumViewModel(
     EnumCategory.GENDER,
   );
-  const { enums: roles, isLoading: isUserRoleLoading } = useEnumViewModel(
-    EnumCategory.USER_ROLE,
-  );
 
-  // ==========================================
-  //  DYNAMIC TAB FILTERING LOGIC
-  // ==========================================
-  const allowedTabKeys: string[] = (() => {
-    if (isSuperAdmin) return [ROLES.HOD, ROLES.PROFESSOR, ROLES.STUDENT];
-    if (isHOD) return [ROLES.PROFESSOR, ROLES.STUDENT];
-    if (currentUserRole === ROLES.PROFESSOR)
-      return [ROLES.PROFESSOR, ROLES.STUDENT];
-    if (currentUserRole === ROLES.STUDENT) return [ROLES.PROFESSOR];
-    return [];
-  })();
+  //   V2 ROLE FETCHING
+  const { roles, isRolesLoading } = useRoleViewModel();
 
+  //   DYNAMIC TAB FILTERING LOGIC (PBAC)
   const filteredTabs =
     roles
-      ?.filter((r: EnumValueResponse) => allowedTabKeys.includes(r.key))
-      .map((r: EnumValueResponse) => ({ id: r.id.toString(), key: r.key })) ||
-    [];
+      ?.filter((r) => {
+        if (r.name === "SUPER_ADMIN") return false; // Hide from standard tables
+        if (r.name === "STUDENT") return canManageStudents;
+        return canManageStaff; // HOD, PROFESSOR, etc.
+      })
+      .map((r) => ({ id: r.id, key: r.name })) || [];
 
-  // ============
-  //  Extract the hodRoleId so we can pass it down to the Modal
-  const hodRoleId = roles?.find((r) => r.key === ROLES.HOD)?.id.toString();
-  // ============
+  // Extract the hodRoleId so we can pass it down to the Modal
+  const hodRoleId = roles?.find((r) => r.name === "HOD")?.id;
 
   useEffect(() => {
     if (filteredTabs.length > 0 && !vm.roleId) {
@@ -86,11 +83,10 @@ export default function UserManagementView() {
       label: g.value.toUpperCase(),
     })) || [];
 
-  const selectedRoleObj = roles?.find((r) => r.id.toString() === vm.roleId);
-  const isStudentTab = selectedRoleObj?.key === ROLES.STUDENT;
+  const selectedRoleObj = roles?.find((r) => r.id === vm.roleId);
+  const isStudentTab = selectedRoleObj?.name === "STUDENT";
   const hasActiveFilters = Boolean(vm.search || vm.branchId || vm.genderId);
 
-  //  Get current user's branch name for the modal
   const currentBranchName = branches?.find(
     (b: Branch) => b.id === user?.branchId,
   )?.name;
@@ -105,13 +101,13 @@ export default function UserManagementView() {
               User Management
             </CardTitle>
             <CardDescription>
-              {isSuperAdmin
+              {canFilterBranch
                 ? "System-wide overview of all registered roles and departments."
                 : "Manage and view members within your designated department."}
             </CardDescription>
           </div>
 
-          {!isSuperAdmin && !isHOD && (
+          {!canFilterBranch && (
             <HodProfileModal
               branchId={user?.branchId ?? undefined}
               branchName={currentBranchName}
@@ -149,12 +145,12 @@ export default function UserManagementView() {
               <DebouncedSearchInput
                 value={vm.search}
                 onChange={vm.setSearch}
-                placeholder="Search by name, enrollment, or city..."
+                placeholder="Search by name, enrollment..."
               />
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto items-start sm:items-end">
-              {isSuperAdmin && (
+              {canFilterBranch && (
                 <div className="w-full sm:w-45">
                   <label className="text-xs font-bold tracking-wider uppercase text-muted-foreground mb-1.5 block">
                     Branch Filter
@@ -185,11 +181,10 @@ export default function UserManagementView() {
               {hasActiveFilters && (
                 <Button
                   variant="ghost"
-                  className="w-full sm:w-auto text-red-500 hover:text-red-600 hover:bg-red-50/50 transition-colors"
+                  className="w-full sm:w-auto text-red-500 hover:text-red-600 hover:bg-red-50/50"
                   onClick={vm.clearFilters}
                 >
-                  <XCircle className="w-4 h-4 mr-2" />
-                  Clear
+                  <XCircle className="w-4 h-4 mr-2" /> Clear
                 </Button>
               )}
             </div>
@@ -198,12 +193,12 @@ export default function UserManagementView() {
           <div className="px-4 sm:px-0">
             <div className="rounded-md border overflow-hidden">
               <UsersTable
-                users={vm.users}
-                isLoading={vm.isLoading || isUserRoleLoading}
-                isSuperAdmin={isSuperAdmin}
-                isStudent={isStudentTab}
+                users={vm.users as UserListItem[]}
+                isLoading={vm.isLoading || isRolesLoading}
+                showBranchColumn={canFilterBranch}
+                showEnrollmentColumn={isStudentTab}
                 onRowClick={(id) =>
-                  navigate(ROUTENAME.USER_DETAILS.replace(":id", id.toString()))
+                  navigate(ROUTENAME.USER_DETAILS.replace(":id", id))
                 }
               />
             </div>

@@ -17,34 +17,30 @@ import { useCreateStaffViewModel } from "../viewModel/useCreateStaffViewModel";
 import { PageBreadcrumb } from "@/components/custom/dashboard/PageBreadcrumb";
 import { DynamicSelect } from "@/components/custom/dashboard/DynamicSelect";
 import { useBranchViewModel } from "@/modules/branch/viewModel/useBranchViewModel";
-import { ROLES } from "@/core/Constants/enums/role-enum-value";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function CreateStaffView() {
-  const {
-    form,
-    onSubmit,
-    isSubmitting,
-    isSuperAdmin,
-    navigate,
-    roles,
-    isRolesLoading,
-  } = useCreateStaffViewModel();
+  const { form, onSubmit, isSubmitting, navigate, roles, isRolesLoading } =
+    useCreateStaffViewModel();
+
+  const { hasPermission } = usePermissions();
+  const canAssignHOD = hasPermission("*:*") || hasPermission("user:assign-hod");
+  const canSelectBranch =
+    hasPermission("*:*") || hasPermission("user:filter-branch");
 
   const { branches, isLoading: isBranchesLoading } = useBranchViewModel();
-
   const branchOptions =
     branches?.map((b) => ({ id: b.id, label: b.name })) || [];
 
+  // 🚨 PBAC Role Filtering
   const availableRoles =
     roles
       ?.filter((r) => {
-        if (isSuperAdmin) {
-          return r.key === ROLES.HOD || r.key === ROLES.PROFESSOR;
-        }
-        return r.key === ROLES.PROFESSOR;
+        if (r.name === "SUPER_ADMIN" || r.name === "STUDENT") return false;
+        if (r.name === "HOD") return canAssignHOD;
+        return true; // Assume can assign PROFESSOR
       })
-      .map((r) => ({ id: r.id, label: r.value }))
-      .map((r) => ({ id: r.id, label: r.label.toUpperCase() })) || [];
+      .map((r) => ({ id: r.id, label: r.name.toUpperCase() })) || [];
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6">
@@ -84,8 +80,7 @@ export default function CreateStaffView() {
               <Info className="h-4 w-4" />
               <AlertDescription className="ml-2">
                 You do not need to set a password. The system will automatically
-                generate secure credentials and email them to the user. They
-                will be prompted to change it upon first login.
+                generate secure credentials and email them to the user.
               </AlertDescription>
             </Alert>
 
@@ -144,6 +139,7 @@ export default function CreateStaffView() {
                   )}
                 </div>
               </div>
+
               {/* Assignment Group */}
               <div className="space-y-0.5 md:space-y-4 pt-1 md:pt-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">
@@ -189,7 +185,7 @@ export default function CreateStaffView() {
                           options={branchOptions}
                           placeholder="Select Branch"
                           isLoading={isBranchesLoading}
-                          disabled={!isSuperAdmin || isBranchesLoading}
+                          disabled={!canSelectBranch || isBranchesLoading}
                         />
                       )}
                     />
@@ -201,6 +197,7 @@ export default function CreateStaffView() {
                   </div>
                 </div>
               </div>
+
               {/* Professional Details Group */}
               <div className="space-y-0.5 md:space-y-4 pt-1 md:pt-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">
@@ -221,7 +218,6 @@ export default function CreateStaffView() {
                       </span>
                     )}
                   </div>
-
                   <div className="space-y-1.5">
                     <FieldLabel>
                       Office Location <span className="text-red-500">*</span>
@@ -236,7 +232,6 @@ export default function CreateStaffView() {
                       </span>
                     )}
                   </div>
-
                   <div className="space-y-1.5 sm:col-span-2">
                     <FieldLabel>Date of Joining</FieldLabel>
                     <Controller

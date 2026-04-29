@@ -10,7 +10,9 @@ const Topbar = () => {
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   return (
-    <header className="flex justify-between items-center h-20 sticky top-0 z-50 bg-mist-100 px-5 border-b shrink-0">
+    // <header className="flex justify-between items-center h-20 sticky top-0 z-50 bg-mist-100 px-5 border-b shrink-0">
+
+    <header className="flex justify-between items-center h-16 shrink-0 bg-mist-100 px-5 border-b z-10 w-full">
       <div className="flex items-center gap-4">
         <SidebarTrigger className="md:hidden" />
         <img src={logo} alt="logo" width={80} />

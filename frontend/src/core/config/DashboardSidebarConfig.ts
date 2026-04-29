@@ -1,17 +1,18 @@
-import { ROLES, type RoleType } from "@/core/Constants/enums/role-enum-value";
 import { ROUTENAME } from "@/core/Constants/RouteName";
+
 export type SidebarChild = {
   label: string;
   icon: string;
   link: string;
-  allowedRoles: RoleType[];
+  permission?: string; // 🚨 Only use permission now
 };
+
 export type SidebarItem = {
   label: string;
   icon: string;
   children?: SidebarChild[];
   link?: string;
-  allowedRoles?: RoleType[];
+  permission?: string; // 🚨 Only use permission now
 };
 
 export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
@@ -23,24 +24,19 @@ export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
         label: "View Subjects",
         icon: "Eye",
         link: ROUTENAME.SUBJECTS,
-        allowedRoles: [
-          ROLES.SUPER_ADMIN,
-          ROLES.HOD,
-          ROLES.PROFESSOR,
-          ROLES.STUDENT,
-        ],
+        permission: "subject:read",
       },
       {
         label: "Register Subject",
         icon: "FilePlusCorner",
         link: ROUTENAME.ADD_SUBJECT,
-        allowedRoles: [ROLES.SUPER_ADMIN, ROLES.HOD],
+        permission: "subject:create",
       },
       {
         label: "Assign Subject",
         icon: "UserCog",
         link: ROUTENAME.ASSIGN_SUBJECT,
-        allowedRoles: [ROLES.SUPER_ADMIN, ROLES.HOD],
+        permission: "subject-mapping:create",
       },
     ],
   },
@@ -51,26 +47,15 @@ export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
       {
         label: "View Assignments",
         icon: "Eye",
-        link: ROUTENAME.ASSIGNMENT, // Replaces: /assignment/all
-        allowedRoles: [
-          ROLES.SUPER_ADMIN,
-          ROLES.HOD,
-          ROLES.PROFESSOR,
-          ROLES.STUDENT,
-        ],
+        link: ROUTENAME.ASSIGNMENT,
+        permission: "assignment:read",
       },
       {
         label: "Create Assignment",
         icon: "PlusCircle",
         link: ROUTENAME.ADD_ASSIGNMENT,
-        allowedRoles: [ROLES.HOD, ROLES.PROFESSOR],
+        permission: "assignment:create",
       },
-      // {
-      //   label: "My Assignments",
-      //   icon: "User",
-      //   link: ROUTENAME.MY_ASSIGNMENT,
-      //   allowedRoles: [ROLES.SUPER_ADMIN, ROLES.HOD, ROLES.PROFESSOR],
-      // },
     ],
   },
   {
@@ -81,14 +66,13 @@ export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
         label: "View Branches",
         icon: "Eye",
         link: ROUTENAME.BRANCH,
-        // "/branch/all", // needs: updated this from your file where it said "/subject" under branch
-        allowedRoles: [ROLES.SUPER_ADMIN],
+        permission: "branch:read",
       },
       {
         label: "Register Branch",
         icon: "FilePlusCorner",
         link: ROUTENAME.ADD_BRANCH,
-        allowedRoles: [ROLES.SUPER_ADMIN],
+        permission: "branch:create",
       },
     ],
   },
@@ -100,19 +84,13 @@ export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
         label: "View All Users",
         icon: "Eye",
         link: ROUTENAME.ALL_USERS,
-        allowedRoles: [
-          ROLES.SUPER_ADMIN,
-          ROLES.HOD,
-          ROLES.PROFESSOR,
-          ROLES.STUDENT,
-        ],
+        permission: "user:read",
       },
-
       {
         label: "Register Staff",
         icon: "UserPlus",
         link: ROUTENAME.ADD_STAFF,
-        allowedRoles: [ROLES.SUPER_ADMIN, ROLES.HOD],
+        permission: "user:create",
       },
     ],
   },
@@ -120,6 +98,6 @@ export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
     label: "Setting",
     icon: "Settings",
     link: ROUTENAME.SETTING,
-    allowedRoles: [ROLES.SUPER_ADMIN, ROLES.HOD],
+    permission: "setting:manage",
   },
 ];

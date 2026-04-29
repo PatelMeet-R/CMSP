@@ -31,8 +31,6 @@ import {
   type SidebarItem,
   type SidebarChild,
 } from "@/core/config/DashboardSidebarConfig";
-import { useAppSelector } from "@/store/hook";
-import { type RoleType } from "@/core/Constants/enums/role-enum-value";
 import { ROUTENAME } from "@/core/Constants/RouteName";
 import { PROFILE_SIDEBAR_CONFIG } from "@/core/config/ProfileSidebar";
 import {
@@ -44,6 +42,9 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+
+// 🚨 V2: Import usePermissions instead of roles!
+import { usePermissions } from "@/hooks/usePermissions";
 
 const IconMap: Record<string, React.ElementType> = {
   BookOpen,
@@ -66,11 +67,9 @@ const IconMap: Record<string, React.ElementType> = {
 
 export const DashboardSideBarDetails = () => {
   const location = useLocation();
-  const { user } = useAppSelector((state) => state.auth);
-  if (!user) {
-    return null;
-  }
-  const userRole = user.role;
+
+  // 🚨 V2 PBAC: We don't need user.role anymore!
+  const { hasPermission } = usePermissions();
 
   const isProfileRoute = location.pathname.includes(ROUTENAME.PROFILE);
 
@@ -78,63 +77,44 @@ export const DashboardSideBarDetails = () => {
     ? PROFILE_SIDEBAR_CONFIG
     : DASHBOARD_SIDEBAR_CONFIG;
 
-  //THE FILTERING
-  // const filteredSidebarConfig = activeConfig
-  //   .map((parentCategory) => {
-  //     //  Keep only the children this specific role is allowed to see
-  //     const allowedChildren =
-  //       parentCategory.children?.filter((child) =>
-  //         child.allowedRoles.includes(userRole as RoleType),
-  //       ) || [];
-  //     //  Return the parent with the newly filtered children array
-  //     return {
-  //       ...parentCategory,
-  //       children: allowedChildren,
-  //     };
-  //   })
-  //   .filter((parentCategory) => {
-  //     return parentCategory.children && parentCategory.children.length > 0;
-  //   });
+  // 🚨 V2 FILTERING LOGIC
   const filteredSidebarConfig = activeConfig
     .map((parentCategory) => {
+      // 1. Filter the children based on permissions
       if (parentCategory.children) {
-        const allowedChildren = parentCategory.children.filter((child) =>
-          child.allowedRoles.includes(userRole as RoleType),
-        );
+        const allowedChildren = parentCategory.children.filter((child) => {
+          // If no permission is required, everyone sees it. Otherwise, check PBAC.
+          return !child.permission || hasPermission(child.permission);
+        });
         return {
           ...parentCategory,
           children: allowedChildren,
         };
       }
-      // If it doesn't have children, just return it as is
       return parentCategory;
     })
     .filter((parentCategory) => {
-      // Keep it if it has valid children OR if it's a direct link that the user is allowed to see
+      // 2. Keep the parent if it has valid children left over
       const hasValidChildren =
         parentCategory.children && parentCategory.children.length > 0;
 
-      // We need to add allowedRoles to the top level SidebarItem type for direct links to work!
+      // 3. Or, keep it if it's a direct link (like Settings) and the user has permission
       const isAllowedDirectLink =
         parentCategory.link &&
-        (parentCategory as any).allowedRoles?.includes(userRole as RoleType);
+        (!parentCategory.permission ||
+          hasPermission(parentCategory.permission));
 
       return hasValidChildren || isAllowedDirectLink;
     });
-  const renderSideBarItem = (item: SidebarItem) => {
-    //  GET THE DYNAMIC ICON
 
+  const renderSideBarItem = (item: SidebarItem) => {
     const ParentIcon = IconMap[item.icon] || FolderIcon;
 
-    //  CHECK FOR CHILDREN
     if (item.children && item.children.length > 0) {
       return (
-        //  Chevron icon know when this specific item is open
         <Collapsible key={item.label} className="group/collapsible">
-          {/* PARENT BUTTON (Trigger) */}
           <SidebarMenuItem>
             <CollapsibleTrigger asChild>
-              {/* tooltip={item.label} shows the text when hovering in icon-only mode! */}
               <SidebarMenuButton>
                 <ParentIcon className="w-5 h-5 shrink-0" />
                 <span>{item.label}</span>
@@ -142,7 +122,6 @@ export const DashboardSideBarDetails = () => {
               </SidebarMenuButton>
             </CollapsibleTrigger>
 
-            {/* CHILDREN CONTENT */}
             <CollapsibleContent>
               <SidebarMenuSub>
                 {item.children.map((child: SidebarChild) => {
@@ -165,7 +144,6 @@ export const DashboardSideBarDetails = () => {
       );
     }
 
-    //  RENDER ITEMS WITHOUT CHILDREN
     return (
       <SidebarMenuItem key={item.label}>
         <SidebarMenuButton asChild>
@@ -177,6 +155,7 @@ export const DashboardSideBarDetails = () => {
       </SidebarMenuItem>
     );
   };
+
   return (
     <SidebarGroup>
       <SidebarMenu>

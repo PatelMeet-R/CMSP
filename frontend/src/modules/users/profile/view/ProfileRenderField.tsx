@@ -9,7 +9,7 @@ export interface ProfileRenderFieldProps {
   isRestricted?: boolean;
   form: UseFormReturn<UpdateProfileFormValues>;
   isEditing: boolean;
-  isAdmin: boolean;
+  canEditRestricted: boolean; //     Renamed from isAdmin to match PBAC
 }
 
 export const ProfileRenderField = ({
@@ -18,7 +18,7 @@ export const ProfileRenderField = ({
   isRestricted = false,
   form,
   isEditing,
-  isAdmin,
+  canEditRestricted,
 }: ProfileRenderFieldProps) => {
   const value = form.watch(name);
 
@@ -40,8 +40,8 @@ export const ProfileRenderField = ({
             <Input
               {...field}
               value={field.value || ""} // Prevent undefined warnings
-              disabled={isRestricted && !isAdmin}
-              className={`h-10 ${isRestricted && !isAdmin ? "bg-muted cursor-not-allowed" : ""}`}
+              disabled={isRestricted && !canEditRestricted} //     Updated logic
+              className={`h-10 ${isRestricted && !canEditRestricted ? "bg-muted cursor-not-allowed" : ""}`}
             />
           )}
         />

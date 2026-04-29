@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useAppSelector } from "@/store/hook";
-import { ROLES } from "@/core/Constants/enums/role-enum-value";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,13 +23,19 @@ import { ProfileRenderField } from "./ProfileRenderField";
 import { toastService } from "@/core/toast/toastService";
 import { SpinnerCustom } from "@/components/ui/spinner";
 
-// 🚀 IMPORT THE NEW PROFILE HEADER
 import ProfileHeader from "./ProfileHeader";
 import type { UpdateProfileFormValues } from "@/modules/users/types/users.schemas";
 
+//    V2 PBAC IMPORT
+import { usePermissions } from "@/hooks/usePermissions";
+
 export const Profile = () => {
   const { user } = useAppSelector((state) => state.auth);
-  const isAdmin = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.HOD;
+
+  //    V2 PBAC CHECK (Replaces ROLES.SUPER_ADMIN / ROLES.HOD)
+  const { hasPermission } = usePermissions();
+  const canEditRestricted =
+    hasPermission("*:*") || hasPermission("user:update-restricted");
 
   const [isEditing, setIsEditing] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
@@ -39,7 +44,6 @@ export const Profile = () => {
     useProfileViewModel();
   const { isDirty } = form.formState;
 
-  // 🚀 Add !profile check so the Header doesn't crash on initial load
   if (isFetchingProfile || !profile) {
     return (
       <div className="grid place-items-center h-screen">
@@ -63,16 +67,13 @@ export const Profile = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
-      {/* THE VERIFICATION MODAL */}
       <EmailVerificationAlert
         isOpen={showVerifyModal}
         onClose={() => setShowVerifyModal(false)}
       />
 
-      {/* 🚀 1. THE NEW PROFILE HEADER (Handles Image & Summary) */}
       <ProfileHeader user={profile} />
 
-      {/* 2. THE EXISTING EDIT FORM CARD */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -100,15 +101,11 @@ export const Profile = () => {
                   <X className="w-4 h-4 mr-2" /> Cancel
                 </Button>
                 <Button
-                  onClick={form.handleSubmit(
-                    handleSubmitAndClose, 
-                    () => {
-                
-                      toastService.error(
-                        "Please fix the errors in the form before saving.",
-                      );
-                    },
-                  )}
+                  onClick={form.handleSubmit(handleSubmitAndClose, () => {
+                    toastService.error(
+                      "Please fix the errors in the form before saving.",
+                    );
+                  })}
                   disabled={isUpdating || !isDirty}
                 >
                   {isUpdating ? (
@@ -137,7 +134,7 @@ export const Profile = () => {
                   isRestricted={true}
                   form={form}
                   isEditing={isEditing}
-                  isAdmin={isAdmin}
+                  canEditRestricted={canEditRestricted} //    Updated prop
                 />
                 <ProfileRenderField
                   name="lastName"
@@ -145,7 +142,7 @@ export const Profile = () => {
                   isRestricted={true}
                   form={form}
                   isEditing={isEditing}
-                  isAdmin={isAdmin}
+                  canEditRestricted={canEditRestricted} //    Updated prop
                 />
 
                 <div className="flex flex-col gap-1.5">
@@ -182,7 +179,7 @@ export const Profile = () => {
                   isRestricted={true}
                   form={form}
                   isEditing={isEditing}
-                  isAdmin={isAdmin}
+                  canEditRestricted={canEditRestricted} //    Updated prop
                 />
 
                 <div className="flex flex-col gap-1.5">
@@ -199,7 +196,7 @@ export const Profile = () => {
                     <BranchDropdownMenu
                       control={form.control}
                       name="branchId"
-                      disabled={!isAdmin}
+                      disabled={!canEditRestricted} //    Updated prop
                     />
                   )}
                 </div>
@@ -240,7 +237,7 @@ export const Profile = () => {
                       name="expectedGraduateYearId"
                       label="Expected Graduation"
                       category={EnumCategory.ACADEMIC_YEAR}
-                      disabled={!isAdmin}
+                      disabled={!canEditRestricted} //    Updated prop
                     />
                   )}
                 </div>
@@ -259,7 +256,7 @@ export const Profile = () => {
                   isRestricted={false}
                   form={form}
                   isEditing={isEditing}
-                  isAdmin={isAdmin}
+                  canEditRestricted={canEditRestricted} //    Updated prop
                 />
                 <ProfileRenderField
                   name="secondaryMobileNumber"
@@ -267,7 +264,7 @@ export const Profile = () => {
                   isRestricted={false}
                   form={form}
                   isEditing={isEditing}
-                  isAdmin={isAdmin}
+                  canEditRestricted={canEditRestricted} //    Updated prop
                 />
               </div>
             </div>
@@ -284,7 +281,7 @@ export const Profile = () => {
                   isRestricted={false}
                   form={form}
                   isEditing={isEditing}
-                  isAdmin={isAdmin}
+                  canEditRestricted={canEditRestricted} //    Updated prop
                 />
                 <ProfileRenderField
                   name="state"
@@ -292,7 +289,7 @@ export const Profile = () => {
                   isRestricted={false}
                   form={form}
                   isEditing={isEditing}
-                  isAdmin={isAdmin}
+                  canEditRestricted={canEditRestricted} //    Updated prop
                 />
                 <ProfileRenderField
                   name="country"
@@ -300,7 +297,7 @@ export const Profile = () => {
                   isRestricted={false}
                   form={form}
                   isEditing={isEditing}
-                  isAdmin={isAdmin}
+                  canEditRestricted={canEditRestricted} //    Updated prop
                 />
                 <ProfileRenderField
                   name="postalCode"
@@ -308,7 +305,7 @@ export const Profile = () => {
                   isRestricted={false}
                   form={form}
                   isEditing={isEditing}
-                  isAdmin={isAdmin}
+                  canEditRestricted={canEditRestricted} //    Updated prop
                 />
               </div>
             </div>

@@ -3,5 +3,6 @@ export const ROLES = {
   HOD: "HOD",
   PROFESSOR: "PROFESSOR",
   STUDENT: "STUDENT",
+  PENDING_USER: "PENDING_USER",
 } as const;
 export type RoleType = (typeof ROLES)[keyof typeof ROLES];

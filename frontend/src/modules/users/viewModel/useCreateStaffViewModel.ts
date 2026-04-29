@@ -11,26 +11,25 @@ import {
 } from "../types/users.schemas";
 
 import { useAppSelector } from "@/store/hook";
-import { ROLES } from "@/core/Constants/enums/role-enum-value";
 import { ROUTENAME } from "@/core/Constants/RouteName";
-
 import { registerStaff } from "../model/usersService";
 import type { AxiosError } from "axios";
-import { EnumCategory } from "@/modules/enums/types/enum.schemas";
-import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
+// V2 Imports
+import { usePermissions } from "@/hooks/usePermissions";
+import { useRoleViewModel } from "@/modules/roles/viewModel/useRoleViewModel";
 
 export const useCreateStaffViewModel = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAppSelector((state) => state.auth);
 
-  const { enums: roles, isLoading: isRolesLoading } = useEnumViewModel(
-    EnumCategory.USER_ROLE,
-  );
+  //  V2 PBAC Integration
+  const { isSuperAdmin, hasPermission } = usePermissions();
+  const canCreateStaff = hasPermission("user:create");
+  const { roles, isRolesLoading } = useRoleViewModel();
 
-  const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
   const currentUserBranchId = user?.branchId;
-  const defaultBranchId = isSuperAdmin ? 0 : currentUserBranchId || 0;
+  const defaultBranchId = isSuperAdmin ? null : currentUserBranchId || null;
 
   const form = useForm<StaffRegisterFormValues>({
     resolver: zodResolver(staffRegisterSchema),
@@ -38,8 +37,8 @@ export const useCreateStaffViewModel = () => {
       firstName: "",
       lastName: "",
       email: "",
-      roleId: 0,
-      branchId: defaultBranchId,
+      roleId: "", // V2: string UUID instead of 0
+      branchId: defaultBranchId || "",
       designation: "",
       officeLocation: "",
       joiningDate: new Date().toISOString().split("T")[0],
@@ -53,7 +52,6 @@ export const useCreateStaffViewModel = () => {
         "Staff registered successfully! Credentials have been emailed.",
       );
       queryClient.invalidateQueries({ queryKey: ["users"] });
-
       navigate(ROUTENAME.ALL_USERS);
     },
     onError: (error: AxiosError<{ message: string | string[] }>) => {
@@ -68,6 +66,7 @@ export const useCreateStaffViewModel = () => {
       toastService.error(finalMessage);
     },
   });
+
   const onSubmit = (data: StaffRegisterFormValues) => {
     mutation.mutate(data);
   };
@@ -77,6 +76,7 @@ export const useCreateStaffViewModel = () => {
     onSubmit: form.handleSubmit(onSubmit),
     isSubmitting: mutation.isPending,
     isSuperAdmin,
+    canCreateStaff, // Export for View to use
     isRolesLoading,
     roles,
     navigate,

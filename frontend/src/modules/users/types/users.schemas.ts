@@ -49,8 +49,22 @@ export interface FetchUsersQueryParams {
   genderId?: string;
 }
 
+export interface UserListItem {
+  id: string;
+  firstName: string;
+  lastName: string;
+  fullName?: string;
+  enrollmentNumber: string;
+  gender?: { value: string };
+  branch?: { name: string };
+  address?: { city: string; state: string };
+  city?: string;
+  accountStatus?: { value: string; key: string };
+  status?: { value: string; key: string };
+}
+
 export interface PaginatedUserResponse {
-  items: any[];
+  items: UserListItem[];
   meta: PaginationMeta;
 }
 

@@ -1,12 +1,30 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Shield, ShieldPlus, Search, Info, AlertTriangle } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Shield,
+  ShieldPlus,
+  Search,
+  Info,
+  AlertTriangle,
+  Save,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { usePermissions } from "@/hooks/usePermissions";
 import { fetchPermissionMatrix } from "@/modules/users/model/usersService";
-import type { PermissionMatrixItem } from "@/modules/users/types/permission.interface";
+import type {
+  LocalOverride,
+  PermissionMatrixItem,
+  PermissionSectionProps,
+} from "@/modules/users/types/permission.interface";
+import PermissionSaveDialog from "./PermissionSaveDialog";
+import {
+  formatAction,
+  formatResource,
+  groupByResource,
+} from "@/lib/permission.utils";
 
 // =============================================
 //  V2: Two-Tier Permission Matrix
@@ -19,47 +37,19 @@ import type { PermissionMatrixItem } from "@/modules/users/types/permission.inte
 //    - Toggling ON  = GRANT override
 //    - Toggling OFF = DEFAULT (remove grant)
 //
-//  Local state only — actual API save is Phase 3.
+//  Local state only
 // =============================================
 
 interface Props {
   personalInfoId: string;
 }
 
-/** Describes a local override the admin has made in this session */
-interface LocalOverride {
-  slug: string;
-  state: "grant" | "revoke" | "default";
-}
-
-/** Groups permission slugs by their resource prefix (e.g. "assignment", "user") */
-function groupByResource(items: PermissionMatrixItem[]) {
-  const groups = new Map<string, PermissionMatrixItem[]>();
-  for (const item of items) {
-    const [resource] = item.slug.split(":");
-    if (!groups.has(resource)) groups.set(resource, []);
-    groups.get(resource)!.push(item);
-  }
-  return groups;
-}
-
-/** Formats "assignment:create" → "Create" */
-function formatAction(slug: string): string {
-  const action = slug.split(":")[1] || slug;
-  return action
-    .split("-")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-}
-
-/** Formats "assignment" → "Assignment" */
-function formatResource(resource: string): string {
-  return resource.charAt(0).toUpperCase() + resource.slice(1);
-}
-
 export default function UserPermissionMatrix({ personalInfoId }: Props) {
   const { hasPermission } = usePermissions();
   const canManage = hasPermission("user:manage-permissions");
+
+  const queryClient = useQueryClient();
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [localOverrides, setLocalOverrides] = useState<
@@ -159,6 +149,14 @@ export default function UserPermissionMatrix({ personalInfoId }: Props) {
     });
   }
 
+  const handleSaveSuccess = () => {
+    setIsSaveDialogOpen(false);
+    setLocalOverrides(new Map());
+    queryClient.invalidateQueries({
+      queryKey: ["permission-matrix", personalInfoId],
+    });
+  };
+
   // ---- PERMISSION CHECK ----
   if (!canManage) {
     return (
@@ -210,12 +208,18 @@ export default function UserPermissionMatrix({ personalInfoId }: Props) {
         </div>
 
         {dirtyCount > 0 && (
-          <Badge
-            variant="secondary"
-            className="text-xs bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
-          >
-            {dirtyCount} unsaved {dirtyCount === 1 ? "change" : "changes"}
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Badge
+              variant="secondary"
+              className="text-xs bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+            >
+              {dirtyCount} unsaved {dirtyCount === 1 ? "change" : "changes"}
+            </Badge>
+            <Button size="sm" onClick={() => setIsSaveDialogOpen(true)}>
+              <Save className="w-4 h-4 mr-2" />
+              Save Changes
+            </Button>
+          </div>
         )}
       </div>
 
@@ -256,6 +260,15 @@ export default function UserPermissionMatrix({ personalInfoId }: Props) {
         localOverrides={localOverrides}
         accentColor="emerald"
       />
+
+      {/* ---- SAVE DIALOG ---- */}
+      <PermissionSaveDialog
+        isOpen={isSaveDialogOpen}
+        onClose={() => setIsSaveDialogOpen(false)}
+        personalInfoId={personalInfoId}
+        localOverrides={localOverrides}
+        onSuccess={handleSaveSuccess}
+      />
     </div>
   );
 }
@@ -263,22 +276,6 @@ export default function UserPermissionMatrix({ personalInfoId }: Props) {
 // =============================================
 //  Sub-Component: Permission Section
 // =============================================
-
-interface PermissionSectionProps {
-  title: string;
-  subtitle: string;
-  icon: React.ReactNode;
-  groups: Map<string, PermissionMatrixItem[]>;
-  isBaseSection: boolean;
-  getChecked: (item: PermissionMatrixItem) => boolean;
-  onToggle: (
-    item: PermissionMatrixItem,
-    isBaseSection: boolean,
-    newChecked: boolean,
-  ) => void;
-  localOverrides: Map<string, LocalOverride>;
-  accentColor: "blue" | "emerald";
-}
 
 function PermissionSection({
   title,
