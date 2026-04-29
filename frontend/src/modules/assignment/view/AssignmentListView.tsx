@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { BookOpen, Plus, Eye, FileText, Search, History } from "lucide-react";
 
@@ -22,39 +21,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
 import { PageBreadcrumb } from "@/components/custom/dashboard/PageBreadcrumb";
-import { useAssignmentListViewModel } from "../viewModel/useAssignmentListViewModel";
-import { useAppSelector } from "@/store/hook";
-import { ROLES } from "@/core/Constants/enums/role-enum-value";
-import { ROUTENAME } from "@/core/Constants/RouteName";
-import { getPreviewUrl } from "@/lib/file-utils";
 
-//  Imports for Filters
-import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
-import { EnumCategory } from "@/modules/enums/types/enum.schemas";
-import { useBranchViewModel } from "@/modules/branch/viewModel/useBranchViewModel";
+import { useAssignmentListViewModel } from "../viewModel/useAssignmentListViewModel";
+import { getPreviewUrl } from "@/lib/file-utils";
 import type { AssignmentDTO } from "../types/assignment.schemas";
 
 export default function AssignmentListView() {
-  const navigate = useNavigate();
+  //  The View only consumes the ViewModel
   const vm = useAssignmentListViewModel();
-  const { user } = useAppSelector((state) => state.auth);
-
-  // 🚀 Load Dropdown Data
-  const { enums: academicYears } = useEnumViewModel(EnumCategory.ACADEMIC_YEAR);
-  const { branches } = useBranchViewModel();
-
-  const canCreate =
-    user?.role === ROLES.SUPER_ADMIN ||
-    user?.role === ROLES.HOD ||
-    user?.role === ROLES.PROFESSOR;
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 pb-12">
       <PageBreadcrumb
         items={[
-          { label: "Dashboard", onClick: () => navigate("/") },
+          { label: "Dashboard", onClick: () => vm.navigate("/") },
           { label: "Assignments" },
         ]}
       />
@@ -73,17 +54,17 @@ export default function AssignmentListView() {
           {vm.hasCreatedAssignments && (
             <Button
               variant="secondary"
-              // Assuming your route is /assignments/me, adjust if needed
-              onClick={() => navigate("/assignments/me")}
+              onClick={() => vm.navigate("/assignments/me")}
             >
               <History className="w-4 h-4 mr-2" />
               My Assignments
             </Button>
           )}
 
-          {canCreate && (
+          {/* PBAC Gate */}
+          {vm.canCreate && (
             <Button
-              onClick={() => navigate(ROUTENAME.ADD_ASSIGNMENT)}
+              onClick={() => vm.navigate(vm.ROUTENAME.ADD_ASSIGNMENT)}
               className="shrink-0"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -93,7 +74,6 @@ export default function AssignmentListView() {
         </div>
       </div>
 
-      {/* 🚀 NEW: FILTER BAR */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-muted/10 p-4 rounded-lg border">
         {/* Search Input */}
         <div className="relative w-full md:w-80">
@@ -115,9 +95,7 @@ export default function AssignmentListView() {
                 : "all"
             }
             onValueChange={(val) =>
-              vm.filters.setAcademicYearId(
-                val === "all" ? undefined : val,
-              )
+              vm.filters.setAcademicYearId(val === "all" ? undefined : val)
             }
           >
             <SelectTrigger className="w-40 bg-background">
@@ -125,7 +103,7 @@ export default function AssignmentListView() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Years</SelectItem>
-              {academicYears?.map((y) => (
+              {vm.academicYears?.map((y) => (
                 <SelectItem key={y.id} value={String(y.id)}>
                   {y.value}
                 </SelectItem>
@@ -133,8 +111,8 @@ export default function AssignmentListView() {
             </SelectContent>
           </Select>
 
-          {/* Branch Select (SuperAdmin Only) */}
-          {user?.role === ROLES.SUPER_ADMIN && (
+          {/* Branch Select (Global Managers Only) */}
+          {vm.canManageGlobal && (
             <Select
               value={vm.filters.branchId ? String(vm.filters.branchId) : "all"}
               onValueChange={(val) =>
@@ -146,7 +124,7 @@ export default function AssignmentListView() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Branches</SelectItem>
-                {branches?.map((b) => (
+                {vm.branches?.map((b) => (
                   <SelectItem key={b.id} value={String(b.id)}>
                     {b.name}
                   </SelectItem>
@@ -227,8 +205,7 @@ export default function AssignmentListView() {
                               rel="noreferrer"
                               className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 hover:underline"
                             >
-                              <FileText className="w-3 h-3 mr-1" />
-                              View File
+                              <FileText className="w-3 h-3 mr-1" /> View File
                             </a>
                           ) : (
                             <span className="text-xs text-muted-foreground">
@@ -237,23 +214,21 @@ export default function AssignmentListView() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                navigate(
-                                  ROUTENAME.VIEW_ASSIGNMENT.replace(
-                                    ":id",
-                                    assignment.id.toString(),
-                                  ),
-                                )
-                              }
-                              title="View Details"
-                            >
-                              <Eye className="w-4 h-4 text-muted-foreground" />
-                            </Button>
-                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              vm.navigate(
+                                vm.ROUTENAME.VIEW_ASSIGNMENT.replace(
+                                  ":id",
+                                  assignment.id.toString(),
+                                ),
+                              )
+                            }
+                            title="View Details"
+                          >
+                            <Eye className="w-4 h-4 text-muted-foreground" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -265,7 +240,7 @@ export default function AssignmentListView() {
         </CardContent>
       </Card>
 
-      {/* 🚀 NEW: PAGINATION CONTROLS */}
+      {/* PAGINATION CONTROLS */}
       {vm.meta && vm.meta.totalPages > 1 && (
         <div className="flex justify-center items-center gap-4 mt-6">
           <Button

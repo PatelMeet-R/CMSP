@@ -1,30 +1,28 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
-
 import { toastService } from "@/core/toast/toastService";
-import {
-  assignmentFormSchema,
-  type AssignmentFormValues,
-  type UpdateAssignmentPayload,
-  type AssignmentDTO,
-} from "../types/assignment.schemas";
+
 import {
   fetchAssignmentById,
   updateAssignment,
   uploadAssignmentFile,
 } from "../model/assignmentService";
-import { ROUTENAME } from "@/core/Constants/RouteName";
+import { searchSubjects } from "../../subject-mapping/model/subjectMappingService";
+import {
+  assignmentFormSchema,
+  type AssignmentFormValues,
+  type UpdateAssignmentPayload,
+} from "../types/assignment.schemas";
 
-interface ApiError {
-  response?: {
-    data?: {
-      message?: string;
-    };
-  };
-}
+import { useAppSelector } from "@/store/hook";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useBranchViewModel } from "@/modules/branch/viewModel/useBranchViewModel";
+import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
+import { EnumCategory } from "@/modules/enums/types/enum.schemas";
+import type { SubjectComboboxDTO } from "@/modules/subject-mapping/types/subject-mapping.types";
 
 export function useAssignmentEditViewModel() {
   const { id } = useParams<{ id: string }>();
@@ -32,92 +30,118 @@ export function useAssignmentEditViewModel() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  // --- 1. PBAC & AUTH ---
+  const { user } = useAppSelector((state) => state.auth);
+  const { hasPermission } = usePermissions();
+  const canManageGlobal = hasPermission("assignment:manage-global");
+
+  // --- 2. EXTERNAL DEPENDENCIES ---
+  const { enums: semesters, isLoading: isSemLoading } = useEnumViewModel(
+    EnumCategory.SEMESTER,
+  );
+  const { branches, isLoading: isBranchesLoading } = useBranchViewModel();
+
+  // --- 3. UI STATE ---
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
-
-  // Track if the user explicitly removed the existing file
   const [removedExistingFile, setRemovedExistingFile] = useState(false);
 
-  // 1. Fetch Existing Data
-  const { data: assignment, isLoading: isFetching } = useQuery<
-    AssignmentDTO,
-    Error
-  >({
+  // --- 4. DATA FETCHING ---
+  const { data: assignment, isLoading: isFetching } = useQuery({
     queryKey: ["assignment", assignmentId],
     queryFn: () => fetchAssignmentById(assignmentId),
     enabled: !!assignmentId,
   });
 
+  // --- 5. FORM SETUP ---
   const form = useForm<AssignmentFormValues>({
     resolver: zodResolver(assignmentFormSchema),
-    mode: "onChange",
     defaultValues: {
       title: "",
       description: "",
-      dueDate: undefined,
-      subjectId: undefined,
-      semesterId: undefined,
-      branchId: undefined,
-      academicYearId: undefined,
+      subjectId: "",
+      branchId: "",
+      semesterId: "",
+      academicYearId: "",
+      attachmentId: null,
     },
   });
 
+  // Populate form on load
   useEffect(() => {
-    form.register("subjectId");
-    form.register("semesterId");
-    form.register("branchId");
-    form.register("academicYearId");
-
     if (assignment) {
       form.reset({
-        title: assignment.title,
-        description: assignment.description,
-        dueDate: new Date(assignment.dueDate),
-        subjectId: assignment.subjectId,
-        branchId: assignment.branchId,
-        semesterId: assignment.semesterId,
-        academicYearId: assignment.academicYearId,
-        attachmentId: assignment.attachmentId || null,
+        title: assignment.title ?? "",
+        description: assignment.description ?? "",
+        subjectId: assignment.subjectId ?? "",
+        branchId:
+          assignment.branchId ??
+          (!canManageGlobal ? (user?.branchId ?? "") : ""),
+        semesterId: assignment.semesterId ?? "",
+        academicYearId: assignment.academicYearId ?? "",
+        dueDate: assignment.dueDate
+          ? new Date(assignment.dueDate)
+          : (undefined as unknown as Date),
       });
-
-      form.trigger();
     }
-  }, [assignment, form]);
+  }, [assignment, form, canManageGlobal, user]);
 
-  // 3. Update Mutation
+  const activeBranchId = canManageGlobal
+    ? form.watch("branchId")
+    : user?.branchId;
+
+  // --- 6. HANDLERS ---
+  const fetchSubjectsMemoized = useCallback(
+    (term: string) =>
+      searchSubjects(term, undefined, activeBranchId ?? undefined),
+    [activeBranchId],
+  );
+
+  const handleSubjectSelect = (
+    subjectId: string | null,
+    rawData?: SubjectComboboxDTO | null,
+  ) => {
+    if (!subjectId) {
+      form.setValue("subjectId", "", { shouldValidate: true });
+      form.setValue("semesterId", "", { shouldValidate: true });
+      return;
+    }
+    form.setValue("subjectId", subjectId, { shouldValidate: true });
+    if (rawData?.semesterId) {
+      form.setValue("semesterId", rawData.semesterId, { shouldValidate: true });
+    }
+  };
+
+  // --- 7. MUTATIONS ---
   const updateMutation = useMutation({
     mutationFn: (payload: UpdateAssignmentPayload) =>
       updateAssignment(assignmentId, payload),
     onSuccess: () => {
-      toastService.success("Assignment updated successfully!");
-      queryClient.invalidateQueries({ queryKey: ["assignments"] });
+      toastService.success("Assignment updated successfully.");
       queryClient.invalidateQueries({ queryKey: ["assignment", assignmentId] });
-      navigate(
-        ROUTENAME.VIEW_ASSIGNMENT.replace(":id", assignmentId.toString()),
-      );
+      queryClient.invalidateQueries({ queryKey: ["assignments"] });
+      navigate(-1);
     },
-    onError: (error: ApiError) => {
+    onError: (error: any) => {
       toastService.error(
         error?.response?.data?.message || "Failed to update assignment.",
       );
     },
   });
 
-  // 4. Handle Submit
   const onSubmit = async (values: AssignmentFormValues) => {
     try {
-      // Create a Partial payload so we only send what we need
       const finalPayload: UpdateAssignmentPayload = {
         title: values.title,
         description: values.description,
         dueDate: values.dueDate.toISOString(),
         subjectId: values.subjectId,
         semesterId: values.semesterId,
+        branchId: values.branchId,
       };
 
       // FILE LOGIC
       if (selectedFile) {
-        // Case A: User uploaded a brand NEW file
         setIsUploadingFile(true);
         try {
           const uploadedFileResponse = await uploadAssignmentFile(
@@ -132,8 +156,6 @@ export function useAssignmentEditViewModel() {
         }
         setIsUploadingFile(false);
       } else if (removedExistingFile) {
-        // Case B: User clicked 'X' on the old file, but didn't upload a new one
-        // The backend expects `null` to physically delete the relation
         finalPayload.attachmentId = null;
       }
 
@@ -147,15 +169,27 @@ export function useAssignmentEditViewModel() {
     form,
     assignment,
     isFetching,
+    navigate,
     onSubmit: form.handleSubmit(onSubmit),
     isSubmitting: updateMutation.isPending || isUploadingFile,
+
+    // Auth & Dependencies
+    canManageGlobal,
+    branches,
+    semesters,
+    isPageLoading: isSemLoading || isBranchesLoading,
+
+    // Handlers
+    fetchSubjectsMemoized,
+    handleSubjectSelect,
+
     fileState: {
       file: selectedFile,
       setFile: setSelectedFile,
+      isUploading: isUploadingFile,
       existingUrl: assignment?.attachmentUrl,
       removedExistingFile,
       setRemovedExistingFile,
     },
-    navigate,
   };
 }

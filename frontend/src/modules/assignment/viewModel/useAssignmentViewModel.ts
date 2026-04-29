@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toastService } from "@/core/toast/toastService";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 import {
   uploadAssignmentFile,
@@ -12,45 +12,69 @@ import {
   fetchMyActiveSubjects,
   fetchAssignmentById,
 } from "../model/assignmentService";
+import { searchSubjects } from "../../subject-mapping/model/subjectMappingService";
 import {
   assignmentFormSchema,
   type AssignmentFormValues,
   type AssignmentPayload,
 } from "@/modules/assignment/types/assignment.schemas";
+
 import { useAppSelector } from "@/store/hook";
-import { ROLES } from "@/core/Constants/enums/role-enum-value";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useSystemSettingsViewModel } from "@/modules/settings/viewModel/useSystemSettingsViewModel";
+import { useBranchViewModel } from "@/modules/branch/viewModel/useBranchViewModel";
+import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
+import { EnumCategory } from "@/modules/enums/types/enum.schemas";
+import type { SubjectComboboxDTO } from "@/modules/subject-mapping/types/subject-mapping.types";
 
 export function useAssignmentViewModel() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
-  // 1. URL & Auth States
+  // --- 1. PBAC & AUTH STATES ---
   const [searchParams] = useSearchParams();
   const cloneId = searchParams.get("cloneId");
+
   const { user } = useAppSelector((state) => state.auth);
+  const { hasPermission } = usePermissions();
+  const canManageGlobal = hasPermission("assignment:manage-global");
+
+  //  Fallback to empty string instead of undefined to satisfy Zod
+  const defaultBranchId = !canManageGlobal ? (user?.branchId ?? "") : "";
+
+  // --- 2. GLOBAL SETTINGS & DEPENDENCIES ---
   const { selectedYearId: activeAcademicYearId } = useSystemSettingsViewModel();
+  const { enums: semesters, isLoading: isSemLoading } = useEnumViewModel(
+    EnumCategory.SEMESTER,
+  );
+  const { enums: academicYears, isLoading: isYearLoading } = useEnumViewModel(
+    EnumCategory.ACADEMIC_YEAR,
+  );
+  const { branches, isLoading: isBranchesLoading } = useBranchViewModel();
 
-  const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
-  const defaultBranchId = !isSuperAdmin ? user?.branchId : undefined;
-
-  // 2. Form Setup
+  // --- 3. FORM SETUP ---
   const form = useForm<AssignmentFormValues>({
     resolver: zodResolver(assignmentFormSchema),
     mode: "onChange",
     defaultValues: {
       title: "",
       description: "",
-      subjectId: undefined as unknown as string,
-      semesterId: undefined as unknown as string,
+      subjectId: "",
+      semesterId: "",
       branchId: defaultBranchId,
       attachmentId: null,
-      academicYearId: activeAcademicYearId || undefined,
+      academicYearId: activeAcademicYearId || "",
     },
   });
 
   const currentYearId = form.watch("academicYearId");
+  const activeBranchId = canManageGlobal
+    ? form.watch("branchId")
+    : user?.branchId;
+  const activeYearDisplay =
+    academicYears?.find((y) => y.id === currentYearId)?.value || "Loading...";
 
-  // 3. 🚀 Data Fetching (Moved ABOVE the useEffects)
+  // --- 4. DATA FETCHING ---
   const { data: clonedAssignment, isLoading: isCloning } = useQuery({
     queryKey: ["assignment", cloneId],
     queryFn: () => fetchAssignmentById(cloneId!),
@@ -60,22 +84,19 @@ export function useAssignmentViewModel() {
   const { data: mySubjects, isLoading: isMySubjectsLoading } = useQuery({
     queryKey: ["my-active-subjects", currentYearId],
     queryFn: () => fetchMyActiveSubjects(currentYearId as string),
-    enabled: !isSuperAdmin && !!currentYearId,
+    enabled: !canManageGlobal && !!currentYearId,
   });
 
-  // 4. 🚀 The SMART Clone Effect (Now has access to mySubjects)
+  // --- 5. EFFECTS ---
   useEffect(() => {
-    // Wait until both the cloned data AND the professor's current subjects are loaded
     if (clonedAssignment && !isMySubjectsLoading) {
-      // Check if the old subject is still in their active assigned subjects list
       const isSubjectStillAssigned =
-        isSuperAdmin ||
+        canManageGlobal ||
         (mySubjects || []).some(
           (sub: any) => sub.subjectId === clonedAssignment.subjectId,
         );
 
-      // Warning if they don't teach it anymore
-      if (!isSubjectStillAssigned && !isSuperAdmin) {
+      if (!isSubjectStillAssigned && !canManageGlobal) {
         toastService.warning(
           "You are no longer assigned to the original subject. Please select a current subject.",
         );
@@ -88,19 +109,11 @@ export function useAssignmentViewModel() {
       form.reset({
         title: `${clonedAssignment.title} (Copy)`,
         description: clonedAssignment.description,
-
-        // 🚀 THE FIX: Only auto-fill if they still teach it! Otherwise, force them to pick.
-        subjectId: isSubjectStillAssigned
-          ? clonedAssignment.subjectId
-          : (undefined as unknown as string),
-        semesterId: isSubjectStillAssigned
-          ? clonedAssignment.semesterId
-          : (undefined as unknown as string),
-
-        branchId: clonedAssignment.branchId,
+        subjectId: isSubjectStillAssigned ? clonedAssignment.subjectId : "",
+        semesterId: isSubjectStillAssigned ? clonedAssignment.semesterId : "",
+        branchId: clonedAssignment.branchId ?? "",
         attachmentId: clonedAssignment.attachmentId || null,
-
-        academicYearId: activeAcademicYearId || undefined,
+        academicYearId: activeAcademicYearId || "",
         dueDate: undefined as unknown as Date,
       });
     }
@@ -110,45 +123,67 @@ export function useAssignmentViewModel() {
     mySubjects,
     activeAcademicYearId,
     form,
-    isSuperAdmin,
+    canManageGlobal,
   ]);
 
-  // 5. Initial Year Sync Effect
   useEffect(() => {
     if (activeAcademicYearId && !cloneId) {
       form.setValue("academicYearId", activeAcademicYearId);
     }
   }, [activeAcademicYearId, form, cloneId]);
 
-  // 6. File & Upload States
+  // --- 6. HANDLERS ---
+  const fetchSubjectsMemoized = useCallback(
+    (term: string) =>
+      searchSubjects(term, undefined, activeBranchId ?? undefined), //  Safely fallback null to undefined
+    [activeBranchId],
+  );
+
+  const handleSubjectSelect = (
+    subjectId: string | null,
+    rawData?: SubjectComboboxDTO | null,
+  ) => {
+    if (!subjectId) {
+      form.setValue("subjectId", "", { shouldValidate: true });
+      form.setValue("semesterId", "", { shouldValidate: true });
+      return;
+    }
+
+    form.setValue("subjectId", subjectId, { shouldValidate: true });
+
+    if (rawData?.semesterId) {
+      form.setValue("semesterId", rawData.semesterId, { shouldValidate: true });
+    } else if (rawData?.semester && semesters) {
+      const semString =
+        typeof rawData.semester === "string"
+          ? rawData.semester
+          : (rawData.semester as any).value;
+      const matchedSem = semesters.find(
+        (s) => s.key === semString || s.value === semString,
+      );
+      if (matchedSem)
+        form.setValue("semesterId", matchedSem.id, { shouldValidate: true });
+    }
+  };
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
 
-  // 7. Create Mutation
+  // --- 7. MUTATIONS ---
   const createMutation = useMutation({
     mutationFn: createAssignment,
     onSuccess: () => {
       toastService.success("Assignment created successfully!");
       queryClient.invalidateQueries({ queryKey: ["assignments"] });
-      form.reset({
-        title: "",
-        description: "",
-        subjectId: undefined as unknown as string,
-        semesterId: undefined as unknown as string,
-        attachmentId: null,
-        branchId: defaultBranchId,
-        academicYearId: activeAcademicYearId || undefined,
-      });
-      setSelectedFile(null);
+      navigate(-1);
     },
     onError: (error: any) => {
-      const msg =
-        error?.response?.data?.message || "Failed to create assignment.";
-      toastService.error(msg);
+      toastService.error(
+        error?.response?.data?.message || "Failed to create assignment.",
+      );
     },
   });
 
-  // 8. Submit Handler
   const onSubmit = async (values: AssignmentFormValues) => {
     try {
       let finalAttachmentId = values.attachmentId;
@@ -177,7 +212,7 @@ export function useAssignmentViewModel() {
         subjectId: values.subjectId,
         branchId: values.branchId,
         semesterId: values.semesterId,
-        academicYearId: values.academicYearId,
+        academicYearId: values.academicYearId || null,
         dueDate: values.dueDate.toISOString(),
         attachmentId: finalAttachmentId,
       };
@@ -185,17 +220,7 @@ export function useAssignmentViewModel() {
       try {
         await createMutation.mutateAsync(finalPayload);
       } catch (assignmentError) {
-        if (newlyUploadedFileId) {
-          console.warn(
-            "Assignment creation failed. Rolling back uploaded file...",
-          );
-          try {
-            await deleteUploadedFile(newlyUploadedFileId);
-            console.log("Ghost file successfully deleted.");
-          } catch (cleanupError) {
-            console.error("Failed to delete ghost file.", cleanupError);
-          }
-        }
+        if (newlyUploadedFileId) await deleteUploadedFile(newlyUploadedFileId);
       }
     } catch (error) {
       console.error("Critical Submission Error", error);
@@ -204,9 +229,23 @@ export function useAssignmentViewModel() {
 
   return {
     form,
+    navigate,
     onSubmit: form.handleSubmit(onSubmit),
     isSubmitting: createMutation.isPending || isUploadingFile,
     isCloning,
+
+    // Dependencies & Auth
+    canManageGlobal,
+    activeBranchId,
+    activeYearDisplay,
+    branches,
+    semesters,
+    isPageLoading: isSemLoading || isYearLoading || isBranchesLoading,
+
+    // Handlers
+    fetchSubjectsMemoized,
+    handleSubjectSelect,
+
     fileState: {
       file: selectedFile,
       setFile: setSelectedFile,

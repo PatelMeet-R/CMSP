@@ -19,42 +19,50 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SpinnerCustom } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 import { PageBreadcrumb } from "@/components/custom/dashboard/PageBreadcrumb";
-import { useAssignmentEditViewModel } from "../viewModel/useAssignmentEditViewModel";
+import { AsyncCombobox } from "@/components/custom/dashboard/AsyncCombobox";
 import { FileUploader } from "@/components/custom/dashboard/files-uploader";
-import { ROUTENAME } from "@/core/Constants/RouteName";
+import { useAssignmentEditViewModel } from "../viewModel/useAssignmentEditViewModel";
+import { getPreviewUrl } from "@/lib/file-utils";
 
 export default function AssignmentEditView() {
+  // 🚨 The View only consumes the ViewModel
   const vm = useAssignmentEditViewModel();
 
-  if (vm.isFetching) {
+  if (vm.isFetching || vm.isPageLoading) {
     return (
       <div className="w-full max-w-4xl mx-auto space-y-6 pb-12">
         <Skeleton className="h-10 w-64" />
-        <Skeleton className="h-150 w-full rounded-xl" />
+        <Card className="shadow-sm">
+          <CardHeader>
+            <Skeleton className="h-6 w-40" />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Skeleton className="h-20 w-full" />
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 pb-12">
+    <div className="w-full max-w-5xl mx-auto space-y-6 pb-12">
       <PageBreadcrumb
         items={[
           { label: "Dashboard", onClick: () => vm.navigate("/") },
-          {
-            label: vm.assignment?.title || "Assignments",
-            onClick: () =>
-              vm.navigate(
-                ROUTENAME.VIEW_ASSIGNMENT.replace(
-                  ":id",
-                  `${vm.assignment?.id}`.toString(),
-                ),
-              ),
-          },
-          { label: "Edit" },
+          { label: "Assignments", onClick: () => vm.navigate("/assignments") },
+          { label: vm.assignment?.title || "Edit Assignment" },
         ]}
       />
 
@@ -65,10 +73,7 @@ export default function AssignmentEditView() {
             Edit Assignment
           </h1>
           <p className="text-muted-foreground mt-1">
-            Updating:{" "}
-            <span className="font-semibold text-foreground">
-              {vm.assignment?.title}
-            </span>
+            Update the coursework details or attach a new reference file.
           </p>
         </div>
       </div>
@@ -82,20 +87,28 @@ export default function AssignmentEditView() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <FieldLabel className="text-xs font-bold text-muted-foreground uppercase">
-                Assignment Title *
+                Assignment Title
               </FieldLabel>
-              <Input {...vm.form.register("title")} />
+              <Input
+                {...vm.form.register("title")}
+                className={
+                  vm.form.formState.errors.title ? "border-red-500" : ""
+                }
+              />
             </div>
 
             <div className="space-y-2">
               <FieldLabel className="text-xs font-bold text-muted-foreground uppercase">
-                Due Date *
+                Due Date
               </FieldLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant={"outline"}
-                    className="w-full justify-start text-left font-normal"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !vm.form.watch("dueDate") && "text-muted-foreground",
+                    )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {vm.form.watch("dueDate") ? (
@@ -112,6 +125,7 @@ export default function AssignmentEditView() {
                     onSelect={(date) =>
                       vm.form.setValue("dueDate", date as Date, {
                         shouldValidate: true,
+                        shouldDirty: true,
                       })
                     }
                     initialFocus
@@ -123,80 +137,100 @@ export default function AssignmentEditView() {
 
           <div className="space-y-2">
             <FieldLabel className="text-xs font-bold text-muted-foreground uppercase">
-              Instructions / Description *
+              Instructions / Description
             </FieldLabel>
             <Textarea
-              className="min-h-30 resize-y"
+              className={cn(
+                "min-h-30 resize-y",
+                vm.form.formState.errors.description ? "border-red-500" : "",
+              )}
               {...vm.form.register("description")}
             />
           </div>
 
-          {/* 🚀 OPTIMIZED ROUTING INFORMATION */}
           <div className="p-5 rounded-xl border bg-muted/10 space-y-5">
             <h3 className="font-semibold text-sm flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-primary" />
-              Routing Information
-              <span className="text-xs font-normal text-muted-foreground italic ml-2">
-                (Locked during edit)
-              </span>
+              <Building2 className="w-4 h-4 text-primary" /> Routing Information
             </h3>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* Subject Display */}
+              {vm.canManageGlobal && (
+                <div className="space-y-2">
+                  <FieldLabel className="text-xs font-bold text-muted-foreground uppercase">
+                    Branch
+                  </FieldLabel>
+                  <Select
+                    value={vm.form.watch("branchId")}
+                    onValueChange={(val) => {
+                      vm.form.setValue("branchId", val, {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      });
+                      vm.form.setValue("subjectId", "");
+                    }}
+                  >
+                    <SelectTrigger className="bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {vm.branches?.map((b) => (
+                        <SelectItem key={b.id} value={b.id.toString()}>
+                          {b.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <FieldLabel className="text-xs font-bold text-muted-foreground uppercase">
                   Subject
                 </FieldLabel>
-                {/* A simple disabled input displaying the name we already fetched */}
-                <Input
-                  disabled
-                  value={vm.assignment?.subjectName || "Loading..."}
-                  className="bg-background text-muted-foreground opacity-70 cursor-not-allowed"
-                />
-              </div>
-
-              {/* Semester Display */}
-              <div className="space-y-2">
-                <FieldLabel className="text-xs font-bold text-muted-foreground uppercase">
-                  Semester
-                </FieldLabel>
-                <Input
-                  disabled
-                  value={vm.assignment?.semester || "Loading..."}
-                  className="bg-background text-muted-foreground opacity-70 cursor-not-allowed"
+                <AsyncCombobox
+                  key={`sub-combo-${vm.form.watch("branchId") || "all"}`}
+                  placeholder="Search subject..."
+                  value={vm.form.watch("subjectId")}
+                  onChange={(val, raw) => {
+                    vm.handleSubjectSelect(val, raw);
+                    vm.form.setValue("subjectId", val ?? "", {
+                      shouldDirty: true,
+                    });
+                  }}
+                  fetchOptions={vm.fetchSubjectsMemoized}
                 />
               </div>
             </div>
           </div>
 
-          {/* FILE UPLOAD LOGIC */}
           <div className="space-y-2">
-            <FieldLabel className="text-xs font-bold text-muted-foreground uppercase">
-              Reference Material
+            <FieldLabel className="text-xs font-bold text-muted-foreground uppercase flex justify-between">
+              <span>Attached Reference File</span>
+              {vm.fileState.isUploading && (
+                <span className="text-primary animate-pulse flex items-center gap-1">
+                  <SpinnerCustom /> Uploading...
+                </span>
+              )}
             </FieldLabel>
 
             {vm.fileState.existingUrl &&
             !vm.fileState.removedExistingFile &&
             !vm.fileState.file ? (
-              <div className="p-4 border rounded-xl bg-card shadow-sm flex items-center justify-between">
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-background">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 bg-muted rounded-lg">
-                    <FileText className="w-6 h-6 text-primary/70" />
-                  </div>
+                  <FileText className="w-8 h-8 text-blue-500" />
                   <div>
-                    <p className="font-medium text-sm">Existing Attachment</p>
+                    <p className="text-sm font-medium">Existing Attachment</p>
                     <a
-                      href={vm.fileState.existingUrl}
+                      href={getPreviewUrl(vm.fileState.existingUrl)}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-xs text-blue-500 hover:underline"
+                      className="text-xs text-blue-600 hover:underline"
                     >
                       View File
                     </a>
                   </div>
                 </div>
                 <Button
-                  type="button"
                   variant="ghost"
                   size="icon"
                   className="text-red-500"

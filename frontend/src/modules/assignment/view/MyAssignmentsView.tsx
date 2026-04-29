@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { History, Plus, Edit, Search, CalendarDays, Copy } from "lucide-react";
 
@@ -25,21 +24,17 @@ import {
 import { PageBreadcrumb } from "@/components/custom/dashboard/PageBreadcrumb";
 
 import { useMyAssignmentListViewModel } from "../viewModel/useMyAssignmentListViewModel";
-import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
-import { EnumCategory } from "@/modules/enums/types/enum.schemas";
-import { ROUTENAME } from "@/core/Constants/RouteName";
 import type { AssignmentDTO } from "../types/assignment.schemas";
 
 export default function MyAssignmentsView() {
-  const navigate = useNavigate();
+  //  Abstraction Complete
   const vm = useMyAssignmentListViewModel();
-  const { enums: academicYears } = useEnumViewModel(EnumCategory.ACADEMIC_YEAR);
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 pb-12">
       <PageBreadcrumb
         items={[
-          { label: "Dashboard", onClick: () => navigate("/") },
+          { label: "Dashboard", onClick: () => vm.navigate("/") },
           { label: "My Assignments History" },
         ]}
       />
@@ -54,13 +49,12 @@ export default function MyAssignmentsView() {
             Track, edit, and manage all coursework you have ever created.
           </p>
         </div>
-        <Button onClick={() => navigate(ROUTENAME.ADD_ASSIGNMENT)}>
+        <Button onClick={() => vm.navigate(vm.ROUTENAME.ADD_ASSIGNMENT)}>
           <Plus className="w-4 h-4 mr-2" />
           Create New
         </Button>
       </div>
 
-      {/* FILTER BAR */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-muted/10 p-4 rounded-lg border">
         <div className="relative w-full md:w-80">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -79,9 +73,7 @@ export default function MyAssignmentsView() {
               : "all"
           }
           onValueChange={(val) =>
-            vm.filters.setAcademicYearId(
-              val === "all" ? undefined : val,
-            )
+            vm.filters.setAcademicYearId(val === "all" ? undefined : val)
           }
         >
           <SelectTrigger className="w-50 bg-background">
@@ -90,7 +82,7 @@ export default function MyAssignmentsView() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Time (History)</SelectItem>
-            {academicYears?.map((y) => (
+            {vm.academicYears?.map((y) => (
               <SelectItem key={y.id} value={String(y.id)}>
                 {y.value}
               </SelectItem>
@@ -153,22 +145,20 @@ export default function MyAssignmentsView() {
                             size="icon"
                             title="Duplicate Assignment"
                             onClick={() =>
-                              navigate(
-                                `${ROUTENAME.ADD_ASSIGNMENT}?cloneId=${assignment.id}`,
+                              vm.navigate(
+                                `${vm.ROUTENAME.ADD_ASSIGNMENT}?cloneId=${assignment.id}`,
                               )
                             }
                           >
                             <Copy className="w-4 h-4 text-emerald-600" />
                           </Button>
-
-                          {/* Existing Edit Button */}
                           <Button
                             variant="ghost"
                             title="Edit Assignment"
                             size="icon"
                             onClick={() =>
-                              navigate(
-                                ROUTENAME.EDIT_ASSIGNMENT.replace(
+                              vm.navigate(
+                                vm.ROUTENAME.EDIT_ASSIGNMENT.replace(
                                   ":id",
                                   assignment.id.toString(),
                                 ),

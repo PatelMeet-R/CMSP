@@ -7,6 +7,7 @@ interface SecureDeleteModalProps {
   isOpen: boolean;
   targetName: string;
   isDeleting: boolean;
+
   onCancel: () => void;
   onConfirm: () => void;
 }
@@ -15,6 +16,7 @@ export function SecureDeleteModal({
   isOpen,
   targetName,
   isDeleting,
+
   onCancel,
   onConfirm,
 }: SecureDeleteModalProps) {

@@ -1,5 +1,3 @@
-import { useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { BookOpen, CalendarIcon, CheckCircle2, Building2 } from "lucide-react";
 
@@ -26,103 +24,26 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar"; // Assuming standard Shadcn Calendar
+import { Calendar } from "@/components/ui/calendar";
 import { SpinnerCustom } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-
-// Custom Components
-import { PageBreadcrumb } from "@/components/custom/dashboard/PageBreadcrumb";
-import { AsyncCombobox } from "@/components/custom/dashboard/AsyncCombobox";
-
-// Services & Hooks
-import { useAssignmentViewModel } from "../viewModel/useAssignmentViewModel";
-import { searchSubjects } from "../../subject-mapping/model/subjectMappingService";
-import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
-import { EnumCategory } from "@/modules/enums/types/enum.schemas";
-import { useBranchViewModel } from "@/modules/branch/viewModel/useBranchViewModel";
-import { useAppSelector } from "@/store/hook";
-import { ROLES } from "@/core/Constants/enums/role-enum-value";
-import { FileUploader } from "@/components/custom/dashboard/files-uploader";
 import { Badge } from "@/components/ui/badge";
 
-import type { SubjectComboboxDTO } from "@/modules/subject-mapping/types/subject-mapping.types";
+import { PageBreadcrumb } from "@/components/custom/dashboard/PageBreadcrumb";
+import { AsyncCombobox } from "@/components/custom/dashboard/AsyncCombobox";
+import { FileUploader } from "@/components/custom/dashboard/files-uploader";
+import { useAssignmentViewModel } from "../viewModel/useAssignmentViewModel";
 
 export default function AssignmentCreateView() {
-  const navigate = useNavigate();
-  const { user } = useAppSelector((state) => state.auth);
+  //  The View only consumes the ViewModel
   const vm = useAssignmentViewModel();
-  if (!user) return null;
-
-  const isSuperAdmin = user.role === ROLES.SUPER_ADMIN;
-  // If not Super Admin, lock them to their own branch
-  const activeBranchId = isSuperAdmin
-    ? vm.form.watch("branchId")
-    : user.branchId;
-
-  // 1. Fetch Global Enums & Branches
-  const { enums: semesters, isLoading: isSemLoading } = useEnumViewModel(
-    EnumCategory.SEMESTER,
-  );
-  const { enums: academicYears, isLoading: isYearLoading } = useEnumViewModel(
-    EnumCategory.ACADEMIC_YEAR,
-  );
-  const currentYearId = vm.form.watch("academicYearId");
-  const activeYearDisplay =
-    academicYears?.find((y) => y.id === currentYearId)?.value || "Loading...";
-  const { branches, isLoading: isBranchesLoading } = useBranchViewModel();
-
-  // 2. Memoized Subject Fetcher (Dependent on selected Branch)
-  const fetchSubjectsMemoized = useCallback(
-    (term: string) => searchSubjects(term, undefined, activeBranchId),
-    [activeBranchId],
-  );
-
-  // 3. Smart Subject Selection (Auto-fills Semester)
-  const handleSubjectSelect = (
-    subjectId: string | null,
-    rawData?: SubjectComboboxDTO | null,
-  ) => {
-    if (!subjectId) {
-      vm.form.setValue("subjectId", undefined as unknown as string, {
-        shouldValidate: true,
-      });
-      vm.form.setValue("semesterId", undefined as unknown as string, {
-        shouldValidate: true,
-      });
-      return;
-    }
-
-    vm.form.setValue("subjectId", subjectId, { shouldValidate: true });
-
-    if (rawData?.semesterId) {
-      // CASE 1: Professor / HOD (Data comes from your new my-active-subjects API)
-      // We already have the exact ID, so just plug it directly into the form!
-      vm.form.setValue("semesterId", rawData.semesterId, {
-        shouldValidate: true,
-      });
-    } else if (rawData?.semester && semesters) {
-      // CASE 2: Super Admin (Data comes from the Global Search Combobox)
-      // We have to match the string name to find the ID
-      const semString =
-        typeof rawData.semester === "string"
-          ? rawData.semester
-          : (rawData.semester as any).value;
-      const matchedSem = semesters.find(
-        (s) => s.key === semString || s.value === semString,
-      );
-
-      if (matchedSem) {
-        vm.form.setValue("semesterId", matchedSem.id, { shouldValidate: true });
-      }
-    }
-  };
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 pb-12">
       <PageBreadcrumb
         items={[
-          { label: "Dashboard", onClick: () => navigate("/") },
-          { label: "Assignments", onClick: () => navigate("/assignments") },
+          { label: "Dashboard", onClick: () => vm.navigate("/") },
+          { label: "Assignments", onClick: () => vm.navigate("/assignments") },
           { label: "Create Assignment" },
         ]}
       />
@@ -148,9 +69,6 @@ export default function AssignmentCreateView() {
         </CardHeader>
 
         <CardContent className="p-6 space-y-8">
-          {/* ===================================== */}
-          {/* ROW 1: Basic Info (Title & Date)      */}
-          {/* ===================================== */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <FieldLabel className="text-xs font-bold text-muted-foreground uppercase">
@@ -163,11 +81,6 @@ export default function AssignmentCreateView() {
                   vm.form.formState.errors.title ? "border-red-500" : ""
                 }
               />
-              {vm.form.formState.errors.title && (
-                <p className="text-xs text-red-500">
-                  {vm.form.formState.errors.title.message}
-                </p>
-              )}
             </div>
 
             <div className="space-y-2">
@@ -204,21 +117,13 @@ export default function AssignmentCreateView() {
                     initialFocus
                     disabled={(date) =>
                       date < new Date(new Date().setHours(0, 0, 0, 0))
-                    } // Prevent past dates
+                    }
                   />
                 </PopoverContent>
               </Popover>
-              {vm.form.formState.errors.dueDate && (
-                <p className="text-xs text-red-500">
-                  {vm.form.formState.errors.dueDate.message}
-                </p>
-              )}
             </div>
           </div>
 
-          {/* ===================================== */}
-          {/* ROW 2: Description                    */}
-          {/* ===================================== */}
           <div className="space-y-2">
             <FieldLabel className="text-xs font-bold text-muted-foreground uppercase">
               Instructions / Description *
@@ -231,31 +136,21 @@ export default function AssignmentCreateView() {
               )}
               {...vm.form.register("description")}
             />
-            {vm.form.formState.errors.description && (
-              <p className="text-xs text-red-500">
-                {vm.form.formState.errors.description.message}
-              </p>
-            )}
           </div>
 
-          {/* ===================================== */}
-          {/* ROW 3: Institutional Routing          */}
-          {/* ===================================== */}
           <div className="p-5 rounded-xl border bg-muted/10 space-y-5">
             <h3 className="font-semibold text-sm flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-primary" />
-              Routing Information
+              <Building2 className="w-4 h-4 text-primary" /> Routing Information
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* Only Super Admin needs to manually select a Branch */}
-              {isSuperAdmin && (
+              {vm.canManageGlobal && (
                 <div className="space-y-2">
                   <FieldLabel className="text-xs font-bold text-muted-foreground uppercase">
                     Branch *
                   </FieldLabel>
                   <Select
-                    disabled={isBranchesLoading}
+                    disabled={vm.isPageLoading}
                     value={
                       vm.form.watch("branchId")
                         ? String(vm.form.watch("branchId"))
@@ -268,14 +163,14 @@ export default function AssignmentCreateView() {
                       vm.form.setValue(
                         "subjectId",
                         undefined as unknown as string,
-                      ); // Clear subject if branch changes
+                      );
                     }}
                   >
                     <SelectTrigger className="bg-background">
                       <SelectValue placeholder="Select Branch" />
                     </SelectTrigger>
                     <SelectContent>
-                      {branches?.map((b) => (
+                      {vm.branches?.map((b) => (
                         <SelectItem key={b.id} value={b.id.toString()}>
                           {b.name}
                         </SelectItem>
@@ -285,33 +180,18 @@ export default function AssignmentCreateView() {
                 </div>
               )}
 
-              {/* <div className="space-y-2">
-                <FieldLabel className="text-xs font-bold text-muted-foreground uppercase">
-                  Subject *
-                </FieldLabel>
-                <AsyncCombobox
-                  key={`sub-combo-${activeBranchId || "all"}`}
-                  placeholder="Search subject..."
-                  value={vm.form.watch("subjectId")}
-                  onChange={handleSubjectSelect}
-                  fetchOptions={fetchSubjectsMemoized}
-                  disabled={!activeBranchId} // Must have a branch first
-                />
-              </div> */}
               <div className="space-y-2">
                 <FieldLabel className="text-xs font-bold text-muted-foreground uppercase">
                   Subject *
                 </FieldLabel>
-
-                {isSuperAdmin ? (
-                  // SUPER ADMIN: Keep the Global Search Combobox
+                {vm.canManageGlobal ? (
                   <AsyncCombobox
-                    key={`sub-combo-${activeBranchId || "all"}`}
+                    key={`sub-combo-${vm.activeBranchId || "all"}`}
                     placeholder="Search subject globally..."
                     value={vm.form.watch("subjectId")}
-                    onChange={handleSubjectSelect}
-                    fetchOptions={fetchSubjectsMemoized}
-                    disabled={!activeBranchId}
+                    onChange={vm.handleSubjectSelect}
+                    fetchOptions={vm.fetchSubjectsMemoized}
+                    disabled={!vm.activeBranchId}
                   />
                 ) : (
                   <Select
@@ -328,7 +208,7 @@ export default function AssignmentCreateView() {
                       const selectedSub = vm.subjectState.mySubjects.find(
                         (s: any) => s.subjectId === val,
                       );
-                      handleSubjectSelect(val, selectedSub);
+                      vm.handleSubjectSelect(val, selectedSub);
                     }}
                   >
                     <SelectTrigger className="bg-background">
@@ -361,7 +241,7 @@ export default function AssignmentCreateView() {
                   Semester *
                 </FieldLabel>
                 <Select
-                  disabled={isSemLoading || true} // Locked because it auto-fills
+                  disabled={true}
                   key={`sem-combo-${vm.form.watch("semesterId") || "empty"}`}
                   value={
                     vm.form.watch("semesterId")
@@ -378,7 +258,7 @@ export default function AssignmentCreateView() {
                     <SelectValue placeholder="Auto-filled by Subject" />
                   </SelectTrigger>
                   <SelectContent>
-                    {semesters?.map((s) => (
+                    {vm.semesters?.map((s) => (
                       <SelectItem key={s.id} value={s.id.toString()}>
                         {s.value}
                       </SelectItem>
@@ -396,7 +276,7 @@ export default function AssignmentCreateView() {
                     variant="secondary"
                     className="text-sm px-3 py-1 bg-primary/10 text-primary border-primary/20"
                   >
-                    {isYearLoading ? "Loading..." : activeYearDisplay}
+                    {vm.activeYearDisplay}
                   </Badge>
                   <span className="text-xs text-muted-foreground italic">
                     Locked to global system
@@ -406,9 +286,6 @@ export default function AssignmentCreateView() {
             </div>
           </div>
 
-          {/* ===================================== */}
-          {/* ROW 4: File Upload                    */}
-          {/* ===================================== */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <FieldLabel className="text-xs font-bold text-muted-foreground uppercase">
@@ -420,7 +297,6 @@ export default function AssignmentCreateView() {
                 </span>
               )}
             </div>
-
             <FileUploader
               file={vm.fileState.file}
               onChange={vm.fileState.setFile}
@@ -428,9 +304,6 @@ export default function AssignmentCreateView() {
             />
           </div>
 
-          {/* ===================================== */}
-          {/* SUBMIT BUTTON                         */}
-          {/* ===================================== */}
           <div className="pt-6 border-t flex justify-end">
             <Button
               size="lg"
@@ -438,19 +311,17 @@ export default function AssignmentCreateView() {
               disabled={
                 vm.isSubmitting ||
                 !vm.form.formState.isValid ||
-                (isSuperAdmin && !vm.form.watch("branchId"))
+                (vm.canManageGlobal && !vm.form.watch("branchId"))
               }
               className="w-full sm:w-auto"
             >
               {vm.isSubmitting ? (
                 <>
-                  <SpinnerCustom />
-                  Processing...
+                  <SpinnerCustom /> Processing...
                 </>
               ) : (
                 <>
-                  <CheckCircle2 className="mr-2 h-5 w-5" />
-                  Create Assignment
+                  <CheckCircle2 className="mr-2 h-5 w-5" /> Create Assignment
                 </>
               )}
             </Button>

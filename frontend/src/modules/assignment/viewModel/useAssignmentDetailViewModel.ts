@@ -6,8 +6,8 @@ import {
   deleteAssignment,
 } from "../model/assignmentService";
 import { useAppSelector } from "@/store/hook";
-import { ROLES } from "@/core/Constants/enums/role-enum-value";
 import { useState } from "react";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export function useAssignmentDetailViewModel() {
   const { id } = useParams<{ id: string }>();
@@ -15,12 +15,12 @@ export function useAssignmentDetailViewModel() {
   const queryClient = useQueryClient();
   const { user } = useAppSelector((state) => state.auth);
 
+  const assignmentId = id!;
+
   const [assignmentToDelete, setAssignmentToDelete] = useState<{
     id: string;
     title: string;
   } | null>(null);
-
-  const assignmentId = id;
 
   // Fetch Assignment Details
   const {
@@ -53,6 +53,7 @@ export function useAssignmentDetailViewModel() {
       setAssignmentToDelete({ id: assignment.id, title: assignment.title });
     }
   };
+
   const confirmDeletion = () => {
     if (assignmentToDelete) {
       deleteMutation.mutate(assignmentToDelete.id);
@@ -60,22 +61,16 @@ export function useAssignmentDetailViewModel() {
     }
   };
 
-  // FRONTEND AUTHORIZATION LOGIC
-  // Super Admins can edit/delete everything
-  let canEditOrDelete = user?.role === ROLES.SUPER_ADMIN;
+  // 🚨 PBAC AUTHORIZATION LOGIC
+  const { hasPermission } = usePermissions();
+  const canManageGlobal = hasPermission("assignment:manage-global");
+  const canManageOthers = hasPermission("assignment:manage-others");
 
+  let canModify = false;
   if (assignment && user) {
-    if (user.role === ROLES.HOD) {
-      // HODs can manage anything in their branch
-      // (Requires branchName match, or preferably branchId if added to DTO)
-      canEditOrDelete = true;
-    } else if (user.role === ROLES.PROFESSOR) {
-      // Professors can only manage their own
-      // NOTE: Requires 'createdBy' to be returned in backend DTO to work perfectly!
-     
-      canEditOrDelete = assignment.createdBy
-        ? assignment.createdBy === user.id
-        : true;
+    const isCreator = assignment.createdBy === user.id;
+    if (canManageGlobal || canManageOthers || isCreator) {
+      canModify = true;
     }
   }
 
@@ -84,9 +79,8 @@ export function useAssignmentDetailViewModel() {
     isLoading,
     isError,
     isDeleting: deleteMutation.isPending,
-    canEditOrDelete,
+    canModify, 
     navigate,
-    //
     assignmentToDelete,
     setAssignmentToDelete,
     triggerDeleteModal,
