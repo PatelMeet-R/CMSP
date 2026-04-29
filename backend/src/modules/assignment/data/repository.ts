@@ -30,7 +30,7 @@ export class AssignmentRepository {
   ): Promise<Assignment | null> {
     return this.repo.findOne({
       where: { id: assignmentId },
-      relations: ['attachment', 'branch'],
+      relations: ['attachment', 'branch', 'semester', 'academicYear'],
     });
   }
 

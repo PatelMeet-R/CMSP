@@ -20,7 +20,7 @@ export class UserPermission {
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @ManyToOne(() => Permission, { eager: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => Permission, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'permissionId' })
   permission: Permission;
 

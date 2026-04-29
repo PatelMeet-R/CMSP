@@ -38,6 +38,7 @@ export class PersonalInfoRepository {
       .createQueryBuilder('profile')
       .leftJoinAndSelect('profile.user', 'user')
       .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('role.permissions', 'rolePermissions')
       .leftJoinAndSelect('profile.branch', 'branch')
       .leftJoinAndSelect('profile.gender', 'gender')
       .leftJoinAndSelect('profile.userAccountStatus', 'status')
@@ -49,7 +50,12 @@ export class PersonalInfoRepository {
 
   async findAllPersonalInfo(): Promise<PersonalInfo[]> {
     const data = await this.repo.find({
-      relations: ['expectedGraduateYear'],
+      relations: [
+        'gender',
+        'joinedAcademicYear',
+        'expectedGraduateYear',
+        'userAccountStatus',
+      ],
     });
     return data;
   }

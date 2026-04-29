@@ -18,7 +18,7 @@ export class Role extends UuidBaseEntity {
   @Column({ default: false })
   isSystem: boolean; // System roles (SUPER_ADMIN, HOD, etc.) cannot be deleted
 
-  @ManyToMany(() => Permission, { eager: true })
+  @ManyToMany(() => Permission)
   @JoinTable({
     name: 'role_permissions',
     joinColumn: { name: 'roleId', referencedColumnName: 'id' },

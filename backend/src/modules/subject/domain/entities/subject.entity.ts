@@ -16,7 +16,7 @@ export class Subject extends AuditableEntity {
   @JoinColumn({ name: 'branchId' })
   branch: Branch;
 
-  @ManyToOne(() => EnumValue, { eager: true })
+  @ManyToOne(() => EnumValue)
   @JoinColumn({ name: 'semesterId' })
   semester: EnumValue;
 }

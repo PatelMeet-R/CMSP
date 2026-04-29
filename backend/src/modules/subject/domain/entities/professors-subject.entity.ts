@@ -22,11 +22,11 @@ export class ProfessorSubMapping extends AuditableEntity {
   @JoinColumn({ name: 'subjectId' })
   subject: Subject;
 
-  @ManyToOne(() => EnumValue, { eager: true })
+  @ManyToOne(() => EnumValue)
   @JoinColumn({ name: 'semesterId' })
   semester: EnumValue;
 
-  @ManyToOne(() => EnumValue, { eager: true })
+  @ManyToOne(() => EnumValue)
   @JoinColumn({ name: 'academicYearId' })
   academicYear: EnumValue;
 

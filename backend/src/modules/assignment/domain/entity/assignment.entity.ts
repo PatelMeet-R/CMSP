@@ -20,7 +20,7 @@ export class Assignment extends AuditableEntity {
   @Column()
   dueDate: Date;
 
-  @ManyToOne(() => EnumValue, { eager: true })
+  @ManyToOne(() => EnumValue)
   @JoinColumn({ name: 'semesterId' })
   semester: EnumValue;
 
@@ -28,7 +28,7 @@ export class Assignment extends AuditableEntity {
   @JoinColumn({ name: 'branchId' })
   branch: Branch;
 
-  @ManyToOne(() => EnumValue, { eager: true })
+  @ManyToOne(() => EnumValue)
   @JoinColumn({ name: 'academicYearId' })
   academicYear: EnumValue;
 

@@ -38,6 +38,7 @@ export class ProfessorSubMappingRepository {
         semester: { id: semesterId },
         academicYear: { id: yearId },
       },
+      relations: ['semester', 'academicYear'],
     });
   }
 
@@ -249,7 +250,7 @@ export class ProfessorSubMappingRepository {
       where: {
         id: In(mappingIds),
       },
-      relations: ['professor', 'subject', 'subject.branch', 'semester'],
+      relations: ['professor', 'subject', 'subject.branch', 'semester', 'academicYear'],
       withDeleted: true, //  CRITICAL: Because they were archived!
     });
   }

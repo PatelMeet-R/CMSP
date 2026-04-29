@@ -34,7 +34,7 @@ export class PersonalInfo extends AuditableEntity {
   @Column({ length: 50 })
   lastName: string;
 
-  @ManyToOne(() => EnumValue, { eager: true })
+  @ManyToOne(() => EnumValue)
   @JoinColumn({ name: 'genderId' })
   gender: EnumValue;
 
@@ -42,11 +42,11 @@ export class PersonalInfo extends AuditableEntity {
   @JoinColumn({ name: 'branchId' })
   branch: Branch;
 
-  @ManyToOne(() => EnumValue, { eager: true })
+  @ManyToOne(() => EnumValue)
   @JoinColumn({ name: 'joinedYearId' })
   joinedAcademicYear: EnumValue;
 
-  @ManyToOne(() => EnumValue, { eager: true })
+  @ManyToOne(() => EnumValue)
   @JoinColumn({ name: 'expectedGraduateYearId' })
   expectedGraduateYear: EnumValue;
 
@@ -57,7 +57,7 @@ export class PersonalInfo extends AuditableEntity {
   secondaryMobileNumber?: string | null;
 
   // account status
-  @ManyToOne(() => EnumValue, { eager: true })
+  @ManyToOne(() => EnumValue)
   @JoinColumn({ name: 'userAccountStatusId' })
   userAccountStatus: EnumValue;
 

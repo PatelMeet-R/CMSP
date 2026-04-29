@@ -12,13 +12,21 @@ export class AuthRepository {
   async findByEmail(email: string): Promise<User | null> {
     return this.repo.findOne({
       where: { email },
-      relations: ['personalInfo', 'personalInfo.branch'],
+      relations: [
+        'personalInfo',
+        'personalInfo.branch',
+        'personalInfo.userAccountStatus',
+      ],
     });
   }
   async findById(id: string): Promise<User | null> {
     return this.repo.findOne({
       where: { id },
-      relations: ['personalInfo', 'personalInfo.branch'],
+      relations: [
+        'personalInfo',
+        'personalInfo.branch',
+        'personalInfo.userAccountStatus',
+      ],
     });
   }
 
@@ -40,7 +48,11 @@ export class AuthRepository {
   async findByIdWithPersonalInfoRelation(id: string) {
     return this.repo.findOne({
       where: { id: id },
-      relations: ['personalInfo', 'personalInfo.branch'],
+      relations: [
+        'personalInfo',
+        'personalInfo.branch',
+        'personalInfo.userAccountStatus',
+      ],
     });
   }
   async update(id: string, partialEntity: Partial<User>) {
