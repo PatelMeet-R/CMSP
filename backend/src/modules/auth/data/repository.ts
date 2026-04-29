@@ -13,12 +13,30 @@ export class AuthRepository {
     return this.repo.findOne({
       where: { email },
       relations: [
+        'role',
+        'role.permissions',
         'personalInfo',
         'personalInfo.branch',
         'personalInfo.userAccountStatus',
+        'userPermissions',
+        'userPermissions.permission',
       ],
     });
   }
+
+  async findByEmailUsedAtLogin(email: string): Promise<User | null> {
+    return this.repo
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('role.permissions', 'permissions') // Forces the join we see in DBeaver
+      .leftJoinAndSelect('user.personalInfo', 'personalInfo')
+      .leftJoinAndSelect('personalInfo.branch', 'branch')
+      .leftJoinAndSelect('user.userPermissions', 'userPermissions')
+      .leftJoinAndSelect('userPermissions.permission', 'overridePermission')
+      .where('user.email = :email', { email })
+      .getOne();
+  }
+
   async findById(id: string): Promise<User | null> {
     return this.repo.findOne({
       where: { id },

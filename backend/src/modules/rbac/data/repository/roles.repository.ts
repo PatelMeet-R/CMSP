@@ -19,4 +19,7 @@ export class RoleRepository {
       where: { name },
     });
   }
+  async find() {
+    return this.roleRepository.find();
+  }
 }

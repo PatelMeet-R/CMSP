@@ -12,9 +12,11 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import mailConfig from './config/mail.config';
 import appConfig from './config/app.config';
+import redisConfig from './config/redis.config';
 import { AssignmentModule } from './modules/assignment/assignment.module';
 import cloudinaryConfig from './config/cloudinary.config';
 import { CacheModule } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-redis-yet';
 import { SettingsModule } from 'src/core/system-setting/settings.module';
 import { RbacModule } from './modules/rbac/rbac.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -26,7 +28,20 @@ import { PermissionsGuard } from 'src/core/guards/permissions.guard';
 @Module({
   imports: [
     EventEmitterModule.forRoot(),
-    CacheModule.register({ isGlobal: true, ttl: 30000, max: 100 }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        store: await redisStore({
+          socket: {
+            host: configService.get<string>('redis.host'),
+            port: configService.get<number>('redis.port'),
+          },
+          password: configService.get<string>('redis.password'),
+        }),
+        ttl: configService.get<number>('redis.ttl'), // milliseconds
+      }),
+    }),
     AuthModule,
     RbacModule,
     BranchModule,
@@ -38,7 +53,7 @@ import { PermissionsGuard } from 'src/core/guards/permissions.guard';
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [mailConfig, appConfig, cloudinaryConfig],
+      load: [mailConfig, appConfig, cloudinaryConfig, redisConfig],
     }),
     ThrottlerModule.forRoot({
       throttlers: [

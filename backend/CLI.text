@@ -20,3 +20,8 @@ npm i @nestjs/platform-express cloudinary multer streamifier
 npm i cloudinary multer @nestjs/config
 npm install --save-dev @types/multer
 npm i @nestjs/platform-express
+
+
+
+
+docker compose -f docker-compose.redis.yml up -d

@@ -1,0 +1,20 @@
+services:
+  redis:
+    image: redis:alpine
+    container_name: cms-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    # Redis password — must match REDIS_PASSWORD in your .env
+    command: redis-server --requirepass ourpassword --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', 'ourpassword', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  redis_data:
+    driver: local

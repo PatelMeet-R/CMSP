@@ -5,8 +5,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { User } from 'src/modules/auth/domain/entities/user.entity';
 import { UserPermission } from '../entities/user-permission.entity';
-
-const PERMISSION_CACHE_TTL = 60000; // 1 minute
+import { PERMISSION_CACHE_TTL } from 'src/common/constants/token.constants';
 
 @Injectable()
 export class PermissionComputeService {
@@ -16,7 +15,7 @@ export class PermissionComputeService {
     @InjectRepository(UserPermission)
     private readonly userPermRepo: Repository<UserPermission>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) { }
+  ) {}
 
   /**
    * Computes effective permissions for a user:
@@ -28,7 +27,7 @@ export class PermissionComputeService {
     const cacheKey = `user_perms_${userId}`;
     const cached = await this.cacheManager.get<string[]>(cacheKey);
 
-    if (cached) {
+    if (cached && Array.isArray(cached) && cached.length > 0) {
       return new Set(cached);
     }
 
@@ -38,12 +37,30 @@ export class PermissionComputeService {
       relations: ['role', 'role.permissions'],
     });
 
+    // const user = await this.userRepo.findOne({
+    //   where: { id: userId },
+    //   relations: {
+    //     role: {
+    //       permissions: true, // Uses the object syntax for better clarity in TypeORM
+    //     },
+    //   },
+    // });
+
     if (!user || !user.role) {
       return new Set();
     }
 
+    if (user.role.name === 'SUPER_ADMIN') {
+      const godMode = ['*:*'];
+      await this.cacheManager.set(cacheKey, godMode, PERMISSION_CACHE_TTL);
+      return new Set(godMode);
+    }
+
     // 2. Get role-level permissions
-    const rolePermSlugs = user.role.permissions.map((p) => p.slug);
+    // const rolePermSlugs = user.role?.permissions?.map((p) => p.slug);
+    const rolePermSlugs: string[] = Array.isArray(user.role.permissions)
+      ? user.role.permissions.map((p) => p.slug)
+      : [];
 
     // 3. Get user-level overrides
     const overrides = await this.userPermRepo.find({
@@ -51,19 +68,27 @@ export class PermissionComputeService {
       relations: ['permission'],
     });
 
-    const grants = overrides
-      .filter((o) => o.type === 'grant')
-      .map((o) => o.permission.slug);
+    // const grants: string[] = overrides
+    //   .filter((o) => o.type === 'grant')
+    //   .map((o) => o.permission.slug);
 
-    const revokes = new Set(
-      overrides
-        .filter((o) => o.type === 'revoke')
-        .map((o) => o.permission.slug),
-    );
+    const grants: string[] = overrides
+      ? overrides
+          .filter((o) => o.type === 'grant' && o.permission?.slug)
+          .map((o) => o.permission.slug)
+      : [];
+
+    const revokesList: string[] = overrides
+      ? overrides
+          .filter((o) => o.type === 'revoke' && o.permission?.slug)
+          .map((o) => o.permission.slug)
+      : [];
+      
+    const revokes = new Set(revokesList);
 
     // 4. Compute: (rolePerms ∪ grants) ∖ revokes
     const effective = [...rolePermSlugs, ...grants].filter(
-      (slug) => !revokes.has(slug),
+      (slug) => slug && !revokes.has(slug),
     );
 
     // 5. Cache and return

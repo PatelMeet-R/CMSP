@@ -12,6 +12,8 @@ import { RoleRepository } from 'src/modules/rbac/data/repository/roles.repositor
 import { UsersModule } from 'src/modules/users/users.module';
 import { UserPermissionService } from 'src/modules/rbac/domain/services/user-permission.service';
 import { UserPermissionRepository } from 'src/modules/rbac/data/repository/user-permission.repository';
+import { RoleController } from 'src/modules/rbac/presentation/controller/role.controller';
+import { UserPermissionController } from 'src/modules/rbac/presentation/controller/user-permission.controller';
 
 @Global()
 @Module({
@@ -20,14 +22,16 @@ import { UserPermissionRepository } from 'src/modules/rbac/data/repository/user-
     DiscoveryModule,
     UsersModule,
   ],
+  controllers: [UserPermissionController, RoleController],
   providers: [
-    PermissionComputeService,
-    PermissionSyncService,
     RoleService,
     RoleRepository,
+    PermissionComputeService,
+    PermissionSyncService,
     UserPermissionRepository,
     UserPermissionService,
   ],
+
   exports: [PermissionComputeService, TypeOrmModule, RoleService],
 })
 export class RbacModule {}
