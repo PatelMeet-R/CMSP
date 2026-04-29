@@ -20,6 +20,7 @@ import { SubjectService } from '../../domain/services/subject.service';
 import { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-query.dto';
 import { PermissionsGuard } from 'src/core/guards/permissions.guard';
 import { Permissions } from 'src/core/decorators/permissions.decorator';
+import { hasPermission } from 'src/common/utils/permissions/permission.utils';
 import { StatusGuard } from 'src/core/guards/status.guard';
 import { Public } from 'src/core/decorators/public.decorator';
 import { AllowInactive } from 'src/core/decorators/allow-inactive.decorator';
@@ -29,8 +30,6 @@ export class SubjectController {
   constructor(private readonly subjectService: SubjectService) {}
   // ======================================
 
-  @Public()
-  @AllowInactive()
   @Get()
   @HttpCode(HttpStatus.OK)
   @Permissions('subject:read')
@@ -52,9 +51,10 @@ export class SubjectController {
     @Query('branchId') branchId?: string,
     @Query('limit') limit?: string,
   ) {
-    const hasGlobalAccess =
-      user.permissions.includes('subject:read-all-branches') ||
-      user.permissions.includes('*:*');
+    const hasGlobalAccess = hasPermission(
+      user.permissions,
+      'subject:read-all-branches',
+    );
     const finalBranchId = hasGlobalAccess ? branchId : user.branchId;
     const parsedLimit = limit ? parseInt(limit, 10) : 10;
     const safeSearch = search || '';
@@ -104,13 +104,14 @@ export class SubjectController {
   }
   // ======================================
 
-  @Public()
-  @AllowInactive()
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @Permissions('subject:read-detail')
-  async getSubject(@Param('id') id: string) {
-    const subject = await this.subjectService.getSubjectById(id);
+  async getSubject(
+    @Param('id') id: string,
+    @CurrentUser() user: UserResponseDto,
+  ) {
+    const subject = await this.subjectService.getSubjectById(id, user);
 
     return {
       message: SUCCESSMSG.SUBJECT.FETCHED,

@@ -26,6 +26,7 @@ import { SUCCESSMSG } from 'src/common/constants/success.message';
 import { FindAssignmentQueryDto } from 'src/common/pagination/dto/find-assignment-query.dto';
 import { PermissionsGuard } from 'src/core/guards/permissions.guard';
 import { Permissions } from 'src/core/decorators/permissions.decorator';
+import { hasPermission } from 'src/common/utils/permissions/permission.utils';
 import { StatusGuard } from 'src/core/guards/status.guard';
 
 @Controller('assignment')
@@ -40,9 +41,10 @@ export class AssignmentController {
     @Query() query: FindAssignmentQueryDto,
     @CurrentUser() user: UserResponseDto,
   ) {
-    const hasGlobalAccess =
-      user.permissions.includes('*:*') ||
-      user.permissions.includes('assignment:read-all-branches');
+    const hasGlobalAccess = hasPermission(
+      user.permissions,
+      'assignment:read-all-branches',
+    );
     if (!user.branchId && !hasGlobalAccess) {
       throw new ForbiddenException(
         ERRORMESSAGE.ASSIGNMENT_MESSAGE.FORBIDDEN.BRANCH_MISSING,

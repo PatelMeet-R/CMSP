@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Permissions } from 'src/core/decorators/permissions.decorator';
+import { hasPermission } from 'src/common/utils/permissions/permission.utils';
 import { PersonalInfoService } from '../../domain/services/personal-info.service';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
@@ -48,9 +49,10 @@ export class PersonalInfoController {
     @Query('branchId') branchId: string,
     @Query('limit') limit: string,
   ) {
-    const hasGlobalAccess =
-      user.permissions.includes('user:read-all-branches') ||
-      user.permissions.includes('*:*');
+    const hasGlobalAccess = hasPermission(
+      user.permissions,
+      'user:read-all-branches',
+    );
 
     const finalBranchId = hasGlobalAccess ? branchId : user.branchId;
 

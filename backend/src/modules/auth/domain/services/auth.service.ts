@@ -122,10 +122,6 @@ export class AuthService {
       await this.permissionComputeService.getEffectivePermissions(user.id);
     const permissionSlugs = Array.from(effectivePermissions);
     const userResponse = UserMapper.toResponseDto(user, permissionSlugs);
-    
-    console.log('--- LOGIN DEBUG ---');
-    console.log('Target User:', user.email);
-    console.log('Computed Slugs:', permissionSlugs);
 
     user.lastLoginAt = new Date();
     await this.authRepository.save(user);

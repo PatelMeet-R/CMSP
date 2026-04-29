@@ -5,6 +5,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { hasPermission, hasAnyPermission, isSuperAdmin } from 'src/common/utils/permissions/permission.utils';
 import { ProfessorSubMappingRepository } from '../../data/repositories/professor-subject-mapping-repository';
 import { AssignSubjectDto } from '../../presentation/dto/request/professor-subjects.request.dto';
 import { AssignSubjectMapper } from '../../data/mappers/subject-mapping/subject-assign.mapper';
@@ -55,9 +56,10 @@ export class ProfessorSubMappingService {
       );
     }
     // PBAC Branch Check
-    const canManageGlobal =
-      currentUser.permissions.includes('assignment:manage-global') ||
-      currentUser.permissions.includes('*:*');
+    const canManageGlobal = hasPermission(
+      currentUser.permissions,
+      'assignment:manage-global',
+    );
     if (!canManageGlobal) {
       if (
         subject.branch?.id !== currentUser.branchId ||
@@ -106,12 +108,13 @@ export class ProfessorSubMappingService {
     query: FindSubjectMappingQueryDto,
     currentUser: UserResponseDto,
   ) {
-    const canAccessAll =
-      currentUser.permissions.includes('assignment:read-all-branches') ||
-      currentUser.permissions.includes('*:*');
+    const canAccessAll = hasPermission(
+      currentUser.permissions,
+      'assignment:read-all-branches',
+    );
     const isSelfOnly =
-      !currentUser.permissions.includes('assignment:read') &&
-      currentUser.permissions.includes('assignment:read-self');
+      !hasPermission(currentUser.permissions, 'assignment:read') &&
+      hasPermission(currentUser.permissions, 'assignment:read-self');
 
     const branchConstraint = canAccessAll ? undefined : currentUser.branchId;
     const isSelfConstraintId = isSelfOnly ? currentUser.id : undefined;
@@ -159,9 +162,10 @@ export class ProfessorSubMappingService {
     if (!updateBy) throw new UnauthorizedException();
 
     // PBAC Branch Check
-    const canManageGlobal =
-      currentUser.permissions.includes('assignment:manage-global') ||
-      currentUser.permissions.includes('*:*');
+    const canManageGlobal = hasPermission(
+      currentUser.permissions,
+      'assignment:manage-global',
+    );
     if (
       !canManageGlobal &&
       existing.subject?.branch?.id !== currentUser.branchId
@@ -242,9 +246,10 @@ export class ProfessorSubMappingService {
       );
 
     // PBAC Check
-    const canManageGlobal =
-      currentUser.permissions.includes('assignment:manage-global') ||
-      currentUser.permissions.includes('*:*');
+    const canManageGlobal = hasPermission(
+      currentUser.permissions,
+      'assignment:manage-global',
+    );
     if (
       !canManageGlobal &&
       mapping.subject?.branch?.id !== currentUser.branchId
@@ -266,7 +271,10 @@ export class ProfessorSubMappingService {
     currentUser: UserResponseDto,
   ) {
     if (currentUser.id !== professorId) {
-      const canReadOthers = currentUser.permissions.includes('assignment:read');
+      const canReadOthers = hasPermission(
+        currentUser.permissions,
+        'assignment:read',
+      );
       if (!canReadOthers)
         throw new ForbiddenException(
           "You cannot view another professor's history.",
@@ -325,9 +333,10 @@ export class ProfessorSubMappingService {
     const newAssignments: ProfessorSubMapping[] = [];
 
     // PBAC Check setup
-    const canManageGlobal =
-      currentUser.permissions.includes('assignment:manage-global') ||
-      currentUser.permissions.includes('*:*');
+    const canManageGlobal = hasPermission(
+      currentUser.permissions,
+      'assignment:manage-global',
+    );
 
     // 3. Process the cloning
     for (const oldMapping of oldMappings) {

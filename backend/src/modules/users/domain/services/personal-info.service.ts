@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { hasPermission, isSuperAdmin } from 'src/common/utils/permissions/permission.utils';
 import { PersonalInfoRepository } from '../../data/repository/personal-info-repository';
 
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
@@ -64,10 +65,14 @@ export class PersonalInfoService {
 
     if (!targetProfile) throw new NotFoundException(ERRORMESSAGE.NOT_FOUND);
 
-    const canUpdateOthers = currentUser.permissions.includes('user:update');
-    const canUpdateGlobal =
-      currentUser.permissions.includes('user:update-global') ||
-      currentUser.permissions.includes('*:*');
+    const canUpdateOthers = hasPermission(
+      currentUser.permissions,
+      'user:update',
+    );
+    const canUpdateGlobal = hasPermission(
+      currentUser.permissions,
+      'user:update-global',
+    );
 
     const isSelf = targetProfile.user?.id === currentUser.id;
 
@@ -131,7 +136,7 @@ export class PersonalInfoService {
     if (!targetProfile) throw new NotFoundException(ERRORMESSAGE.NOT_FOUND);
 
     const isSelf = targetProfile.user?.id === currentUser.id;
-    const canOverride = currentUser.permissions.includes('*:*');
+    const canOverride = isSuperAdmin(currentUser.permissions);
 
     if (!isSelf && !canOverride) {
       throw new ForbiddenException(
@@ -170,9 +175,10 @@ export class PersonalInfoService {
     query: FindUsersPersonalInfoQueryDto,
     currentUser: UserResponseDto,
   ) {
-    const canAccessAll =
-      currentUser.permissions.includes('user:read-all-branches') ||
-      currentUser.permissions.includes('*:*');
+    const canAccessAll = hasPermission(
+      currentUser.permissions,
+      'user:read-all-branches',
+    );
 
     const branchConstraint = canAccessAll ? undefined : currentUser.branchId;
 
@@ -199,9 +205,10 @@ export class PersonalInfoService {
     if (!profile)
       throw new NotFoundException(ERRORMESSAGE.DATA_NOT_FOUND('Profile'));
 
-    const canReadAll =
-      currentUser.permissions.includes('user:read-all-branches') ||
-      currentUser.permissions.includes('*:*');
+    const canReadAll = hasPermission(
+      currentUser.permissions,
+      'user:read-all-branches',
+    );
 
     // 3. PBAC Branch Check
     // If not a global reader, ensure the branch matches
@@ -226,10 +233,14 @@ export class PersonalInfoService {
       throw new NotFoundException('User profile not found');
 
     // 1. PBAC Permission Check
-    const canManageRoles = currentUser.permissions.includes('user:manage-role');
-    const hasGlobalAccess =
-      currentUser.permissions.includes('user:manage-global') ||
-      currentUser.permissions.includes('*:*');
+    const canManageRoles = hasPermission(
+      currentUser.permissions,
+      'user:manage-role',
+    );
+    const hasGlobalAccess = hasPermission(
+      currentUser.permissions,
+      'user:manage-global',
+    );
 
     if (!canManageRoles) {
       throw new ForbiddenException(
@@ -277,11 +288,14 @@ export class PersonalInfoService {
       throw new NotFoundException(ERRORMESSAGE.DATA_NOT_FOUND('Profile'));
 
     // 1. PBAC Permission Checks
-    const canManageStatus =
-      currentUser.permissions.includes('user:manage-status');
-    const hasGlobalAccess =
-      currentUser.permissions.includes('user:manage-global') ||
-      currentUser.permissions.includes('*:*');
+    const canManageStatus = hasPermission(
+      currentUser.permissions,
+      'user:manage-status',
+    );
+    const hasGlobalAccess = hasPermission(
+      currentUser.permissions,
+      'user:manage-global',
+    );
 
     if (!canManageStatus) {
       throw new ForbiddenException(
@@ -346,9 +360,10 @@ export class PersonalInfoService {
     query: FindUsersPersonalInfoQueryDto,
     currentUser: UserResponseDto,
   ) {
-    const canAccessAll =
-      currentUser.permissions.includes('user:read-all-branches') ||
-      currentUser.permissions.includes('*:*');
+    const canAccessAll = hasPermission(
+      currentUser.permissions,
+      'user:read-all-branches',
+    );
     const branchConstraint = canAccessAll ? undefined : currentUser.branchId;
 
     query.statusKey = ENUM_VALUES.USER_ACC_STATUS.PENDING;
@@ -382,11 +397,12 @@ export class PersonalInfoService {
 
     // 1. PBAC & Branch Checks (Needs permission to manage status AND roles)
     const canManageStatusAndRoles =
-      currentUser.permissions.includes('user:manage-status') &&
-      currentUser.permissions.includes('user:manage-role');
-    const hasGlobalAccess =
-      currentUser.permissions.includes('*:*') ||
-      currentUser.permissions.includes('user:manage-global');
+      hasPermission(currentUser.permissions, 'user:manage-status') &&
+      hasPermission(currentUser.permissions, 'user:manage-role');
+    const hasGlobalAccess = hasPermission(
+      currentUser.permissions,
+      'user:manage-global',
+    );
 
     if (!canManageStatusAndRoles && !hasGlobalAccess) {
       throw new ForbiddenException(

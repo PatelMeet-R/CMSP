@@ -4,8 +4,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { hasPermission } from 'src/common/utils/permissions/permission.utils';
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
-import { ROLES } from 'src/common/constants/roles.constant';
 import { SubjectRepository } from '../../data/repositories/repository';
 import { CreateSubjectDto } from '../../presentation/dto/request/subject-register.request.dto';
 import { UpdateSubjectDto } from '../../presentation/dto/request/subject-update.request.dto';
@@ -14,7 +14,7 @@ import { BranchService } from 'src/modules/branch/domain/branch.service';
 import { FindSubjectQueryDto } from 'src/common/pagination/dto/find-subject-query.dto';
 import { SubjectResponseMapper } from 'src/modules/subject/data/mappers/subject/subject-response.mapper';
 import { SubjectRequestMapper } from 'src/modules/subject/data/mappers/subject/subject-request.mapper';
-import  { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
+import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 
 @Injectable()
 export class SubjectService {
@@ -52,9 +52,10 @@ export class SubjectService {
     }
 
     // PBAC AUTHORIZATION CHECK
-    const canManageGlobal =
-      currentUser.permissions.includes('subject:manage-global') ||
-      currentUser.permissions.includes('*:*');
+    const canManageGlobal = hasPermission(
+      currentUser.permissions,
+      'subject:manage-global',
+    );
 
     if (!canManageGlobal && currentUser.branchId !== branch.id) {
       throw new ForbiddenException(
@@ -107,9 +108,10 @@ export class SubjectService {
     }
 
     // PBAC AUTHORIZATION CHECK
-    const canManageGlobal =
-      currentUser.permissions.includes('subject:manage-global') ||
-      currentUser.permissions.includes('*:*');
+    const canManageGlobal = hasPermission(
+      currentUser.permissions,
+      'subject:manage-global',
+    );
     if (!canManageGlobal && currentUser.branchId !== branch?.id) {
       throw new ForbiddenException(
         'You are not authorized to update subjects outside your branch.',
@@ -138,11 +140,20 @@ export class SubjectService {
   }
   // ======================================
 
-  async getSubjectById(subjectId: string) {
+  async getSubjectById(subjectId: string, currentUser: UserResponseDto) {
     const subject = await this.subjectRepository.findSubjectById(subjectId);
+    if (!subject) throw new NotFoundException(ERRORMESSAGE.SUBJECT_NOT_FOUND);
 
-    if (!subject) {
-      throw new NotFoundException(ERRORMESSAGE.SUBJECT_NOT_FOUND);
+    const canReadAll = hasPermission(
+      currentUser.permissions,
+      'subject:read-all-branches',
+    );
+
+    // Check if user is locked to their branch and trying to view another branch's subject
+    if (!canReadAll && subject.branch?.id !== currentUser.branchId) {
+      throw new ForbiddenException(
+        'You are not authorized to view subjects outside your branch.',
+      );
     }
 
     return subject;
@@ -153,9 +164,10 @@ export class SubjectService {
     query: FindSubjectQueryDto,
     currentUser: UserResponseDto,
   ) {
-    const canAccessAll =
-      currentUser.permissions.includes('subject:read-all-branches') ||
-      currentUser.permissions.includes('*:*');
+    const canAccessAll = hasPermission(
+      currentUser.permissions,
+      'subject:read-all-branches',
+    );
     const branchConstraint = canAccessAll ? undefined : currentUser.branchId;
 
     const rawData = await this.subjectRepository.findAll(

@@ -5,6 +5,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { hasPermission } from 'src/common/utils/permissions/permission.utils';
 import { Assignment } from './entity/assignment.entity';
 import { CreateAssignmentMapper } from '../data/mapper/assignment-create.mapper';
 import { CreateAssignmentDto } from '../presentation/dto/request/create-assignment.request.dto';
@@ -48,9 +49,10 @@ export class AssignmentService {
         'User branch is required to create assignments.',
       );
 
-    const canManageGlobal =
-      currentUser.permissions.includes('assignment:manage-global') ||
-      currentUser.permissions.includes('*:*');
+    const canManageGlobal = hasPermission(
+      currentUser.permissions,
+      'assignment:manage-global',
+    );
     if (!canManageGlobal) {
       const isAuthorized =
         await this.profSubMappingService.isProfessorAssignedToSubject(
@@ -118,10 +120,12 @@ export class AssignmentService {
         ERRORMESSAGE.ASSIGNMENT_MESSAGE.NOT_FOUND(assignmentId),
       );
 
-    const canManageGlobal =
-      currentUser.permissions.includes('assignment:manage-global') ||
-      currentUser.permissions.includes('*:*');
-    const canManageOthers = currentUser.permissions.includes(
+    const canManageGlobal = hasPermission(
+      currentUser.permissions,
+      'assignment:manage-global',
+    );
+    const canManageOthers = hasPermission(
+      currentUser.permissions,
       'assignment:manage-others',
     );
     const isOwner = oldAssignment.createdBy === currentUser.id;
@@ -213,10 +217,12 @@ export class AssignmentService {
       );
     }
 
-    const canManageGlobal =
-      currentUser.permissions.includes('assignment:manage-global') ||
-      currentUser.permissions.includes('*:*');
-    const canManageOthers = currentUser.permissions.includes(
+    const canManageGlobal = hasPermission(
+      currentUser.permissions,
+      'assignment:manage-global',
+    );
+    const canManageOthers = hasPermission(
+      currentUser.permissions,
       'assignment:manage-others',
     );
     const isOwner = assignment.createdBy === currentUser.id;
@@ -281,12 +287,13 @@ export class AssignmentService {
     query: FindAssignmentQueryDto,
     currentUser: UserResponseDto,
   ) {
-    const canAccessAll =
-      currentUser.permissions.includes('assignment:read-all-branches') ||
-      currentUser.permissions.includes('*:*');
+    const canAccessAll = hasPermission(
+      currentUser.permissions,
+      'assignment:read-all-branches',
+    );
     const isSelfOnly =
-      !currentUser.permissions.includes('assignment:read') &&
-      currentUser.permissions.includes('assignment:read-self');
+      !hasPermission(currentUser.permissions, 'assignment:read') &&
+      hasPermission(currentUser.permissions, 'assignment:read-self');
 
     const branchConstraint = canAccessAll ? undefined : currentUser.branchId;
     const isSelfConstraintId = isSelfOnly ? currentUser.id : undefined;

@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { hasPermission } from 'src/common/utils/permissions/permission.utils';
 import { File } from './entity/file.entity';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
@@ -45,9 +46,10 @@ export class FileUploadService {
       );
     }
     const isOwner = fileToBeDeleted.createdBy === currentUser.id;
-    const canDeleteGlobal =
-      currentUser.permissions.includes('file:manage-global') ||
-      currentUser.permissions.includes('*:*');
+    const canDeleteGlobal = hasPermission(
+      currentUser.permissions,
+      'file:manage-global',
+    );
 
     if (!isOwner && !canDeleteGlobal) {
       throw new ForbiddenException(

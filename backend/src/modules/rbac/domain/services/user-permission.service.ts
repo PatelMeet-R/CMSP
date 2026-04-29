@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { hasPermission, isSuperAdmin } from 'src/common/utils/permissions/permission.utils';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserPermissionRepository } from '../../data/repository/user-permission.repository';
@@ -42,9 +43,10 @@ export class UserPermissionService {
       throw new NotFoundException('Target user profile not found.');
 
     const targetUserId = targetProfile.user.id;
-    const hasGlobalAccess =
-      currentUser.permissions.includes('*:*') ||
-      currentUser.permissions.includes('user:manage-global');
+    const hasGlobalAccess = hasPermission(
+      currentUser.permissions,
+      'user:manage-global',
+    );
 
     if (!hasGlobalAccess && targetProfile.branch?.id !== currentUser.branchId) {
       throw new ForbiddenException(
@@ -55,7 +57,7 @@ export class UserPermissionService {
     for (const item of dto.overrides) {
       if (
         !hasGlobalAccess &&
-        !currentUser.permissions.includes(item.permissionSlug)
+        !hasPermission(currentUser.permissions, item.permissionSlug)
       ) {
         throw new ForbiddenException(
           `You do not possess '${item.permissionSlug}' to delegate it.`,
@@ -125,9 +127,10 @@ export class UserPermissionService {
     const targetRole = targetProfile.user.role;
 
     // 2. PBAC Branch Isolation Check
-    const hasGlobalAccess =
-      currentUser.permissions.includes('*:*') ||
-      currentUser.permissions.includes('user:manage-global');
+    const hasGlobalAccess = hasPermission(
+      currentUser.permissions,
+      'user:manage-global',
+    );
     if (!hasGlobalAccess && targetProfile.branch?.id !== currentUser.branchId) {
       throw new ForbiddenException(
         'You can only view permissions for users in your own branch.',

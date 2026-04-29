@@ -108,7 +108,11 @@ export class ProfessorSubMappingController {
 
   @Get('history/:professorId')
   @HttpCode(HttpStatus.OK)
-  @Permissions('assignment:read', 'assignment:read-self')
+  @Permissions(
+    'assignment:read',
+    'assignment:read-self',
+    'professor-subject:read',
+  )
   async getProfessorHistory(
     @Param('professorId') professorId: string,
     @CurrentUser() user: UserResponseDto,

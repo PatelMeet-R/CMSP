@@ -20,4 +20,11 @@ export class StaffProfileRepository {
   async saveProfile(profile: StaffProfile): Promise<StaffProfile> {
     return this.repo.save(profile);
   }
+
+  async findByUserIdOrPersonalInfoId(id: string): Promise<StaffProfile | null> {
+    return this.repo.findOne({
+      where: [{ user: { id: id } }, { user: { personalInfo: { id: id } } }],
+      relations: ['user', 'user.personalInfo', 'user.personalInfo.branch'],
+    });
+  }
 }
