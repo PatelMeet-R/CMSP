@@ -49,7 +49,7 @@ export class AuthService {
     @Inject(forwardRef(() => PersonalInfoRepository))
     private readonly personalInfoRespository: PersonalInfoRepository,
     private readonly mailService: MailService,
-    private readonly JwtTokenService: JwtTokenService,
+    private readonly jwtTokenService: JwtTokenService,
     private readonly bcryptService: BcyptService,
     private readonly enumService: EnumService,
     private readonly branchService: BranchService,
@@ -127,22 +127,28 @@ export class AuthService {
     await this.authRepository.save(user);
 
     const { accessToken, refreshToken } =
-      this.JwtTokenService.generateToken(user);
+      this.jwtTokenService.generateToken(user);
 
     return { user: userResponse, accessToken, refreshToken };
   }
   // =====================================
 
-  async refreshToken(refreshToken: string) {
-    const payload = this.JwtTokenService.verifyRefreshToken(refreshToken);
+  async refreshToken(refreshToken: string): Promise<RefreshTokenResponseDto> {
+    const payload = this.jwtTokenService.verifyRefreshToken(refreshToken);
     const user = await this.authRepository.findById(payload.sub);
     if (!user) {
       throw new UnauthorizedException(ERRORMESSAGE.INVALID_TOKEN);
     }
-    const accessToken = this.JwtTokenService.generateAccessToken(user);
+    const accessToken = this.jwtTokenService.generateAccessToken(user);
 
-    return new RefreshTokenResponseDto({ accessToken });
+    const newRefreshToken = this.jwtTokenService.generateRefreshToken(user);
+    return {
+      accessToken,
+      refreshToken: newRefreshToken,
+      user: UserMapper.toResponseDto(user),
+    };
   }
+
   // =====================================
 
   async getUserByIdWithPersonalInfo(userId: string) {
@@ -173,7 +179,7 @@ export class AuthService {
       if (!user) {
         throw new UnauthorizedException(ERRORMESSAGE.USERNOTEXIST);
       }
-      const token = this.JwtTokenService.generateEmailVerificationToken(user);
+      const token = this.jwtTokenService.generateEmailVerificationToken(user);
 
       const verifyUrl = `${this.appConfig.frontendUrl}/verify-email?token=${token}`;
 
@@ -187,7 +193,7 @@ export class AuthService {
 
   async verifyEmail(token: string) {
     try {
-      const payload = this.JwtTokenService.verifyEmailToken(token);
+      const payload = this.jwtTokenService.verifyEmailToken(token);
       if (!payload)
         throw new BadRequestException('Invalid or expired verification token.');
 

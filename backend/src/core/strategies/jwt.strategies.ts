@@ -5,8 +5,9 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
 import { AuthService } from 'src/modules/auth/domain/services/auth.service';
-import  { PermissionComputeService } from 'src/modules/rbac/domain/services/permission-compute.service';
-import  { AccessTokenPayload } from 'src/common/interfaces/auth/jwt-payload.interface';
+import { PermissionComputeService } from 'src/modules/rbac/domain/services/permission-compute.service';
+import { AccessTokenPayload } from 'src/common/interfaces/auth/jwt-payload.interface';
+import express from 'express';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -16,7 +17,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     configService: ConfigService,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (request: express.Request) => {
+          return request?.cookies?.accessToken;
+        },
+      ]),
       ignoreExpiration: false,
       secretOrKey:
         configService.get<string>('JWT_ACCESS_SECRET') ?? 'JWT_ACCESS_SECRET',

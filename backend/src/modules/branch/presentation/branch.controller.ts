@@ -16,12 +16,14 @@ import { Permissions } from 'src/core/decorators/permissions.decorator';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 import { Public } from 'src/core/decorators/public.decorator';
+import { AllowInactive } from 'src/core/decorators/allow-inactive.decorator';
 
 @Controller('branch')
 export class BranchController {
   constructor(private branchService: BranchService) {}
 
   @Public()
+  @AllowInactive()
   @Get('all')
   @HttpCode(HttpStatus.OK)
   async getMeAllBranch() {

@@ -3,9 +3,13 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common/pipes/validation.pipe';
 import { ConfigService } from '@nestjs/config';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.use(cookieParser());
+
   const configService = app.get(ConfigService);
   app.enableCors({
     origin:
@@ -15,7 +19,8 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      disableErrorMessages: true,
+      disableErrorMessages:
+        configService.get('NODE_ENV') === 'production' || true,
       transform: true,
       transformOptions: {
         enableImplicitConversion: true,

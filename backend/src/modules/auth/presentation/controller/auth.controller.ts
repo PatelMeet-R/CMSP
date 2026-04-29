@@ -7,10 +7,12 @@ import {
   HttpStatus,
   Post,
   Query,
+  Req,
+  Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
-import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
 import { AuthService } from '../../domain/services/auth.service';
 import { RegisterStudentDto } from '../dto/request/register.dto';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
@@ -25,12 +27,13 @@ import { ERRORMESSAGE } from 'src/common/constants/error.message';
 import { VerificationEmailThrottlerGuard } from 'src/core/guards/verification-email-throttler.guard';
 import { Public } from 'src/core/decorators/public.decorator';
 import { AllowInactive } from 'src/core/decorators/allow-inactive.decorator';
-
+import express from 'express';
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Public()
+  @AllowInactive()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() dto: RegisterStudentDto) {
@@ -44,20 +47,73 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(LoginThrottlerGuard)
-  async login(@Body() dto: LoginDto) {
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: express.Response,
+  ) {
+    const result = await this.authService.login(dto);
+
+    //  Set Access Token Cookie
+    res.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000, // 15 minutes
+      path: '/',
+    });
+
+    //  Set Refresh Token Cookie (Scoped to refresh route for security)
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/api/v1/auth/refresh',
+    });
+
     return {
-      message: SUCCESSMSG.AUTH.LOGIN_SUCCESS,
-      data: await this.authService.login(dto),
+      message: 'Login successful',
+      data: result.user,
     };
   }
 
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  async refreshToken(@Body('refreshToken') refreshToken: string) {
+  async refreshToken(
+    @Req() req: express.Request,
+    @Res({ passthrough: true }) res: express.Response,
+  ) {
+    const tokenFromCookie = req.cookies?.refreshToken;
+
+    if (!tokenFromCookie) {
+      throw new UnauthorizedException('Session expired. Please login again.');
+    }
+
+    const result = await this.authService.refreshToken(tokenFromCookie);
+
+    //  Rotate the cookies (Set new ones)
+    res.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000,
+      path: '/', // everywhere
+    });
+
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/api/v1/auth/refresh', //  Browser only sends it back to THIS route
+    });
+
+    // Note: If you rotate the refresh token too, set it here with path: '/api/v1/auth/refresh'
+
     return {
-      message: 'tokens',
-      data: await this.authService.refreshToken(refreshToken),
+      message: 'Session extended successfully',
+      data: result.user,
     };
   }
 
@@ -115,7 +171,10 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout() {
-    return { message: 'Logout successful' };
+  async logout(@Res({ passthrough: true }) res: express.Response) {
+    //  Clear cookies on logout
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken', { path: '/api/v1/auth/refresh' });
+    return { message: 'Logged out successfully' };
   }
 }
