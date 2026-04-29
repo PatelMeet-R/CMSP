@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { useAppSelector } from "@/store/hook";
-
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,301 +8,186 @@ import {
 } from "@/components/ui/card";
 import { FieldLabel } from "@/components/ui/field";
 import { UserPen, Save, X } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { useProfileViewModel } from "../viewModel/useProfileViewModel";
 import { BranchDropdownMenu } from "@/modules/branch/view/BranchDropdownMenu";
 import { EmailVerificationAlert } from "@/components/custom/EmailVerificationAlert";
-import { EnumDropdownMenu } from "@/components/custom/EnumDropdownMenu";
-import { EnumCategory } from "@/modules/enums/types/enum.schemas";
-
-// Import your fields and spinner
-import { ProfileRenderField } from "./ProfileRenderField";
-import { toastService } from "@/core/toast/toastService";
 import { SpinnerCustom } from "@/components/ui/spinner";
-
+import { ProfileRenderField } from "./ProfileRenderField";
 import ProfileHeader from "./ProfileHeader";
-import type { UpdateProfileFormValues } from "@/modules/users/types/users.schemas";
-
-//    V2 PBAC IMPORT
-import { usePermissions } from "@/hooks/usePermissions";
 
 export const Profile = () => {
-  const { user } = useAppSelector((state) => state.auth);
+  const vm = useProfileViewModel();
 
-  //    V2 PBAC CHECK (Replaces ROLES.SUPER_ADMIN / ROLES.HOD)
-  const { hasPermission } = usePermissions();
-  const canEditRestricted =
-    hasPermission("*:*") || hasPermission("user:update-restricted");
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [showVerifyModal, setShowVerifyModal] = useState(false);
-
-  const { form, profile, isFetchingProfile, isUpdating, onSubmit } =
-    useProfileViewModel();
-  const { isDirty } = form.formState;
-
-  if (isFetchingProfile || !profile) {
+  if (vm.isFetchingProfile || !vm.profile) {
     return (
-      <div className="grid place-items-center h-screen">
-        <SpinnerCustom />
+      <div className="w-full max-w-5xl mx-auto space-y-6 pt-10">
+        <Skeleton className="h-40 w-full rounded-xl" />
+        <Skeleton className="h-125 w-full rounded-xl" />
       </div>
     );
   }
 
-  const handleSubmitAndClose = (data: UpdateProfileFormValues) => {
-    onSubmit(data);
-    setIsEditing(false);
-  };
-
-  const handleEditClick = () => {
-    if (!user?.isEmailVerified) {
-      setShowVerifyModal(true);
-    } else {
-      setIsEditing(true);
-    }
-  };
+  //   Helper to handle if the backend returns branch as a string or object
+  const branchDisplay =
+    typeof vm.profile.branch === "string"
+      ? vm.profile.branch
+      : (vm.profile.branch as any)?.name || "N/A";
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
-      <EmailVerificationAlert
-        isOpen={showVerifyModal}
-        onClose={() => setShowVerifyModal(false)}
-      />
+    <div className="w-full max-w-5xl mx-auto space-y-8 pb-12">
+      {/*   Updated Verification Alert with required props */}
+      {!vm.isEmailVerified && (
+        <EmailVerificationAlert
+          isOpen={vm.isVerificationAlertOpen}
+          onClose={vm.closeVerificationAlert}
+        />
+      )}
 
-      <ProfileHeader user={profile} />
+      <Card className="border-none shadow-lg rounded-xl overflow-hidden bg-card">
+        {/* Profile Header (Avatar & Summary) */}
+        <ProfileHeader user={vm.profile} />
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="bg-muted/10 border-b flex flex-row items-center justify-between py-4 px-6">
           <div>
-            <CardTitle className="text-2xl">Personal Profile</CardTitle>
+            <CardTitle className="text-xl">Personal Information</CardTitle>
             <CardDescription>
-              View and manage your account details.
+              Manage your personal details and contact information.
             </CardDescription>
           </div>
 
-          <div className="flex gap-2">
-            {!isEditing ? (
-              <Button onClick={handleEditClick}>
-                <UserPen className="w-4 h-4 mr-2" /> Edit Profile
+          <div className="flex gap-3">
+            {!vm.isEditing ? (
+              <Button onClick={() => vm.setIsEditing(true)} variant="outline">
+                <UserPen className="w-4 h-4 mr-2" />
+                Edit Profile
               </Button>
             ) : (
               <>
                 <Button
-                  variant="outline"
-                  onClick={() => {
-                    form.reset();
-                    setIsEditing(false);
-                  }}
-                  disabled={isUpdating}
+                  variant="ghost"
+                  onClick={vm.cancelEdit}
+                  disabled={vm.isUpdating}
                 >
                   <X className="w-4 h-4 mr-2" /> Cancel
                 </Button>
                 <Button
-                  onClick={form.handleSubmit(handleSubmitAndClose, () => {
-                    toastService.error(
-                      "Please fix the errors in the form before saving.",
-                    );
-                  })}
-                  disabled={isUpdating || !isDirty}
+                  onClick={vm.onSubmit}
+                  disabled={vm.isUpdating || !vm.form.formState.isDirty}
                 >
-                  {isUpdating ? (
-                    <SpinnerCustom />
+                  {vm.isUpdating ? (
+                    <>
+                      <SpinnerCustom /> Saving...
+                    </>
                   ) : (
-                    <Save className="w-4 h-4 mr-2" />
+                    <>
+                      <Save className="w-4 h-4 mr-2" /> Save
+                    </>
                   )}
-                  {isUpdating ? "Saving..." : "Save Changes"}
                 </Button>
               </>
             )}
           </div>
         </CardHeader>
 
-        <CardContent>
-          <form>
-            {/* --- IDENTITY --- */}
+        <CardContent className="p-6">
+          <form className="space-y-8">
+            {/* Academic Details Section */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2">
-                Personal Identity
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground border-b pb-2">
+                Academic Details
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <ProfileRenderField
                   name="firstName"
                   label="First Name"
-                  isRestricted={true}
-                  form={form}
-                  isEditing={isEditing}
-                  canEditRestricted={canEditRestricted} //    Updated prop
+                  form={vm.form}
+                  isEditing={vm.isEditing}
+                  canEditRestricted={true}
                 />
                 <ProfileRenderField
                   name="lastName"
                   label="Last Name"
-                  isRestricted={true}
-                  form={form}
-                  isEditing={isEditing}
-                  canEditRestricted={canEditRestricted} //    Updated prop
+                  form={vm.form}
+                  isEditing={vm.isEditing}
+                  canEditRestricted={true}
                 />
-
-                <div className="flex flex-col gap-1.5">
-                  {!isEditing ? (
-                    <>
-                      <FieldLabel className="text-muted-foreground">
-                        Gender
-                      </FieldLabel>
-                      <div className="h-10 py-2 text-sm font-medium border-b border-transparent">
-                        {profile?.gender || "Not specified"}
-                      </div>
-                    </>
-                  ) : (
-                    <EnumDropdownMenu
-                      control={form.control}
-                      name="genderId"
-                      label="Gender"
-                      category={EnumCategory.GENDER}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* --- ACADEMIC DETAILS --- */}
-            <div className="space-y-4 mt-8">
-              <h3 className="text-lg font-semibold border-b pb-2">
-                Academic Details
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <ProfileRenderField
                   name="enrollmentNumber"
-                  label="Enrollment Number"
+                  label="Enrollment / Employee ID"
                   isRestricted={true}
-                  form={form}
-                  isEditing={isEditing}
-                  canEditRestricted={canEditRestricted} //    Updated prop
+                  form={vm.form}
+                  isEditing={vm.isEditing}
+                  canEditRestricted={vm.canEditRestricted}
                 />
 
                 <div className="flex flex-col gap-1.5">
-                  {!isEditing ? (
-                    <>
-                      <FieldLabel className="text-muted-foreground">
-                        Branch
-                      </FieldLabel>
-                      <div className="h-10 py-2 text-sm font-medium border-b border-transparent">
-                        {profile?.branch || "No Branch Assigned"}
-                      </div>
-                    </>
+                  <FieldLabel className="text-muted-foreground">
+                    Department / Branch
+                  </FieldLabel>
+                  {!vm.isEditing ? (
+                    <div className="h-10 py-2 text-sm font-medium border-b border-transparent">
+                      {/*   Safely render branch display */}
+                      {branchDisplay}
+                    </div>
                   ) : (
                     <BranchDropdownMenu
-                      control={form.control}
+                      control={vm.form.control}
                       name="branchId"
-                      disabled={!canEditRestricted} //    Updated prop
+                      label=""
+                      disabled={!vm.canEditRestricted}
                     />
                   )}
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  {!isEditing ? (
-                    <>
-                      <FieldLabel className="text-muted-foreground">
-                        Joined Year
-                      </FieldLabel>
-                      <div className="h-10 py-2 text-sm font-medium border-b border-transparent">
-                        {profile?.joinedYear || "Not specified"}
-                      </div>
-                    </>
-                  ) : (
-                    <EnumDropdownMenu
-                      control={form.control}
-                      name="joinedAcademicYearId"
-                      label="Joined Year"
-                      category={EnumCategory.ACADEMIC_YEAR}
-                    />
-                  )}
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  {!isEditing ? (
-                    <>
-                      <FieldLabel className="text-muted-foreground">
-                        Expected Graduation
-                      </FieldLabel>
-                      <div className="h-10 py-2 text-sm font-medium border-b border-transparent">
-                        {profile?.gradYear || "Not specified"}
-                      </div>
-                    </>
-                  ) : (
-                    <EnumDropdownMenu
-                      control={form.control}
-                      name="expectedGraduateYearId"
-                      label="Expected Graduation"
-                      category={EnumCategory.ACADEMIC_YEAR}
-                      disabled={!canEditRestricted} //    Updated prop
-                    />
+                  {vm.isEditing && !vm.canEditRestricted && (
+                    <span className="text-[10px] text-muted-foreground mt-1">
+                      Locked: Only Administrators can change department routing.
+                    </span>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* --- CONTACT INFORMATION --- */}
-            <div className="space-y-4 mt-8">
-              <h3 className="text-lg font-semibold border-b pb-2">
-                Contact Information
+            {/* Contact Details Section */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground border-b pb-2">
+                Contact & Address Details
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <ProfileRenderField
                   name="primaryMobileNumber"
-                  label="Primary Mobile"
-                  isRestricted={false}
-                  form={form}
-                  isEditing={isEditing}
-                  canEditRestricted={canEditRestricted} //    Updated prop
+                  label="Mobile Number"
+                  form={vm.form}
+                  isEditing={vm.isEditing}
+                  canEditRestricted={true}
                 />
-                <ProfileRenderField
-                  name="secondaryMobileNumber"
-                  label="Secondary Mobile"
-                  isRestricted={false}
-                  form={form}
-                  isEditing={isEditing}
-                  canEditRestricted={canEditRestricted} //    Updated prop
-                />
-              </div>
-            </div>
-
-            {/* --- ADDRESS --- */}
-            <div className="space-y-4 mt-8">
-              <h3 className="text-lg font-semibold border-b pb-2">
-                Address Details
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <ProfileRenderField
                   name="city"
                   label="City"
-                  isRestricted={false}
-                  form={form}
-                  isEditing={isEditing}
-                  canEditRestricted={canEditRestricted} //    Updated prop
+                  form={vm.form}
+                  isEditing={vm.isEditing}
+                  canEditRestricted={true}
                 />
                 <ProfileRenderField
                   name="state"
                   label="State"
-                  isRestricted={false}
-                  form={form}
-                  isEditing={isEditing}
-                  canEditRestricted={canEditRestricted} //    Updated prop
+                  form={vm.form}
+                  isEditing={vm.isEditing}
+                  canEditRestricted={true}
                 />
                 <ProfileRenderField
                   name="country"
                   label="Country"
-                  isRestricted={false}
-                  form={form}
-                  isEditing={isEditing}
-                  canEditRestricted={canEditRestricted} //    Updated prop
+                  form={vm.form}
+                  isEditing={vm.isEditing}
+                  canEditRestricted={true}
                 />
                 <ProfileRenderField
                   name="postalCode"
                   label="Postal Code"
-                  isRestricted={false}
-                  form={form}
-                  isEditing={isEditing}
-                  canEditRestricted={canEditRestricted} //    Updated prop
+                  form={vm.form}
+                  isEditing={vm.isEditing}
+                  canEditRestricted={true}
                 />
               </div>
             </div>

@@ -10,17 +10,35 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { SpinnerCustom } from "@/components/ui/spinner";
-
 import { Skeleton } from "@/components/ui/skeleton";
 import { DynamicSelect } from "@/components/custom/dashboard/DynamicSelect";
 import { PageBreadcrumb } from "@/components/custom/dashboard/PageBreadcrumb";
+import { useNavigate } from "react-router-dom";
 
 import { useSystemSettingsViewModel } from "../viewModel/useSystemSettingsViewModel";
-import { useNavigate } from "react-router-dom";
 
 export default function SystemSettingsView() {
   const navigate = useNavigate();
   const vm = useSystemSettingsViewModel();
+
+  //  Block access if they don't have permission
+  if (!vm.canManageSettings) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <h2 className="text-xl font-bold text-red-500">Access Denied</h2>
+        <p className="text-muted-foreground mt-2">
+          You do not have permission to manage global system configurations.
+        </p>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={() => navigate("/")}
+        >
+          Go to Dashboard
+        </Button>
+      </div>
+    );
+  }
 
   if (vm.isLoading) {
     return (
@@ -41,10 +59,7 @@ export default function SystemSettingsView() {
     <div className="w-full max-w-7xl mx-auto space-y-6">
       <PageBreadcrumb
         items={[
-          {
-            label: "Dashboard",
-            onClick: () => navigate("/"),
-          },
+          { label: "Dashboard", onClick: () => navigate("/") },
           { label: "System Configuration" },
         ]}
       />

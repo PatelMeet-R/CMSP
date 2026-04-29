@@ -8,6 +8,7 @@ import {
 import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
 import { EnumCategory } from "@/modules/enums/types/enum.schemas";
 import { toastService } from "@/core/toast/toastService";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export const SETTING_KEYS = {
   ACADEMIC_YEAR: "CURRENT_ACADEMIC_YEAR_ID",
@@ -16,11 +17,15 @@ export const SETTING_KEYS = {
 export const useSystemSettingsViewModel = () => {
   const queryClient = useQueryClient();
 
+  //  PBAC Check
+  const { hasPermission } = usePermissions();
+  const canManageSettings = hasPermission("setting:manage");
+
   const [selectedYearId, setSelectedYearId] = useState<string | undefined>(
     undefined,
   );
 
-  //  Fetch the Dropdown Options (Academic Years from Enums)
+  // Fetch the Dropdown Options
   const { enums: academicYears, isLoading: isEnumsLoading } = useEnumViewModel(
     EnumCategory.ACADEMIC_YEAR,
   );
@@ -31,20 +36,20 @@ export const useSystemSettingsViewModel = () => {
       label: year.value,
     })) || [];
 
-  //  Fetch the Current Active Setting from the DB
+  // Fetch the Current Active Setting
   const { data: currentSetting, isLoading: isSettingLoading } = useQuery({
     queryKey: ["system-setting", SETTING_KEYS.ACADEMIC_YEAR],
     queryFn: () => fetchSystemSetting(SETTING_KEYS.ACADEMIC_YEAR),
   });
 
-  //  Sync the fetched setting into our local React state
+  // Sync state
   useEffect(() => {
     if (currentSetting?.value) {
       setSelectedYearId(currentSetting.value);
     }
   }, [currentSetting]);
 
-  //  Handle the Save Mutation
+  // Handle Save
   const { mutate: saveSetting, isPending: isSaving } = useMutation({
     mutationFn: (newYearIdString: string) =>
       upsertSystemSetting({
@@ -56,7 +61,6 @@ export const useSystemSettingsViewModel = () => {
       toastService.success(
         "The active academic year has been changed successfully.",
       );
-      // Invalidate cache so any other component relying on this updates instantly
       queryClient.invalidateQueries({ queryKey: ["system-setting"] });
     },
     onError: (error: any) => {
@@ -84,5 +88,6 @@ export const useSystemSettingsViewModel = () => {
     isSaving,
     hasChanges,
     isLoading: isEnumsLoading || isSettingLoading,
+    canManageSettings, //  Export the permission state
   };
 };

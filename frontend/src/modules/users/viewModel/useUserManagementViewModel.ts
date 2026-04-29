@@ -16,10 +16,10 @@ export const useUserManagementViewModel = () => {
   const branchId = searchParams.get("branchId") || undefined;
   const genderId = searchParams.get("genderId") || undefined;
 
-  // ⏱️ DEBOUNCE SEARCH
+  //  DEBOUNCE SEARCH
   const debouncedSearch = useDebounce(search, 800);
 
-  // 🔗 UPDATE URL
+  //  UPDATE URL
   const setParam = (key: string, value: string | number | undefined) => {
     setSearchParams((prev) => {
       if (value) prev.set(key, value.toString());
@@ -28,7 +28,7 @@ export const useUserManagementViewModel = () => {
     });
   };
 
-  // 🎯 SETTERS
+  //  SETTERS
   const setPage = (p: number) => setParam("page", p);
   const setLimit = (l: number) => setParam("limit", l);
   const setSearch = (s: string) => setParam("search", s);
@@ -36,12 +36,12 @@ export const useUserManagementViewModel = () => {
   const setRoleId = (id: string | undefined) => setParam("roleId", id);
   const setGenderId = (id: string | undefined) => setParam("genderId", id);
 
-  // 🔄 Reset Pagination: Go to Page 1 on filter change
+  //  Reset Pagination: Go to Page 1 on filter change
   useEffect(() => {
     if (page !== 1) setPage(1);
   }, [debouncedSearch, branchId, roleId, genderId, limit]);
 
-  // 📦 Group params for API
+  //  Group params for API
   const queryParams = {
     page,
     limit,
@@ -51,7 +51,7 @@ export const useUserManagementViewModel = () => {
     roleId: roleId ? roleId : undefined,
   };
 
-  // 📡 Fetch Data
+  //  Fetch Data
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["users", queryParams],
     queryFn: () => fetchUsersList(queryParams),
