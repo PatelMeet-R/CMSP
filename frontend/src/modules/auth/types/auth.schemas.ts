@@ -1,5 +1,8 @@
-import { ROLES } from "@/core/Constants/enums/role-enum-value";
 import * as z from "zod";
+
+// =============================================
+//  V2 Auth Schemas — Matches Backend UserResponseDto
+// =============================================
 
 export const LoginInputSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -14,6 +17,7 @@ export const SignupInputSchema = z.object({
   branchId: z.number().int().positive("please select a branch"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
+
 export const ForgetPasswordInputSchema = z.object({
   email: z.string().email("Invalid email address"),
 });
@@ -21,7 +25,6 @@ export const ForgetPasswordInputSchema = z.object({
 export const resetPasswordInputSchema = z
   .object({
     password: z.string().min(6, "Password must be at least 6 characters"),
-
     confirmPassword: z
       .string()
       .min(6, "Confirm password must be at least 6 characters"),
@@ -31,21 +34,38 @@ export const resetPasswordInputSchema = z
     path: ["confirmPassword"],
   });
 
+// =============================================
+//  V2 User Schema — Matches UserResponseDto from backend
+//  Backend sends: { id, email, role (string), branchId,
+//  isEmailVerified, permissions[], mustChangePassword, status }
+// =============================================
+
+/** Account statuses matching backend ENUM_VALUES.USER_ACC_STATUS */
+export const USER_STATUS = {
+  ACTIVE: "ACTIVE",
+  PENDING: "PENDING",
+  BLOCKED: "BLOCKED",
+  REJECTED: "REJECTED",
+  INACTIVE: "INACTIVE",
+  GRADUATED: "GRADUATED",
+} as const;
+
+export type UserStatus = (typeof USER_STATUS)[keyof typeof USER_STATUS];
+
 export const UserSchema = z.object({
-  id: z.number(),
+  id: z.string(), // V2: UUID string, not number
   email: z.string().email(),
-  role: z.enum(ROLES),
-  branchId: z.number(),
+  role: z.string(), // V2: role name string (e.g. "SUPER_ADMIN", "HOD")
+  branchId: z.string().nullable(), // V2: UUID string, not number
   isEmailVerified: z.boolean(),
+  permissions: z.array(z.string()), // V2: permission slugs ["assignment:create", ...]
+  mustChangePassword: z.boolean(),
+  status: z.string(), // V2: "ACTIVE", "INACTIVE", "BLOCKED", etc.
 });
 
 export const LoginResponseSchema = z.object({
   message: z.string(),
-  data: z.object({
-    user: UserSchema,
-    accessToken: z.string(),
-    refreshToken: z.string(),
-  }),
+  data: UserSchema, // V2: No accessToken/refreshToken in body — they're in HttpOnly cookies
 });
 
 //  Export the TypeScript types

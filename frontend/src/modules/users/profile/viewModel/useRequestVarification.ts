@@ -6,10 +6,8 @@ import { useMutation } from "@tanstack/react-query";
 export const useRequestVarification = () => {
   const { mutate, isPending, isSuccess } = useMutation({
     mutationFn: sendVerificationEmail,
-    onSuccess: (response) => {
-      toastService.success(
-        response?.message || "Verification link sent to your email!",
-      );
+    onSuccess: () => {
+      toastService.success("Verification link sent to your email!");
     },
     onError: (error) => {
       toastService.error(getAxiosErrorMessage(error));

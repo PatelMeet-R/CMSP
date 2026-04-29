@@ -8,7 +8,11 @@ import type {
   SignupInput,
 } from "@/modules/auth/types/auth.schemas";
 
-import Cookies from "js-cookie";
+// =============================================
+//  V2 Auth Service — HttpOnly Cookie Auth
+//  Tokens are set/cleared by the BACKEND via Set-Cookie headers.
+//  Frontend never touches tokens directly.
+// =============================================
 
 export const loginUser = async (
   credentials: LoginInput,
@@ -17,41 +21,22 @@ export const loginUser = async (
     API_ENDPOINT.AUTH.LOGIN,
     credentials,
   );
-  const data = response.data.data;
-  const isSecure = window.location.protocol === "https:";
-
-  Cookies.set("accessToken", data.accessToken, {
-    expires: 1,
-    secure: isSecure,
-  });
-  Cookies.set("refreshToken", data.refreshToken, {
-    expires: 7,
-    secure: isSecure,
-  });
-
+  // Backend sets accessToken + refreshToken as HttpOnly cookies.
+  // We only return the user data for Redux.
   return response.data;
 };
 
 export const logoutUser = async () => {
   try {
-    const token = Cookies.get("accessToken");
-    await axiosInstance.post(
-      API_ENDPOINT.AUTH.LOGOUT,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
+    // Backend clears the HttpOnly cookies via res.clearCookie()
+    await axiosInstance.post(API_ENDPOINT.AUTH.LOGOUT, {});
   } catch (error) {
     console.error(
       "Backend logout failed, but clearing local state anyway.",
       error,
     );
   }
-  Cookies.remove("accessToken");
-  Cookies.remove("refreshToken");
+  // Clear any client-side state
   sessionStorage.clear();
   localStorage.clear();
 };
@@ -63,6 +48,7 @@ export const registerUser = async (data: SignupInput) => {
   );
   return response.data;
 };
+
 export const ForgetPassword = async (data: ForgetPasswordInput) => {
   const response = await axiosInstance.post(
     API_ENDPOINT.AUTH.PASSWORD.FORGOT_PASSWORD,
@@ -71,6 +57,7 @@ export const ForgetPassword = async (data: ForgetPasswordInput) => {
 
   return response.data;
 };
+
 export const ResetPassword = async (
   token: string,
   data: resetPasswordInput,

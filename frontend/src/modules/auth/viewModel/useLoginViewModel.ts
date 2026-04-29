@@ -25,8 +25,9 @@ export function useLoginViewModel() {
   const loginMutation = useMutation({
     mutationFn: loginUser,
     onSuccess: (response) => {
-      dispatch(setCredentials(response.data.user));
-      toastService.success("welcome !");
+      // V2: response.data is the User object directly (no tokens in body)
+      dispatch(setCredentials(response.data));
+      toastService.success("Welcome!");
       navigate("/dashboard");
     },
     onError: (error) => {

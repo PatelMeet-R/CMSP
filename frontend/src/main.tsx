@@ -7,14 +7,28 @@ import { Provider } from "react-redux";
 import { persistor, store } from "@/store/store.ts";
 import { ToastContainer } from "react-toastify";
 import { PersistGate } from "redux-persist/integration/react";
+import { hydrationComplete } from "@/store/features/auth.slice";
 
 const queryClient = new QueryClient();
+
+/**
+ * Called after redux-persist finishes rehydrating state from sessionStorage.
+ * This tells our AuthGuard that the persisted state has been loaded and
+ * it can stop showing the loading spinner.
+ */
+function onBeforeLift() {
+  store.dispatch(hydrationComplete());
+}
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <Provider store={store}>
-        <PersistGate loading={<div>loading...</div>} persistor={persistor}>
+        <PersistGate
+          loading={null}
+          persistor={persistor}
+          onBeforeLift={onBeforeLift}
+        >
           <ToastContainer
             position="top-right"
             autoClose={3000}

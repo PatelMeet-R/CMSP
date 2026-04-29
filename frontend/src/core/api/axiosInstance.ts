@@ -1,40 +1,67 @@
 import { ROUTENAME } from "@/core/Constants/RouteName";
 import { toastService } from "@/core/toast/toastService";
+import { store } from "@/store/store";
+import { logout } from "@/store/features/auth.slice";
 import axios from "axios";
-import Cookies from "js-cookie";
+
+// =============================================
+//  V2 Axios Instance — HttpOnly Cookie Auth
+//  NO js-cookie. Tokens are managed by the browser.
+// =============================================
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  withCredentials: true, // REQUIRED FOR COOKIE
+  withCredentials: true, // Browser sends HttpOnly cookies automatically
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// -------------------------------------
-//  REQUEST INTERCEPTOR (Attach Tokens)
-// -------------------------------------
+// =============================================
+//  REQUEST INTERCEPTOR
+//  No token injection needed — browser handles cookies.
+// =============================================
 axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = Cookies.get("accessToken");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
+  (config) => config,
   (error) => Promise.reject(error),
 );
 
-// -------------------------------------
+// =============================================
+//  STATUS GUARD ERROR CODES
+//  Matches the backend StatusGuard error messages.
+// =============================================
+const STATUS_GUARD_ERRORS = {
+  INACTIVE: "ACCOUNT_INACTIVE",
+  SUSPENDED: "suspended or rejected",
+} as const;
+
+/**
+ * Detects if a 403 error is from the StatusGuard (account state)
+ * vs. a PermissionsGuard (insufficient permissions).
+ */
+function isStatusGuardError(message: string): {
+  isStatusError: boolean;
+  reason: "INACTIVE" | "SUSPENDED" | null;
+} {
+  if (message.includes(STATUS_GUARD_ERRORS.INACTIVE)) {
+    return { isStatusError: true, reason: "INACTIVE" };
+  }
+  if (message.includes(STATUS_GUARD_ERRORS.SUSPENDED)) {
+    return { isStatusError: true, reason: "SUSPENDED" };
+  }
+  return { isStatusError: false, reason: null };
+}
+
+// =============================================
 //  RESPONSE INTERCEPTOR
-// -------------------------------------
+// =============================================
 axiosInstance.interceptors.response.use(
-  (response) => response, // Pass through successful responses
+  (response) => response,
 
   async (error) => {
-    // A. Handle Server Down / Network Error completely
+    // A. Network Error / Server Unreachable
     if (!error.response) {
-      toastService.error("Server not reachable");
+      toastService.error("Server not reachable. Please check your connection.");
       return Promise.reject(error);
     }
 
@@ -42,49 +69,37 @@ axiosInstance.interceptors.response.use(
     const status = error.response.status;
     const message = error.response.data?.message || "Something went wrong";
 
-    // B. Handle 401 Unauthorized (Silent Refresh Logic)
+    // -----------------------------------------------
+    //  B. Handle 401 — Silent Token Refresh
+    //  Cookies are HttpOnly, so the browser manages
+    //  sending them. We just call /auth/refresh.
+    // -----------------------------------------------
     if (status === 401 && !originalRequest._retry) {
-      // Infinite Loop Protection
-      if (originalRequest.url.includes("/refresh")) {
-        Cookies.remove("accessToken");
-        Cookies.remove("refreshToken");
+      // Prevent infinite loop: if the refresh call itself fails, bail out.
+      if (originalRequest.url?.includes("/auth/refresh")) {
+        store.dispatch(logout());
+        sessionStorage.clear();
         toastService.error("Session expired. Please login again.");
         window.location.href = ROUTENAME.LOGIN;
         return Promise.reject(error);
       }
 
       originalRequest._retry = true;
-      const refreshToken = Cookies.get("refreshToken");
 
-      if (refreshToken) {
-        try {
-          // Dynamic URL for production safety!
-          const response = await axios.post(
-            `${import.meta.env.VITE_API_URL}/auth/refresh`,
-            { refreshToken: refreshToken },
-          );
+      try {
+        // The browser automatically sends the httpOnly refreshToken cookie
+        // to this route (path-scoped to /auth/refresh on backend).
+        await axios.post(
+          `${import.meta.env.VITE_API_URL}/auth/refresh`,
+          {},
+          { withCredentials: true },
+        );
 
-          const { accessToken, refreshToken: newRefreshToken } =
-            response.data.data;
-
-          Cookies.set("accessToken", accessToken);
-          if (newRefreshToken) Cookies.set("refreshToken", newRefreshToken);
-
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          return axiosInstance(originalRequest);
-        } catch (refreshError) {
-          // Refresh failed (token dead/tampered)
-          Cookies.remove("accessToken");
-          Cookies.remove("refreshToken");
-          sessionStorage.clear();
-
-          toastService.error("Session expired. Please login again.");
-          window.location.href = ROUTENAME.LOGIN;
-          return Promise.reject(refreshError);
-        }
-      } else {
-        // No refresh token available at all
-        Cookies.remove("accessToken");
+        // Cookies are rotated server-side. Just retry the original request.
+        return axiosInstance(originalRequest);
+      } catch {
+        // Refresh token is dead — force full re-login
+        store.dispatch(logout());
         sessionStorage.clear();
         toastService.error("Session expired. Please login again.");
         window.location.href = ROUTENAME.LOGIN;
@@ -92,16 +107,40 @@ axiosInstance.interceptors.response.use(
       }
     }
 
-    // C. Handle Global Toasts for all OTHER errors (403, 500, 400, etc.)
-    // We skip 401 here because the block above already handled it!
-    if (status !== 401) {
-      if (status === 403) {
-        toastService.error("Access denied");
-      } else if (status === 500) {
-        toastService.error("Server error");
-      } else {
-        toastService.error(message);
+    // -----------------------------------------------
+    //  C. Handle 403 — StatusGuard vs PermissionsGuard
+    //  The StatusGuard returns specific message prefixes
+    //  that we can parse to differentiate.
+    // -----------------------------------------------
+    if (status === 403) {
+      const { isStatusError, reason } = isStatusGuardError(message);
+
+      if (isStatusError) {
+        // Account-level block — redirect, don't just toast.
+        store.dispatch(logout());
+
+        if (reason === "INACTIVE") {
+          window.location.href = ROUTENAME.SUSPENDED;
+        } else {
+          // BLOCKED / REJECTED
+          window.location.href = ROUTENAME.SUSPENDED;
+        }
+        return Promise.reject(error);
       }
+
+      // Regular permission denial (PermissionsGuard)
+      toastService.error("You do not have permission to perform this action.");
+      return Promise.reject(error);
+    }
+
+    // -----------------------------------------------
+    //  D. Handle all other errors (400, 404, 500, etc.)
+    // -----------------------------------------------
+    if (status === 500) {
+      toastService.error("Internal server error. Please try again later.");
+    } else if (status !== 401) {
+      // 401 already handled above
+      toastService.error(message);
     }
 
     return Promise.reject(error);
