@@ -36,7 +36,8 @@ export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
         label: "Assign Subject",
         icon: "UserCog",
         link: ROUTENAME.ASSIGN_SUBJECT,
-        permission: "subject-mapping:create",
+        permission: "assignment:create",
+        // permission: "subject-mapping:create",
       },
     ],
   },
@@ -94,10 +95,29 @@ export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
       },
     ],
   },
+  //
   {
     label: "Setting",
     icon: "Settings",
     link: ROUTENAME.SETTING,
     permission: "setting:manage",
+  },
+  {
+    label: "Settings",
+    icon: "Settings",
+    children: [
+      {
+        label: "General Settings",
+        icon: "Sliders",
+        link: ROUTENAME.SETTING,
+        permission: "setting:manage",
+      },
+      {
+        label: "System Constants",
+        icon: "Database", // Fits the Enum/Database vibe perfectly
+        link: ROUTENAME.ENUMS,
+        permission: "setting:manage",
+      },
+    ],
   },
 ];

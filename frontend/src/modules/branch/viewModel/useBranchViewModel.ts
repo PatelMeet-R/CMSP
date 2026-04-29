@@ -1,4 +1,4 @@
-import { getBranches } from "@/modules/branch/model/branch";
+import { getBranches } from "@/modules/branch/model/branchService";
 import { useQuery } from "@tanstack/react-query";
 
 export function useBranchViewModel() {

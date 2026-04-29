@@ -62,7 +62,7 @@ export class ProfessorSubMappingService {
     // PBAC Branch Check
     const canManageGlobal = hasPermission(
       currentUser.permissions,
-      'assignment:manage-global',
+      'subject-mapping:manage-global',
     );
     if (!canManageGlobal) {
       if (
@@ -342,7 +342,7 @@ export class ProfessorSubMappingService {
     // PBAC Check setup
     const canManageGlobal = hasPermission(
       currentUser.permissions,
-      'assignment:manage-global',
+      'subject-mapping:manage-global',
     );
 
     // 3. Process the cloning

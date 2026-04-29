@@ -6,11 +6,11 @@ services:
     ports:
       - '6379:6379'
     # Redis password — must match REDIS_PASSWORD in your .env
-    command: redis-server --requirepass ourpassword --appendonly yes
+    command: redis-server --requirepass yourpassword --appendonly yes
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ['CMD', 'redis-cli', '-a', 'ourpassword', 'ping']
+      test: ['CMD', 'redis-cli', '-a', 'yourpassword', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5

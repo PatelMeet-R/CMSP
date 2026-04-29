@@ -18,7 +18,7 @@ import { DataTablePagination } from "@/components/custom/dashboard/DataTablePagi
 import { UsersTable } from "@/modules/users/view/UsersTable";
 import { HodProfileModal } from "@/modules/users/view/ModelHodProfile";
 
-import type { Branch } from "@/modules/branch/types/branch";
+import type { Branch } from "@/modules/branch/types/branch.schemas";
 import { useBranchViewModel } from "@/modules/branch/viewModel/useBranchViewModel";
 import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
 import {

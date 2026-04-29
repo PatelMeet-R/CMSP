@@ -23,11 +23,13 @@ export class EnumRepository {
     const data = await this.enumValueRepo.find({
       where: { type: { type: type } },
       relations: ['type'],
+      order: { createdAt: 'ASC' },
     });
 
     await this.cacheManager.set(cacheKey, data, 86400000); // 24 hours
     return data;
   }
+
   async getMeEnumValue(key: string, type: string) {
     const cacheKey = `enum_val_${type}_${key}`;
     const cached = await this.cacheManager.get<EnumValue>(cacheKey);
@@ -56,6 +58,7 @@ export class EnumRepository {
     if (data) await this.cacheManager.set(cacheKey, data, 86400000);
     return data;
   }
+
   async findEnumValueByName(name: string) {
     const cacheKey = `enum_name_${name}`;
     const cached = await this.cacheManager.get<EnumValue>(cacheKey);
@@ -68,5 +71,39 @@ export class EnumRepository {
 
     if (data) await this.cacheManager.set(cacheKey, data, 86400000);
     return data;
+  }
+
+  //  Get EnumType entity by its string name
+  async getEnumTypeByName(typeString: string): Promise<EnumType | null> {
+    return this.enumTypeRepo.findOne({ where: { type: typeString } });
+  }
+
+  //  Check for duplicates before inserting
+  async checkDuplicateExists(
+    key: string,
+    value: string,
+    typeId: string,
+  ): Promise<boolean> {
+    const existing = await this.enumValueRepo.findOne({
+      where: [
+        { key, type: { id: typeId } },
+        { value, type: { id: typeId } },
+      ],
+    });
+    return !!existing;
+  }
+
+  //  Save and invalidate cache
+  async saveEnumValue(entity: EnumValue): Promise<EnumValue> {
+    const saved = await this.enumValueRepo.save(entity);
+
+    // Clear the specific type list cache and this item's cache
+    if (saved.type && saved.type.type) {
+      await this.cacheManager.del(`enums_all_${saved.type.type}`);
+    }
+    await this.cacheManager.del(`enum_id_${saved.id}`);
+    await this.cacheManager.del(`enum_val_${saved.type?.type}_${saved.key}`);
+
+    return saved;
   }
 }

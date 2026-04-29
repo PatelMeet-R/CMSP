@@ -21,7 +21,7 @@ export const API_ENDPOINT = {
   BRANCH: {
     VIEW: "branch/all",
     REGISTER: "branch/register",
-    UPDATE: "branch",
+    UPDATE: (branchId: string) => `/branch/${branchId}`,
   },
   PROFILE: {
     MY_PROFILE: "personal-info/profile",

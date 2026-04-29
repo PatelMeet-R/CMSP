@@ -21,7 +21,11 @@ export const ROUTENAME = {
   ALL_USERS: "/users",
   USER_DETAILS: `/user/:id`,
   ADD_STAFF: "/user/create",
-  SETTING: "/setting",
+  // SETTING: "/setting",
   // V2: Account status pages
   SUSPENDED: "/account/suspended",
+  EMAIL_REQUEST: "/verify-email",
+
+  SETTING: "/settings",
+  ENUMS: "/settings/constants",
 } as const;
