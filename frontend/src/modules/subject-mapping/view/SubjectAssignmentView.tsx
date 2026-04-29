@@ -1,4 +1,3 @@
-import { useCallback, useState } from "react";
 import { BookOpen, Link2, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,86 +23,17 @@ import { useNavigate } from "react-router-dom";
 import { AsyncCombobox } from "@/components/custom/dashboard/AsyncCombobox";
 import { PageBreadcrumb } from "@/components/custom/dashboard/PageBreadcrumb";
 import { useSubjectAssignmentViewModel } from "../viewModel/useSubjectAssignmentViewModel";
-import { searchStaff, searchSubjects } from "../model/subjectMappingService";
-import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
-import { EnumCategory } from "@/modules/enums/types/enum.schemas";
-import { useBranchViewModel } from "@/modules/branch/viewModel/useBranchViewModel";
-import { useAppSelector } from "@/store/hook";
-import { ROLES } from "@/core/Constants/enums/role-enum-value";
 import { ActiveAssignmentsTable } from "@/modules/subject-mapping/view/ActiveAssignmentsTable";
-import type {
-  ActiveAssignmentTableResponse,
-  SubjectComboboxDTO,
-} from "@/modules/subject-mapping/types/subject-mapping.types";
+import type { ActiveAssignmentTableResponse } from "@/modules/subject-mapping/types/subject-mapping.types";
 import type { BranchResponse } from "@/modules/subject/types/subject.schemas";
 
 export default function SubjectAssignmentView() {
   const navigate = useNavigate();
 
-  //  ALL Logic is now encapsulated in the ViewModel!
+  // 🚨 ALL Logic is completely abstracted!
   const vm = useSubjectAssignmentViewModel();
 
-  const { user } = useAppSelector((state) => state.auth);
-  if (!user) return null;
-  const isSuperAdmin: boolean = user.role === ROLES.SUPER_ADMIN;
-
-  const { enums: semesters, isLoading: isSemLoading } = useEnumViewModel(
-    EnumCategory.SEMESTER,
-  );
-  const { enums: academicYears, isLoading: isYearLoading } = useEnumViewModel(
-    EnumCategory.ACADEMIC_YEAR,
-  );
-  const { branches, isLoading: isBranchesLoading } = useBranchViewModel();
-
-  const [selectedBranchId, setSelectedBranchId] = useState<string | undefined>(
-    undefined,
-  );
-
-  const currentYearId = vm.form.watch("academicYearId");
-  const activeYearDisplay =
-    academicYears?.find((y) => y.id === currentYearId)?.value || "Loading...";
-
-  const activeSemesterId = vm.form.watch("semesterId");
-
-  const fetchStaffMemoized = useCallback(
-    (term: string) => searchStaff(term, selectedBranchId),
-    [selectedBranchId],
-  );
-
-  const fetchSubjectsMemoized = useCallback(
-    (term: string) => searchSubjects(term, activeSemesterId, selectedBranchId),
-    [activeSemesterId, selectedBranchId],
-  );
-
-  const handleSubjectSelect = (
-    subjectId: string | null,
-    rawData?: SubjectComboboxDTO | null,
-  ) => {
-    if (!subjectId) {
-      vm.form.setValue("subjectId", undefined as unknown as string, {
-        shouldValidate: true,
-      });
-      vm.form.setValue("semesterId", undefined as unknown as string, {
-        shouldValidate: true,
-      });
-      return;
-    }
-
-    vm.form.setValue("subjectId", subjectId, { shouldValidate: true });
-
-    if (rawData?.semester && semesters) {
-      const semString = rawData.semester;
-      const matchedSem = semesters.find(
-        (s) => s.key === semString || s.value === semString,
-      );
-
-      if (matchedSem) {
-        vm.form.setValue("semesterId", matchedSem.id, { shouldValidate: true });
-      }
-    }
-  };
-
-  if (isSemLoading || isYearLoading || (isSuperAdmin && isBranchesLoading)) {
+  if (vm.isPageLoading) {
     return (
       <div className="w-full max-w-7xl mx-auto space-y-6 pb-12">
         <Skeleton className="h-6 w-64" />
@@ -150,37 +80,35 @@ export default function SubjectAssignmentView() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-5 space-y-5">
-              {isSuperAdmin && (
+              {/* PBAC Gate: Only Global Managers can select arbitrary branches */}
+              {vm.canManageGlobal && (
                 <div className="space-y-1.5">
                   <FieldLabel className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1.5">
                     <Building2 className="w-3.5 h-3.5" /> Select Target Branch
                   </FieldLabel>
                   <Select
                     value={
-                      selectedBranchId ? String(selectedBranchId) : undefined
+                      vm.selectedBranchId
+                        ? String(vm.selectedBranchId)
+                        : undefined
                     }
                     onValueChange={(val) => {
-                      setSelectedBranchId(val);
+                      vm.setSelectedBranchId(val);
+                      // Clear dependents when branch changes
                       vm.form.setValue(
                         "professorId",
                         undefined as unknown as string,
-                        {
-                          shouldValidate: true,
-                        },
+                        { shouldValidate: true },
                       );
                       vm.form.setValue(
                         "subjectId",
                         undefined as unknown as string,
-                        {
-                          shouldValidate: true,
-                        },
+                        { shouldValidate: true },
                       );
                       vm.form.setValue(
                         "semesterId",
                         undefined as unknown as string,
-                        {
-                          shouldValidate: true,
-                        },
+                        { shouldValidate: true },
                       );
                     }}
                   >
@@ -188,7 +116,7 @@ export default function SubjectAssignmentView() {
                       <SelectValue placeholder="Select Branch to Search..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {branches?.map((branch: BranchResponse) => (
+                      {vm.branches?.map((branch: BranchResponse) => (
                         <SelectItem
                           key={branch.id}
                           value={branch.id.toString()}
@@ -206,7 +134,7 @@ export default function SubjectAssignmentView() {
                   Select Professor / HOD
                 </FieldLabel>
                 <AsyncCombobox
-                  key={`prof-combo-${selectedBranchId || "all"}`}
+                  key={`prof-combo-${vm.selectedBranchId || "all"}`}
                   placeholder="Type name to search..."
                   value={vm.form.watch("professorId")}
                   onChange={(val) =>
@@ -214,9 +142,9 @@ export default function SubjectAssignmentView() {
                       shouldValidate: true,
                     })
                   }
-                  fetchOptions={fetchStaffMemoized}
+                  fetchOptions={vm.fetchStaffMemoized}
                   emptyText="No professors found."
-                  disabled={isSuperAdmin && !selectedBranchId}
+                  disabled={vm.canManageGlobal && !vm.selectedBranchId}
                 />
               </div>
 
@@ -225,13 +153,13 @@ export default function SubjectAssignmentView() {
                   Select Subject
                 </FieldLabel>
                 <AsyncCombobox
-                  key={`sub-combo-${selectedBranchId || "all"}`}
+                  key={`sub-combo-${vm.selectedBranchId || "all"}`}
                   placeholder="Type subject name or code..."
                   value={vm.form.watch("subjectId")}
-                  onChange={handleSubjectSelect}
-                  fetchOptions={fetchSubjectsMemoized}
+                  onChange={vm.handleSubjectSelect}
+                  fetchOptions={vm.fetchSubjectsMemoized}
                   emptyText="No subjects found."
-                  disabled={isSuperAdmin && !selectedBranchId}
+                  disabled={vm.canManageGlobal && !vm.selectedBranchId}
                 />
               </div>
 
@@ -240,7 +168,7 @@ export default function SubjectAssignmentView() {
                   Semester
                 </FieldLabel>
                 <Select
-                  disabled={isSemLoading || true}
+                  disabled={true} // Auto-filled by Subject combo
                   key={`semester-select-${vm.form.watch("semesterId") || "empty"}`}
                   value={
                     vm.form.watch("semesterId")
@@ -257,7 +185,7 @@ export default function SubjectAssignmentView() {
                     <SelectValue placeholder="Select Semester" />
                   </SelectTrigger>
                   <SelectContent>
-                    {semesters?.map((sem) => (
+                    {vm.semesters?.map((sem) => (
                       <SelectItem key={sem.id} value={sem.id.toString()}>
                         {sem.value}
                       </SelectItem>
@@ -278,7 +206,7 @@ export default function SubjectAssignmentView() {
                     variant="secondary"
                     className="text-sm px-3 py-1 bg-primary/10 text-primary border-primary/20"
                   >
-                    {isYearLoading ? "Loading..." : activeYearDisplay}
+                    {vm.activeYearDisplay}
                   </Badge>
                   <span className="text-xs text-muted-foreground italic">
                     Locked to global system
@@ -304,19 +232,18 @@ export default function SubjectAssignmentView() {
           </Card>
         </div>
 
-        {/*  DELEGATE EVERYTHING TO THE DUMB COMPONENT */}
+        {/* --- DELEGATE EVERYTHING TO THE TABLE COMPONENT --- */}
         <div className="lg:col-span-2">
           <ActiveAssignmentsTable
-            isSuperAdmin={isSuperAdmin}
-            branches={branches || []}
-            academicYears={academicYears || []} // 🚀 Pass the years down
+            isSuperAdmin={vm.canManageGlobal} // 🚨 Replaced old prop
+            branches={vm.branches || []}
+            academicYears={vm.academicYears || []}
             search={vm.table.search}
             onSearchChange={vm.table.setSearch}
             branchId={vm.table.branchId}
             onBranchChange={vm.table.setBranchId}
-            academicYearId={vm.table.academicYearId} 
+            academicYearId={vm.table.academicYearId}
             onAcademicYearChange={vm.table.setAcademicYearId}
-            
             data={(vm.table.data as ActiveAssignmentTableResponse[]) || []}
             isLoading={vm.table.isLoading}
             onUnassign={vm.table.onUnassign}

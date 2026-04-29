@@ -16,15 +16,15 @@ import {
 import { useDebounce } from "@/hooks/use-debounce";
 
 export interface ComboboxOption<T = any> {
-  value: number;
+  value: string;
   label: string;
   subLabel?: string;
   rawData?: T;
 }
 
 interface AsyncComboboxProps<T = any> {
-  value?: number | null;
-  onChange: (value: number | null, rawData?: T | null) => void;
+  value?: string | null;
+  onChange: (value: string | null, rawData?: T | null) => void;
   fetchOptions: (searchTerm: string) => Promise<ComboboxOption<T>[]>;
   placeholder?: string;
   emptyText?: string;

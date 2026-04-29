@@ -1,15 +1,24 @@
+import { useEffect, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toastService } from "@/core/toast/toastService";
 import { getAxiosErrorMessage } from "@/core/helper/errorMessage";
+import { useDebounce } from "@/hooks/use-debounce";
+
+import { usePermissions } from "@/hooks/usePermissions";
+import { useSystemSettingsViewModel } from "@/modules/settings/viewModel/useSystemSettingsViewModel";
+import { useBranchViewModel } from "@/modules/branch/viewModel/useBranchViewModel";
+import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
+import { EnumCategory } from "@/modules/enums/types/enum.schemas";
+
 import {
   assignSubjectToProfessor,
   fetchActiveAssignments,
   unassignSubject,
+  searchStaff,
+  searchSubjects,
 } from "../model/subjectMappingService";
-import { useSystemSettingsViewModel } from "@/modules/settings/viewModel/useSystemSettingsViewModel";
-import { useEffect, useState } from "react";
-import { useDebounce } from "@/hooks/use-debounce";
+import type { SubjectComboboxDTO } from "@/modules/subject-mapping/types/subject-mapping.types";
 
 interface AssignFormValues {
   professorId: string;
@@ -21,54 +30,95 @@ interface AssignFormValues {
 export const useSubjectAssignmentViewModel = () => {
   const queryClient = useQueryClient();
 
-  // Get the globally active academic year so we can auto-fill the form!
-  const { selectedYearId: activeAcademicYearId } = useSystemSettingsViewModel();
+  // --- 1. PBAC & AUTH ---
+  const { hasPermission } = usePermissions();
+  const canManageGlobal = hasPermission("assignment:manage-global");
 
+  // --- 2. GLOBAL SETTINGS & DEPENDENCIES ---
+  const { selectedYearId: activeAcademicYearId } = useSystemSettingsViewModel();
+  const { enums: semesters, isLoading: isSemLoading } = useEnumViewModel(
+    EnumCategory.SEMESTER,
+  );
+  const { enums: academicYears, isLoading: isYearLoading } = useEnumViewModel(
+    EnumCategory.ACADEMIC_YEAR,
+  );
+  const { branches, isLoading: isBranchesLoading } = useBranchViewModel();
+
+  // --- 3. UI STATE ---
+  const [selectedBranchId, setSelectedBranchId] = useState<string | undefined>(
+    undefined,
+  );
+
+  // --- 4. FORM SETUP ---
   const form = useForm<AssignFormValues>({
     defaultValues: {
       professorId: undefined,
       subjectId: undefined,
       semesterId: undefined,
-      academicYearId: activeAcademicYearId || undefined, // Auto-selects the current year!
+      academicYearId: activeAcademicYearId || undefined,
     },
   });
+
   useEffect(() => {
     if (activeAcademicYearId) {
       form.setValue("academicYearId", activeAcademicYearId);
     }
   }, [activeAcademicYearId, form]);
 
-  // 🚀 WATCHERS: We watch semesterId so we can pass it to the Subject Combobox to filter its API call
-  const selectedSemesterId = form.watch("semesterId");
+  const currentYearId = form.watch("academicYearId");
+  const activeYearDisplay =
+    academicYears?.find((y) => y.id === currentYearId)?.value || "Loading...";
+  const activeSemesterId = form.watch("semesterId");
 
-  // This is called when the AsyncCombobox selects a subject.
-  const handleSubjectSelect = (subjectId: string, rawSubjectData?: any) => {
-    // 1. Set the Subject ID
-    form.setValue("subjectId", subjectId, { shouldValidate: true });
+  // --- 5. ASYNC SEARCH HANDLERS ---
+  const fetchStaffMemoized = useCallback(
+    (term: string) => searchStaff(term, selectedBranchId),
+    [selectedBranchId],
+  );
 
-    // 2. Auto-Fill the Semester!
-    // If the selected subject has a semester attached to it, force the semester dropdown to match it instantly.
-    if (rawSubjectData?.semester?.id) {
-      form.setValue("semesterId", rawSubjectData.semester.id, {
+  const fetchSubjectsMemoized = useCallback(
+    (term: string) => searchSubjects(term, activeSemesterId, selectedBranchId),
+    [activeSemesterId, selectedBranchId],
+  );
+
+  const handleSubjectSelect = (
+    subjectId: string | null,
+    rawData?: SubjectComboboxDTO | null,
+  ) => {
+    if (!subjectId) {
+      form.setValue("subjectId", undefined as unknown as string, {
         shouldValidate: true,
       });
+      form.setValue("semesterId", undefined as unknown as string, {
+        shouldValidate: true,
+      });
+      return;
+    }
+
+    form.setValue("subjectId", subjectId, { shouldValidate: true });
+
+    if (rawData?.semester && semesters) {
+      const semString = rawData.semester;
+      const matchedSem = semesters.find(
+        (s) => s.key === semString || s.value === semString,
+      );
+      if (matchedSem) {
+        form.setValue("semesterId", matchedSem.id, { shouldValidate: true });
+      }
     }
   };
 
-  //  MUTATION: Submit the assignment
+  // --- 6. ASSIGN MUTATION ---
   const assignMutation = useMutation({
     mutationFn: (data: AssignFormValues) => assignSubjectToProfessor(data),
     onSuccess: () => {
       toastService.success("Subject assigned successfully!");
-      // Reset the form but keep the academic year and professor so they can quickly assign another!
       form.reset({
         professorId: undefined,
         subjectId: undefined,
         semesterId: undefined,
         academicYearId: activeAcademicYearId || undefined,
       });
-
-      // Refresh the data table
       queryClient.invalidateQueries({ queryKey: ["active-assignments"] });
     },
     onError: (error: any) => {
@@ -78,11 +128,7 @@ export const useSubjectAssignmentViewModel = () => {
     },
   });
 
-  const onSubmit = form.handleSubmit((data) => {
-    assignMutation.mutate(data);
-  });
-
-  // ==================================
+  // --- 7. TABLE STATE & QUERY ---
   const [tableSearch, setTableSearch] = useState("");
   const [tableBranchId, setTableBranchId] = useState<string | undefined>(
     undefined,
@@ -90,7 +136,6 @@ export const useSubjectAssignmentViewModel = () => {
   const [tableAcademicYearId, setTableAcademicYearId] = useState<
     string | undefined
   >(activeAcademicYearId?.toString());
-
   const debouncedTableSearch = useDebounce(tableSearch, 1500);
 
   const { data: assignmentsData, isLoading: isTableLoading } = useQuery({
@@ -118,25 +163,40 @@ export const useSubjectAssignmentViewModel = () => {
     },
     onError: () => toastService.error("Failed to unassign subject."),
   });
-  // ==================================
 
+  // --- 8. EXPOSE INTERFACE ---
   return {
+    // Form & Actions
     form,
-    onSubmit,
+    onSubmit: form.handleSubmit((data) => assignMutation.mutate(data)),
     isAssigning: assignMutation.isPending,
-    selectedSemesterId,
+
+    // Dependencies & Status
+    canManageGlobal,
+    branches,
+    semesters,
+    academicYears,
+    isPageLoading:
+      isSemLoading || isYearLoading || (canManageGlobal && isBranchesLoading),
+
+    // Custom UI State
+    selectedBranchId,
+    setSelectedBranchId,
+    activeYearDisplay,
+
+    // Async Handlers
+    fetchStaffMemoized,
+    fetchSubjectsMemoized,
     handleSubjectSelect,
 
-    // ================================
+    // Table Context
     table: {
       search: tableSearch,
       setSearch: setTableSearch,
       branchId: tableBranchId,
       setBranchId: setTableBranchId,
-      //
       academicYearId: tableAcademicYearId,
       setAcademicYearId: setTableAcademicYearId,
-      //
       data: assignmentsData,
       isLoading: isTableLoading,
       onUnassign: (id: string) => unassignMutation.mutate(id),
