@@ -14,7 +14,7 @@ interface UsersTableProps {
   isLoading: boolean;
   isSuperAdmin: boolean;
   isStudent: boolean;
-  onRowClick: (id: number) => void;
+  onRowClick: (id: string) => void;
 }
 
 export function UsersTable({

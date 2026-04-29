@@ -116,7 +116,7 @@ export default function AssignmentListView() {
             }
             onValueChange={(val) =>
               vm.filters.setAcademicYearId(
-                val === "all" ? undefined : Number(val),
+                val === "all" ? undefined : val,
               )
             }
           >
@@ -138,7 +138,7 @@ export default function AssignmentListView() {
             <Select
               value={vm.filters.branchId ? String(vm.filters.branchId) : "all"}
               onValueChange={(val) =>
-                vm.filters.setBranchId(val === "all" ? undefined : Number(val))
+                vm.filters.setBranchId(val === "all" ? undefined : val)
               }
             >
               <SelectTrigger className="w-45 bg-background">

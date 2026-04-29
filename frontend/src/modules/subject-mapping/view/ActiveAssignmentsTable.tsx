@@ -25,22 +25,22 @@ import type { ActiveAssignmentTableResponse } from "@/modules/subject-mapping/ty
 interface ActiveAssignmentsTableProps {
   isSuperAdmin: boolean;
   branches: BranchResponse[];
-  academicYears?: { id: number; key: string; value: string }[]; // Pass enums here later
+  academicYears?: { id: string; key: string; value: string }[];
 
   // Handlers
   search: string;
   onSearchChange: (val: string) => void;
-  branchId: number | undefined;
-  onBranchChange: (val: number | undefined) => void;
+  branchId: string | undefined;
+  onBranchChange: (val: string | undefined) => void;
 
   // 🚀 Added Academic Year Filter Prop
-  academicYearId: number | undefined;
-  onAcademicYearChange: (val: number | undefined) => void;
+  academicYearId: string | undefined;
+  onAcademicYearChange: (val: string | undefined) => void;
 
   // 🚀 FIXED: data is an array!
   data: ActiveAssignmentTableResponse[];
   isLoading: boolean;
-  onUnassign: (id: number) => void;
+  onUnassign: (id: string) => void;
   isUnassigning: boolean;
 }
 
@@ -84,7 +84,7 @@ export function ActiveAssignmentsTable({
             <Select
               value={academicYearId ? String(academicYearId) : "all"}
               onValueChange={(val) =>
-                onAcademicYearChange(val === "all" ? undefined : Number(val))
+                onAcademicYearChange(val === "all" ? undefined : val)
               }
             >
               <SelectTrigger className="h-9 w-40 bg-muted/20">
@@ -105,7 +105,7 @@ export function ActiveAssignmentsTable({
               <Select
                 value={branchId ? String(branchId) : "all"}
                 onValueChange={(val) =>
-                  onBranchChange(val === "all" ? undefined : Number(val))
+                  onBranchChange(val === "all" ? undefined : val)
                 }
               >
                 <SelectTrigger className="h-9 w-40 bg-muted/20">

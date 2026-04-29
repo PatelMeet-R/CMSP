@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useHodProfileViewModel } from "../viewModel/useHodProfileViewModel";
 
 interface HodProfileModalProps {
-  branchId?: number;
+  branchId?: string;
   branchName?: string;
   hodRoleId?: string;
 }

@@ -4,7 +4,7 @@ export interface StaffProfileData {
   joiningDate?: string | Date;
 }
 export interface SubjectAssignmentData {
-  id: number;
+  id: string;
   subject?: { name: string; code: string };
   semester?: { value: string };
   deletedAt?: string | null;

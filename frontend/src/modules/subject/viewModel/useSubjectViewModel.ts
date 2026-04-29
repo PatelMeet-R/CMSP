@@ -10,12 +10,8 @@ export const useSubjectViewModel = () => {
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = parseInt(searchParams.get("limit") || "10", 10);
   const search = searchParams.get("search") || "";
-  const branchId = searchParams.get("branchId")
-    ? Number(searchParams.get("branchId"))
-    : undefined;
-  const semesterId = searchParams.get("semesterId")
-    ? Number(searchParams.get("semesterId"))
-    : undefined;
+  const branchId = searchParams.get("branchId") || undefined;
+  const semesterId = searchParams.get("semesterId") || undefined;
 
   //  DEBOUNCE SEARCH
   const debouncedSearch = useDebounce(search, 1500);
@@ -32,8 +28,8 @@ export const useSubjectViewModel = () => {
   const setPage = (p: number) => setParam("page", p);
   const setLimit = (l: number) => setParam("limit", l);
   const setSearch = (s: string) => setParam("search", s);
-  const setBranchId = (id: number | undefined) => setParam("branchId", id);
-  const setSemesterId = (id: number | undefined) => setParam("semesterId", id);
+  const setBranchId = (id: string | undefined) => setParam("branchId", id);
+  const setSemesterId = (id: string | undefined) => setParam("semesterId", id);
 
   //  Reset Pagination: If a user types a new search or changes a filter, go back to Page 1
   useEffect(() => {

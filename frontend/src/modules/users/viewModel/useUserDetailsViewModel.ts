@@ -25,7 +25,7 @@ export const useUserDetailsViewModel = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const userId = Number(id);
+  const userId = id;
 
   //    UI STATE
   const [isEditing, setIsEditing] = useState(false);
@@ -149,7 +149,7 @@ export const useUserDetailsViewModel = () => {
 
   //    MUTATION: CHANGE ROLE
   const roleMutation = useMutation({
-    mutationFn: (newRoleId: number) => updateUserRole(userId, newRoleId),
+    mutationFn: (newRoleId: string) => updateUserRole(userId, newRoleId),
     onSuccess: () => {
       toastService.success("User role updated!");
       queryClient.invalidateQueries({ queryKey: ["user-details", userId] });

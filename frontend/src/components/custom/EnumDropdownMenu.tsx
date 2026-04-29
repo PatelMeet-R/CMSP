@@ -42,7 +42,7 @@ export const EnumDropdownMenu = <T extends FieldValues>({
           <Select
             onValueChange={(value) => {
               // field.onChange(value);
-              field.onChange(parseInt(value, 10));
+              field.onChange(value);
             }}
             value={field.value ? field.value.toString() : ""}
             disabled={isLoading || disabled}

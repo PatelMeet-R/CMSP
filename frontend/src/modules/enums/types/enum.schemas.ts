@@ -9,7 +9,7 @@ export const EnumCategory = {
 export type EnumCategory = (typeof EnumCategory)[keyof typeof EnumCategory];
 
 export interface EnumValueResponse {
-  id: number;
+  id: string;
   key: string;
   value: string;
 }

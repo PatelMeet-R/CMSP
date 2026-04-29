@@ -13,7 +13,7 @@ export interface SelectOption {
 
 interface DynamicSelectProps {
   value?: string | number;
-  onChange: (value: number | undefined) => void;
+  onChange: (value: string | undefined) => void;
   options: SelectOption[];
   placeholder: string;
   isLoading?: boolean;
@@ -34,7 +34,7 @@ export function DynamicSelect({
     if (val === "all") {
       onChange(undefined);
     } else {
-      onChange(parseInt(val, 10));
+      onChange(val);
     }
   };
 

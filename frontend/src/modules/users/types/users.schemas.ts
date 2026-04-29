@@ -2,8 +2,8 @@ import type { PaginationMeta } from "@/components/custom/dashboard/DataTablePagi
 import { z } from "zod";
 
 export interface ProfileResponse {
-  id: number;
-  personalInfoId?: number;
+  id: string;
+  personalInfoId?: string;
   fullName: string;
   firstName: string;
   lastName: string;
@@ -13,19 +13,19 @@ export interface ProfileResponse {
   email?: string;
 
   gender: string | null;
-  genderId?: number;
+  genderId?: string;
 
   branch: string | null;
-  branchId?: number;
+  branchId?: string;
 
   joinedYear: string | null;
-  joinedAcademicYearId?: number;
+  joinedAcademicYearId?: string;
 
   gradYear: string | null;
-  expectedGraduateYearId?: number;
+  expectedGraduateYearId?: string;
 
   accountStatus: string | null;
-  userAccountStatusId?: number;
+  userAccountStatusId?: string;
 
   address: {
     city: string;
@@ -44,9 +44,9 @@ export interface FetchUsersQueryParams {
   page: number;
   limit: number;
   search?: string;
-  roleId?: number;
-  branchId?: number;
-  genderId?: number;
+  roleId?: string;
+  branchId?: string;
+  genderId?: string;
 }
 
 export interface PaginatedUserResponse {
@@ -74,8 +74,8 @@ export const updateProfileSchema = z.object({
   postalCode: z.string().optional(),
 
   // Relational Basic Fields
-  genderId: z.number().optional(),
-  joinedAcademicYearId: z.number().optional(),
+  genderId: z.string().optional(),
+  joinedAcademicYearId: z.string().optional(),
 
   // --- SENSITIVE FIELDS ---
   firstName: z
@@ -91,9 +91,9 @@ export const updateProfileSchema = z.object({
   enrollmentNumber: z.string().optional(),
 
   // Relational Sensitive Fields
-  branchId: z.number().optional(),
-  expectedGraduateYearId: z.number().optional(),
-  userAccountStatusId: z.number().optional(),
+  branchId: z.string().optional(),
+  expectedGraduateYearId: z.string().optional(),
+  userAccountStatusId: z.string().optional(),
 });
 
 export const staffRegisterSchema = z.object({
@@ -101,10 +101,10 @@ export const staffRegisterSchema = z.object({
   lastName: z.string().min(2, "Last name is required"),
   email: z.string().email("Invalid email address"),
   branchId: z
-    .number({ message: "Please select a branch" })
+    .string({ message: "Please select a branch" })
     .min(1, "Branch is required"),
   roleId: z
-    .number({ message: "Please select a role" })
+    .string({ message: "Please select a role" })
     .min(1, "Role is required"),
   designation: z
     .string()

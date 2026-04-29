@@ -6,7 +6,7 @@ import {
 } from "@/modules/users/model/usersService";
 
 interface UseHodProfileViewModelProps {
-  branchId?: number;
+  branchId?: string;
   hodRoleId?: string;
 }
 
@@ -22,7 +22,7 @@ export const useHodProfileViewModel = ({
       fetchUsersList({
         page: 1,
         branchId,
-        roleId: Number(hodRoleId),
+        roleId: hodRoleId,
         limit: 1,
       }),
     enabled: isOpen && !!branchId && !!hodRoleId,

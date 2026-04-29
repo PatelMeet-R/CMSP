@@ -113,7 +113,7 @@ export default function UserManagementView() {
 
           {!isSuperAdmin && !isHOD && (
             <HodProfileModal
-              branchId={user?.branchId}
+              branchId={user?.branchId ?? undefined}
               branchName={currentBranchName}
               hodRoleId={hodRoleId}
             />

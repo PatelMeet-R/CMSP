@@ -1,12 +1,12 @@
 import { z } from "zod";
 //Dropdown Response
 export interface BranchResponse {
-  id: number;
+  id: string;
   name: string;
 }
 
 export interface SemesterResponse {
-  id: number;
+  id: string;
   value: string;
 }
 //  ZOD
@@ -14,8 +14,8 @@ export interface SemesterResponse {
 
 // Base schema mimicking your backend validation
 export const subjectBaseSchema = z.object({
-  semesterId: z.number({ message: "Semester ID must be a valid number" }),
-  branchId: z.number({ message: "Branch ID must be a valid number" }),
+  semesterId: z.string({ message: "Semester is required" }),
+  branchId: z.string({ message: "Branch is required" }),
   name: z
     .string({ message: "Name is required" })
     .min(3, "Name must be at least 3 characters")
@@ -38,7 +38,7 @@ export type UpdateSubjectPayload = z.infer<typeof updateSubjectSchema>;
 
 //  Response Type
 export interface Subject {
-  id: number;
+  id: string;
   code: string;
   name: string;
   branch: string | null;
@@ -47,11 +47,11 @@ export interface Subject {
 }
 
 export interface SubjectDetails {
-  id: number;
+  id: string;
   code: string;
   name: string;
-  branch: { id: number; name: string; code: string } | null;
-  semester: { id: number; key: string; value: string } | null;
+  branch: { id: string; name: string; code: string } | null;
+  semester: { id: string; key: string; value: string } | null;
   createdAt?: string;
   updatedAt?: string;
 }

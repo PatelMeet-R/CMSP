@@ -20,7 +20,7 @@ const extractItems = <T>(response: {
 };
 
 // 1  Search Staff (Professors & HODs) via Personal Info Route
-export const searchStaff = async (searchTerm: string, branchId?: number) => {
+export const searchStaff = async (searchTerm: string, branchId?: string) => {
   const params: SearchParams = { limit: 15 };
   if (searchTerm && searchTerm.trim() !== "") params.search = searchTerm.trim();
 
@@ -48,8 +48,8 @@ export const searchStaff = async (searchTerm: string, branchId?: number) => {
 // 2. Search Subjects (with optional Semester filter)
 export const searchSubjects = async (
   searchTerm: string,
-  semesterId?: number,
-  branchId?: number,
+  semesterId?: string,
+  branchId?: string,
 ) => {
   const params: SearchParams = { limit: 10 };
   if (searchTerm && searchTerm.trim() !== "") params.search = searchTerm.trim();
@@ -86,7 +86,7 @@ export const assignSubjectToProfessor = async (data: AssignSubjectPayload) => {
 };
 
 // 4. Unassign Subject
-export const unassignSubject = async (mappingId: number) => {
+export const unassignSubject = async (mappingId: string) => {
   const response = await axiosInstance.delete(
     API_ENDPOINT.SUBJECT.UNASSIGN(mappingId),
   );

@@ -9,7 +9,7 @@ import type {
 } from "@/modules/subject/types/subject.schemas";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export const useSubjectDetailViewModel = (id: number | undefined) => {
+export const useSubjectDetailViewModel = (id: string | undefined) => {
   const queryClient = useQueryClient();
 
   const {

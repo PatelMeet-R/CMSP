@@ -80,7 +80,7 @@ export default function MyAssignmentsView() {
           }
           onValueChange={(val) =>
             vm.filters.setAcademicYearId(
-              val === "all" ? undefined : Number(val),
+              val === "all" ? undefined : val,
             )
           }
         >

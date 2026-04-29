@@ -29,7 +29,6 @@ import { PageBreadcrumb } from "@/components/custom/dashboard/PageBreadcrumb";
 
 export const SubjectDetailModule = () => {
   const { id } = useParams();
-  const numericId = id ? Number(id) : undefined;
   const navigate = useNavigate();
 
   // --- UI STATE ---
@@ -43,7 +42,7 @@ export const SubjectDetailModule = () => {
 
   // --- VIEW MODELS ---
   const { subject, isFetching, isUpdating, updateSubject } =
-    useSubjectDetailViewModel(numericId);
+    useSubjectDetailViewModel(id);
   const { branches, isLoading: isBranchesLoading } = useBranchViewModel();
   const { enums: semesters, isLoading: isSemestersLoading } = useEnumViewModel(
     EnumCategory.SEMESTER,

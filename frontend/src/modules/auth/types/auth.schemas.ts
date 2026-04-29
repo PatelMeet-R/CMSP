@@ -14,7 +14,7 @@ export const SignupInputSchema = z.object({
   firstName: z.string().min(2, "first name is too short"),
   lastName: z.string().min(2, "last name is too short"),
   enrollmentNumber: z.string().min(5, "Enrollment number is required"),
-  branchId: z.number().int().positive("please select a branch"),
+  branchId: z.string({ message: "please select a branch" }),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 

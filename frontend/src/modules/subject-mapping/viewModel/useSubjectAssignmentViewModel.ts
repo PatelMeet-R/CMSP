@@ -12,10 +12,10 @@ import { useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
 
 interface AssignFormValues {
-  professorId: number;
-  subjectId: number;
-  semesterId: number;
-  academicYearId: number;
+  professorId: string;
+  subjectId: string;
+  semesterId: string;
+  academicYearId: string;
 }
 
 export const useSubjectAssignmentViewModel = () => {
@@ -42,7 +42,7 @@ export const useSubjectAssignmentViewModel = () => {
   const selectedSemesterId = form.watch("semesterId");
 
   // This is called when the AsyncCombobox selects a subject.
-  const handleSubjectSelect = (subjectId: number, rawSubjectData?: any) => {
+  const handleSubjectSelect = (subjectId: string, rawSubjectData?: any) => {
     // 1. Set the Subject ID
     form.setValue("subjectId", subjectId, { shouldValidate: true });
 
@@ -84,12 +84,12 @@ export const useSubjectAssignmentViewModel = () => {
 
   // ==================================
   const [tableSearch, setTableSearch] = useState("");
-  const [tableBranchId, setTableBranchId] = useState<number | undefined>(
+  const [tableBranchId, setTableBranchId] = useState<string | undefined>(
     undefined,
   );
   const [tableAcademicYearId, setTableAcademicYearId] = useState<
-    number | undefined
-  >(activeAcademicYearId);
+    string | undefined
+  >(activeAcademicYearId?.toString());
 
   const debouncedTableSearch = useDebounce(tableSearch, 1500);
 
@@ -139,7 +139,7 @@ export const useSubjectAssignmentViewModel = () => {
       //
       data: assignmentsData,
       isLoading: isTableLoading,
-      onUnassign: (id: number) => unassignMutation.mutate(id),
+      onUnassign: (id: string) => unassignMutation.mutate(id),
       isUnassigning: unassignMutation.isPending,
     },
   };

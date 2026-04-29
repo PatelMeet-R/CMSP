@@ -7,18 +7,14 @@ import { fetchUsersList } from "@/modules/users/model/usersService";
 export const useUserManagementViewModel = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // 🎛️ UI State
+  //  UI State
   const page = parseInt(searchParams.get("page") || "1", 10) || 1;
   const limit = parseInt(searchParams.get("limit") || "10", 10) || 10;
   const search = searchParams.get("search") || "";
   const roleId = searchParams.get("roleId") || undefined;
 
-  const branchId = searchParams.get("branchId")
-    ? Number(searchParams.get("branchId"))
-    : undefined;
-  const genderId = searchParams.get("genderId")
-    ? Number(searchParams.get("genderId"))
-    : undefined;
+  const branchId = searchParams.get("branchId") || undefined;
+  const genderId = searchParams.get("genderId") || undefined;
 
   // ⏱️ DEBOUNCE SEARCH
   const debouncedSearch = useDebounce(search, 800);
@@ -36,9 +32,9 @@ export const useUserManagementViewModel = () => {
   const setPage = (p: number) => setParam("page", p);
   const setLimit = (l: number) => setParam("limit", l);
   const setSearch = (s: string) => setParam("search", s);
-  const setBranchId = (id: number | undefined) => setParam("branchId", id);
+  const setBranchId = (id: string | undefined) => setParam("branchId", id);
   const setRoleId = (id: string | undefined) => setParam("roleId", id);
-  const setGenderId = (id: number | undefined) => setParam("genderId", id);
+  const setGenderId = (id: string | undefined) => setParam("genderId", id);
 
   // 🔄 Reset Pagination: Go to Page 1 on filter change
   useEffect(() => {
@@ -52,7 +48,7 @@ export const useUserManagementViewModel = () => {
     search: debouncedSearch || undefined,
     branchId,
     genderId,
-    roleId: roleId ? Number(roleId) : undefined,
+    roleId: roleId ? roleId : undefined,
   };
 
   // 📡 Fetch Data

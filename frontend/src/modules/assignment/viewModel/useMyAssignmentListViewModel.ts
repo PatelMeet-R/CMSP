@@ -7,7 +7,7 @@ import type { PaginatedResponse } from "@/lib/interface/pagination.interface";
 
 export function useMyAssignmentListViewModel() {
   const [search, setSearch] = useState("");
-  const [academicYearId, setAcademicYearId] = useState<number | undefined>(
+  const [academicYearId, setAcademicYearId] = useState<string | undefined>(
     undefined,
   );
   const [page, setPage] = useState(1);

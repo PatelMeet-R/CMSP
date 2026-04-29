@@ -42,7 +42,7 @@ export const BranchDropdownMenu = <T extends FieldValues>({
           <FieldLabel>{label}</FieldLabel>
           <Select
             onValueChange={(value) => {
-              field.onChange(parseInt(value, 10));
+              field.onChange(value);
             }}
             value={field.value ? field.value.toString() : ""}
             disabled={isLoadingBranches || disabled}

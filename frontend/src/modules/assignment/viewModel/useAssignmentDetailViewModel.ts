@@ -16,11 +16,11 @@ export function useAssignmentDetailViewModel() {
   const { user } = useAppSelector((state) => state.auth);
 
   const [assignmentToDelete, setAssignmentToDelete] = useState<{
-    id: number;
+    id: string;
     title: string;
   } | null>(null);
 
-  const assignmentId = Number(id);
+  const assignmentId = id;
 
   // Fetch Assignment Details
   const {

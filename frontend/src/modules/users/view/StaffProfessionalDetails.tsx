@@ -16,7 +16,7 @@ import {
 import type {
   StaffProfessionalDetailsProps,
   SubjectAssignmentData,
-} from "@/modules/users/types/staff.ui.schemas";
+} from "@/modules/users/types/staff.interface";
 
 export function StaffProfessionalDetails({
   staffProfile,

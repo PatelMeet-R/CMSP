@@ -18,9 +18,9 @@ export function useAssignmentListViewModel() {
 
   // 🚀 Filter States
   const [search, setSearch] = useState("");
-  const [branchId, setBranchId] = useState<number | undefined>(undefined);
-  const [academicYearId, setAcademicYearId] = useState<number | undefined>(
-    selectedYearId,
+  const [branchId, setBranchId] = useState<string | undefined>(undefined);
+  const [academicYearId, setAcademicYearId] = useState<string | undefined>(
+    selectedYearId?.toString(),
   );
   const [page, setPage] = useState(1);
 

@@ -16,7 +16,7 @@ export const SETTING_KEYS = {
 export const useSystemSettingsViewModel = () => {
   const queryClient = useQueryClient();
 
-  const [selectedYearId, setSelectedYearId] = useState<number | undefined>(
+  const [selectedYearId, setSelectedYearId] = useState<string | undefined>(
     undefined,
   );
 
@@ -40,7 +40,7 @@ export const useSystemSettingsViewModel = () => {
   //  Sync the fetched setting into our local React state
   useEffect(() => {
     if (currentSetting?.value) {
-      setSelectedYearId(Number(currentSetting.value));
+      setSelectedYearId(currentSetting.value);
     }
   }, [currentSetting]);
 

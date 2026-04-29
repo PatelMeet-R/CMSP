@@ -24,27 +24,29 @@ export const API_ENDPOINT = {
   },
   PROFILE: {
     MY_PROFILE: "personal-info/profile",
-    VIEW_PROFILE: (profileId: number) => `personal-info/${profileId}`,
-    UPDATE: (profileId: number) => `personal-info/update/${profileId}`,
+    VIEW_PROFILE: (profileId: string) => `personal-info/${profileId}`,
+    UPDATE: (profileId: string) => `personal-info/update/${profileId}`,
     VIEW_LIST: "/personal-info",
-    STATUS_UPDATE: (profileId: number) => `/personal-info/status/${profileId}`,
-    ROLE_UPDATE: (profileId: number) => `/personal-info/role/${profileId}`,
+    STATUS_UPDATE: (profileId: string) => `/personal-info/status/${profileId}`,
+    ROLE_UPDATE: (profileId: string) => `/personal-info/role/${profileId}`,
     AVATAR_UPLOAD: `/file-upload`,
-    AVATAR_UPDATE: (profileId: number) =>
+    AVATAR_UPDATE: (profileId: string) =>
       `/personal-info/update-image/${profileId}`,
     ADD_PROF: `/register/professor`,
     ADD_HOD: `/register/hod`,
   },
   SUBJECT: {
     VIEW: "/subject",
-    VIEW_BY_ID: (id: number) => `/subject/${id}`,
+    VIEW_BY_ID: (id: string) => `/subject/${id}`,
     REGISTER: `/subject/register`,
-    UPDATE: (id: number) => `/subject/${id}`,
+    UPDATE: (id: string) => `/subject/${id}`,
     ASSIGN: `/professor-subject/assign-subject`,
-    UNASSIGN: (mappingId: number) => `/professor-subject/unassign/${mappingId}`,
+    UNASSIGN: (mappingId: string) => `/professor-subject/unassign/${mappingId}`,
     VIEW_PROFESSOR_SUBJECT: `/professor-subject`,
   },
   STAFF: {
+    VIEW: (userId: string) => `/staff-profile/${userId}`,
+    SUBJECT_HISTORY: (userId: string) => `/professor-subject/history/${userId}`,
     REGISTER: `/auth/register/staff`,
     SEARCH_STAFF: `/personal-info/search-staff-combobox`,
     SEARCH_SUBJECT: `/subject/search-combobox`,
@@ -56,12 +58,18 @@ export const API_ENDPOINT = {
   ASSIGNMENT: {
     ADD: `/assignment/create`,
     LIST: `/assignment/all`,
-    VIEW: (assignmentId: number) => `/assignment/${assignmentId}`,
-    UPDATE: (assignmentId: number) => `/assignment/${assignmentId}`,
-    DELETE: (assignmentId: number) => `/assignment/${assignmentId}`,
+    VIEW: (assignmentId: string) => `/assignment/${assignmentId}`,
+    UPDATE: (assignmentId: string) => `/assignment/${assignmentId}`,
+    DELETE: (assignmentId: string) => `/assignment/${assignmentId}`,
   },
   FILE: {
     UPLOAD: `/file-upload`,
-    DELETE: (fileId: number) => `/file-upload/${fileId}`,
+    DELETE: (fileId: string) => `/file-upload/${fileId}`,
+  },
+  PERMISSION: {
+    GET_USER: (personalInfoId: string) =>
+      `/user-permissions/matrix/${personalInfoId}`,
+    SAVE_USER: (personalInfoId: string) =>
+      `/user-permissions/bulk/${personalInfoId}`,
   },
 } as const;

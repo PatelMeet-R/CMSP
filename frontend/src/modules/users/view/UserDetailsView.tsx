@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
-import { Users, ArrowLeft, ShieldCheck, UserPen, Save, X } from "lucide-react";
+import {
+  Users,
+  ArrowLeft,
+  ShieldCheck,
+  UserPen,
+  Save,
+  X,
+  KeyRound,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +43,9 @@ import { BranchDropdownMenu } from "@/modules/branch/view/BranchDropdownMenu";
 import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
 import { ProfileRenderField } from "@/modules/users/profile/view/ProfileRenderField";
 import { StaffProfessionalDetails } from "@/modules/users/view/StaffProfessionalDetails";
+import UserPermissionMatrix from "@/modules/users/view/UserPermissionMatrix";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function UserDetailsView() {
   const vm = useUserDetailsViewModel();
@@ -43,6 +54,8 @@ export default function UserDetailsView() {
   const isSuperAdmin = currentUser?.role === ROLES.SUPER_ADMIN;
   const isHOD = currentUser?.role === ROLES.HOD;
   const isAdmin = isSuperAdmin || isHOD;
+  const { hasPermission } = usePermissions();
+  const canManagePermissions = hasPermission("user:manage-permissions");
 
   const {
     userProfile: profile,
@@ -95,7 +108,7 @@ export default function UserDetailsView() {
 
   const handleSaveSystemActions = () => {
     if (selectedStatus !== currentStatus) updateStatus(selectedStatus);
-    if (selectedRole !== currentRoleId) updateRole(Number(selectedRole));
+    if (selectedRole !== currentRoleId) updateRole(selectedRole);
     setActionModalOpen(false);
   };
 
@@ -532,15 +545,51 @@ export default function UserDetailsView() {
         </CardContent>
       </Card>
 
-      {/* --- NEW: STAFF PROFESSIONAL INFO & HISTORY GRID --- */}
-      {isStaff && (
-        <StaffProfessionalDetails
-          staffProfile={staffProfile}
-          historyMap={historyMap}
-          expandedYearKey={expandedYearKey}
-          setExpandedYearKey={setExpandedYearKey}
-        />
-      )}
+      {/* --- TABS: PROFESSIONAL INFO & PERMISSIONS --- */}
+      <Tabs defaultValue="details" className="w-full">
+        <TabsList variant="line" className="w-full justify-start border-b px-0 gap-0">
+          <TabsTrigger value="details" className="text-sm px-4 py-2">
+            <UserPen className="w-4 h-4 mr-1.5" />
+            Details
+          </TabsTrigger>
+          {canManagePermissions && (
+            <TabsTrigger value="permissions" className="text-sm px-4 py-2">
+              <KeyRound className="w-4 h-4 mr-1.5" />
+              Permissions
+            </TabsTrigger>
+          )}
+        </TabsList>
+
+        {/* Tab 1: Staff Professional Details (existing) */}
+        <TabsContent value="details" className="mt-4">
+          {isStaff && (
+            <StaffProfessionalDetails
+              staffProfile={staffProfile}
+              historyMap={historyMap}
+              expandedYearKey={expandedYearKey}
+              setExpandedYearKey={setExpandedYearKey}
+            />
+          )}
+          {!isStaff && (
+            <div className="text-center py-12 text-muted-foreground text-sm">
+              No additional details available for this user type.
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Tab 2: Permission Matrix */}
+        {canManagePermissions && (
+          <TabsContent value="permissions" className="mt-4">
+            <Card className="border-none shadow-md">
+              <CardContent className="p-4 sm:p-6">
+                <UserPermissionMatrix
+                  personalInfoId={profile.id?.toString() || ""}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }

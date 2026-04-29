@@ -1,14 +1,14 @@
 export interface AssignSubjectPayload {
-  professorId: number;
-  subjectId: number;
-  semesterId: number;
-  academicYearId: number;
+  professorId: string;
+  subjectId: string;
+  semesterId: string;
+  academicYearId: string;
 }
 
 // Based on your Backend Staff Mapper
 export interface StaffComboboxDTO {
-  id: number;
-  userId: number;
+  id: string;
+  userId: string;
   fullName: string;
   roleKey: string | null;
   roleValue: string | null;
@@ -16,20 +16,20 @@ export interface StaffComboboxDTO {
 
 // Based on your Backend Subject Mapper
 export interface SubjectComboboxDTO {
-  id: number;
+  id: string;
   name: string;
   code: string;
   semester: string | null;
-  semesterId: number | null;
+  semesterId: string | null;
 }
 
 // Search Parameters
 export interface SearchParams {
   limit: number;
   search?: string;
-  semesterId?: number;
-  branchId?: number;
-  academicYearId?: number;
+  semesterId?: string;
+  branchId?: string;
+  academicYearId?: string;
   page?: number;
 }
 
@@ -46,16 +46,16 @@ export interface PaginatedResponse<T> {
 }
 
 export interface ActiveAssignmentTableResponse {
-  id: number;
+  id: string;
   createdAt: string;
   professor: {
-    id?: number;
+    id?: string;
     name: string;
     email?: string;
     mobile?: string | null;
   };
   subject: {
-    id?: number;
+    id?: string;
     code?: string;
     name?: string;
     branch?: string | null;

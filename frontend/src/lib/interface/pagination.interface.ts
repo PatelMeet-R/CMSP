@@ -19,8 +19,8 @@ export interface StandardResponse<T> {
 export interface SearchParams {
   limit: number;
   search?: string;
-  semesterId?: number;
-  branchId?: number;
-  academicYearId?: number;
+  semesterId?: string;
+  branchId?: string;
+  academicYearId?: string;
   page?: number;
 }

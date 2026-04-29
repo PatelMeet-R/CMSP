@@ -15,7 +15,7 @@ interface SubjectTableProps {
   subjects: Subject[];
   isLoading: boolean;
   isSuperAdmin: boolean;
-  onRowClick: (subjectId: number) => void;
+  onRowClick: (subjectId: string) => void;
 }
 
 export function SubjectTable({

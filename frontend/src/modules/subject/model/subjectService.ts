@@ -9,8 +9,8 @@ export const fetchSubjects = async (params: {
   page: number;
   limit: number;
   search?: string;
-  branchId?: number;
-  semesterId?: number;
+  branchId?: string;
+  semesterId?: string;
 }) => {
   try {
     const response = await axiosInstance.get(API_ENDPOINT.SUBJECT.VIEW, {
@@ -21,7 +21,7 @@ export const fetchSubjects = async (params: {
     throw error;
   }
 };
-export const getSubjectDetails = async (subjectId: number) => {
+export const getSubjectDetails = async (subjectId: string) => {
   const response = await axiosInstance.get(
     API_ENDPOINT.SUBJECT.VIEW_BY_ID(subjectId),
   );
@@ -29,7 +29,7 @@ export const getSubjectDetails = async (subjectId: number) => {
   return response.data.data;
 };
 export const updateSubjectDetails = async (
-  subjectId: number,
+  subjectId: string,
   data: UpdateSubjectPayload,
 ) => {
   const response = await axiosInstance.patch(

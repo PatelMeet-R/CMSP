@@ -40,8 +40,8 @@ export function useAssignmentViewModel() {
     defaultValues: {
       title: "",
       description: "",
-      subjectId: undefined as unknown as number,
-      semesterId: undefined as unknown as number,
+      subjectId: undefined as unknown as string,
+      semesterId: undefined as unknown as string,
       branchId: defaultBranchId,
       attachmentId: null,
       academicYearId: activeAcademicYearId || undefined,
@@ -53,13 +53,13 @@ export function useAssignmentViewModel() {
   // 3. 🚀 Data Fetching (Moved ABOVE the useEffects)
   const { data: clonedAssignment, isLoading: isCloning } = useQuery({
     queryKey: ["assignment", cloneId],
-    queryFn: () => fetchAssignmentById(Number(cloneId)),
+    queryFn: () => fetchAssignmentById(cloneId!),
     enabled: !!cloneId,
   });
 
   const { data: mySubjects, isLoading: isMySubjectsLoading } = useQuery({
     queryKey: ["my-active-subjects", currentYearId],
-    queryFn: () => fetchMyActiveSubjects(currentYearId as number),
+    queryFn: () => fetchMyActiveSubjects(currentYearId as string),
     enabled: !isSuperAdmin && !!currentYearId,
   });
 
@@ -92,10 +92,10 @@ export function useAssignmentViewModel() {
         // 🚀 THE FIX: Only auto-fill if they still teach it! Otherwise, force them to pick.
         subjectId: isSubjectStillAssigned
           ? clonedAssignment.subjectId
-          : (undefined as unknown as number),
+          : (undefined as unknown as string),
         semesterId: isSubjectStillAssigned
           ? clonedAssignment.semesterId
-          : (undefined as unknown as number),
+          : (undefined as unknown as string),
 
         branchId: clonedAssignment.branchId,
         attachmentId: clonedAssignment.attachmentId || null,
@@ -133,8 +133,8 @@ export function useAssignmentViewModel() {
       form.reset({
         title: "",
         description: "",
-        subjectId: undefined as unknown as number,
-        semesterId: undefined as unknown as number,
+        subjectId: undefined as unknown as string,
+        semesterId: undefined as unknown as string,
         attachmentId: null,
         branchId: defaultBranchId,
         academicYearId: activeAcademicYearId || undefined,
@@ -152,7 +152,7 @@ export function useAssignmentViewModel() {
   const onSubmit = async (values: AssignmentFormValues) => {
     try {
       let finalAttachmentId = values.attachmentId;
-      let newlyUploadedFileId: number | null = null;
+      let newlyUploadedFileId: string | null = null;
 
       if (selectedFile) {
         setIsUploadingFile(true);

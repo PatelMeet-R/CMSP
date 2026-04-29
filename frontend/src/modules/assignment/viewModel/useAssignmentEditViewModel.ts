@@ -28,7 +28,7 @@ interface ApiError {
 
 export function useAssignmentEditViewModel() {
   const { id } = useParams<{ id: string }>();
-  const assignmentId = Number(id);
+  const assignmentId = id!;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 

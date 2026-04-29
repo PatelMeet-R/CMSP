@@ -55,7 +55,7 @@ export default function SubjectAssignmentView() {
   );
   const { branches, isLoading: isBranchesLoading } = useBranchViewModel();
 
-  const [selectedBranchId, setSelectedBranchId] = useState<number | undefined>(
+  const [selectedBranchId, setSelectedBranchId] = useState<string | undefined>(
     undefined,
   );
 
@@ -76,14 +76,14 @@ export default function SubjectAssignmentView() {
   );
 
   const handleSubjectSelect = (
-    subjectId: number | null,
+    subjectId: string | null,
     rawData?: SubjectComboboxDTO | null,
   ) => {
     if (!subjectId) {
-      vm.form.setValue("subjectId", undefined as unknown as number, {
+      vm.form.setValue("subjectId", undefined as unknown as string, {
         shouldValidate: true,
       });
-      vm.form.setValue("semesterId", undefined as unknown as number, {
+      vm.form.setValue("semesterId", undefined as unknown as string, {
         shouldValidate: true,
       });
       return;
@@ -160,24 +160,24 @@ export default function SubjectAssignmentView() {
                       selectedBranchId ? String(selectedBranchId) : undefined
                     }
                     onValueChange={(val) => {
-                      setSelectedBranchId(Number(val));
+                      setSelectedBranchId(val);
                       vm.form.setValue(
                         "professorId",
-                        undefined as unknown as number,
+                        undefined as unknown as string,
                         {
                           shouldValidate: true,
                         },
                       );
                       vm.form.setValue(
                         "subjectId",
-                        undefined as unknown as number,
+                        undefined as unknown as string,
                         {
                           shouldValidate: true,
                         },
                       );
                       vm.form.setValue(
                         "semesterId",
-                        undefined as unknown as number,
+                        undefined as unknown as string,
                         {
                           shouldValidate: true,
                         },
@@ -248,7 +248,7 @@ export default function SubjectAssignmentView() {
                       : undefined
                   }
                   onValueChange={(val) =>
-                    vm.form.setValue("semesterId", Number(val), {
+                    vm.form.setValue("semesterId", val, {
                       shouldValidate: true,
                     })
                   }

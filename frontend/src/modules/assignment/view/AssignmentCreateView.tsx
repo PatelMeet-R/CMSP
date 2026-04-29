@@ -79,14 +79,14 @@ export default function AssignmentCreateView() {
 
   // 3. Smart Subject Selection (Auto-fills Semester)
   const handleSubjectSelect = (
-    subjectId: number | null,
+    subjectId: string | null,
     rawData?: SubjectComboboxDTO | null,
   ) => {
     if (!subjectId) {
-      vm.form.setValue("subjectId", undefined as unknown as number, {
+      vm.form.setValue("subjectId", undefined as unknown as string, {
         shouldValidate: true,
       });
-      vm.form.setValue("semesterId", undefined as unknown as number, {
+      vm.form.setValue("semesterId", undefined as unknown as string, {
         shouldValidate: true,
       });
       return;
@@ -262,12 +262,12 @@ export default function AssignmentCreateView() {
                         : undefined
                     }
                     onValueChange={(val) => {
-                      vm.form.setValue("branchId", Number(val), {
+                      vm.form.setValue("branchId", val, {
                         shouldValidate: true,
                       });
                       vm.form.setValue(
                         "subjectId",
-                        undefined as unknown as number,
+                        undefined as unknown as string,
                       ); // Clear subject if branch changes
                     }}
                   >
@@ -326,9 +326,9 @@ export default function AssignmentCreateView() {
                     }
                     onValueChange={(val) => {
                       const selectedSub = vm.subjectState.mySubjects.find(
-                        (s: any) => s.subjectId === Number(val),
+                        (s: any) => s.subjectId === val,
                       );
-                      handleSubjectSelect(Number(val), selectedSub);
+                      handleSubjectSelect(val, selectedSub);
                     }}
                   >
                     <SelectTrigger className="bg-background">
@@ -369,7 +369,7 @@ export default function AssignmentCreateView() {
                       : undefined
                   }
                   onValueChange={(val) =>
-                    vm.form.setValue("semesterId", Number(val), {
+                    vm.form.setValue("semesterId", val, {
                       shouldValidate: true,
                     })
                   }

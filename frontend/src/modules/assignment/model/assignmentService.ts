@@ -54,7 +54,7 @@ export const fetchAllAssignments = async (
 };
 
 // 4. Delete Assignment
-export const deleteAssignment = async (assignmentId: number) => {
+export const deleteAssignment = async (assignmentId: string) => {
   const response = await axiosInstance.delete(
     API_ENDPOINT.ASSIGNMENT.DELETE(assignmentId),
   );
@@ -62,7 +62,7 @@ export const deleteAssignment = async (assignmentId: number) => {
 };
 
 export const fetchAssignmentById = async (
-  assignmentId: number,
+  assignmentId: string,
 ): Promise<AssignmentDTO> => {
   const response = await axiosInstance.get<{ data: AssignmentDTO }>(
     API_ENDPOINT.ASSIGNMENT.VIEW(assignmentId),
@@ -72,7 +72,7 @@ export const fetchAssignmentById = async (
 };
 
 export const updateAssignment = async (
-  assignmentId: number,
+  assignmentId: string,
   payload: UpdateAssignmentPayload,
 ) => {
   const response = await axiosInstance.patch(
@@ -82,12 +82,12 @@ export const updateAssignment = async (
   return response.data;
 };
 
-export const deleteUploadedFile = async (fileId: number) => {
+export const deleteUploadedFile = async (fileId: string) => {
   const response = await axiosInstance.delete(API_ENDPOINT.FILE.DELETE(fileId));
   return response.data;
 };
 
-export const fetchMyActiveSubjects = async (academicYearId: number) => {
+export const fetchMyActiveSubjects = async (academicYearId: string) => {
   if (!academicYearId) return [];
   const response = await axiosInstance.get(
     `/professor-subject/my-active-subjects`,

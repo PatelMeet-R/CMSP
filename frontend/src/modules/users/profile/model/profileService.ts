@@ -3,7 +3,7 @@ import { API_ENDPOINT } from "@/core/api/endPoint";
 import type { ProfileResponse } from "@/modules/users/types/users.schemas";
 
 interface FileUploadResponse {
-  data: { id: number; url: string };
+  data: { id: string; url: string };
 }
 // ============================
 export const getProfile = async (): Promise<ProfileResponse> => {
@@ -31,8 +31,8 @@ export const uploadFile = async (
 // ============================
 
 export const updateProfileImage = async (
-  personalInfoId: number,
-  profileImageId: number | null,
+  personalInfoId: string,
+  profileImageId: string | null,
 ) => {
   const response = await axiosInstance.patch(
     API_ENDPOINT.PROFILE.AVATAR_UPDATE(personalInfoId),
