@@ -14,14 +14,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface SubjectTableProps {
   subjects: Subject[];
   isLoading: boolean;
-  isSuperAdmin: boolean;
+  showBranchColumn: boolean;
   onRowClick: (subjectId: string) => void;
 }
 
 export function SubjectTable({
   subjects,
   isLoading,
-  isSuperAdmin,
+  showBranchColumn,
   onRowClick,
 }: SubjectTableProps) {
   const skeletonRows = Array.from({ length: 10 });
@@ -33,7 +33,7 @@ export function SubjectTable({
           <TableRow>
             <TableHead className="w-25 hidden sm:table-cell">Code</TableHead>
             <TableHead>Subject Name</TableHead>
-            {isSuperAdmin && (
+            {showBranchColumn && (
               <TableHead className="hidden md:table-cell">Branch</TableHead>
             )}
             <TableHead className="w-30">Semester</TableHead>
@@ -57,7 +57,7 @@ export function SubjectTable({
                 </TableCell>
 
                 {/* Skeleton for Branch (SuperAdmin only) */}
-                {isSuperAdmin && (
+                {showBranchColumn && (
                   <TableCell className="hidden md:table-cell">
                     <Skeleton className="h-5 w-40" />
                   </TableCell>
@@ -72,7 +72,7 @@ export function SubjectTable({
           ) : subjects.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={isSuperAdmin ? 4 : 3}
+                colSpan={showBranchColumn ? 4 : 3}
                 className="h-48 text-center"
               >
                 <div className="flex flex-col items-center justify-center text-muted-foreground">
@@ -106,7 +106,7 @@ export function SubjectTable({
                 </TableCell>
 
                 {/* Branch Cell (SuperAdmin Only) */}
-                {isSuperAdmin && (
+                {showBranchColumn && (
                   <TableCell className="hidden md:table-cell text-muted-foreground">
                     {subject.branch || "—"}
                   </TableCell>

@@ -3,20 +3,52 @@ import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/use-debounce";
 import { fetchSubjects } from "@/modules/subject/model/subjectService";
 import { useSearchParams } from "react-router-dom";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useBranchViewModel } from "@/modules/branch/viewModel/useBranchViewModel";
+import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
+import { EnumCategory } from "@/modules/enums/types/enum.schemas";
+import type {
+  BranchResponse,
+  SemesterResponse,
+} from "@/modules/subject/types/subject.schemas";
+import { useSubjectViewModelSearch_debounce_delay } from "@/core/Constants/time.contant";
 
 export const useSubjectViewModel = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  //  UI State
+
+  // --- 1. PBAC PERMISSIONS ---
+  const { hasPermission } = usePermissions();
+  const canManageGlobal = hasPermission("subject:manage-global");
+
+  // --- 2. EXTERNAL DEPENDENCIES (Dropdowns) ---
+  const { branches, isLoading: isBranchesLoading } = useBranchViewModel();
+  const { enums: semesters, isLoading: isSemestersLoading } = useEnumViewModel(
+    EnumCategory.SEMESTER,
+  );
+
+  // Format options for the UI
+  const branchOptions =
+    branches?.map((b: BranchResponse) => ({ id: b.id, label: b.name })) || [];
+  const semesterOptions =
+    semesters?.map((s: SemesterResponse) => ({ id: s.id, label: s.value })) ||
+    [];
+
+  // --- 3. UI STATE (URL Params) ---
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = parseInt(searchParams.get("limit") || "10", 10);
   const search = searchParams.get("search") || "";
   const branchId = searchParams.get("branchId") || undefined;
   const semesterId = searchParams.get("semesterId") || undefined;
 
-  //  DEBOUNCE SEARCH
-  const debouncedSearch = useDebounce(search, 1500);
+  const debouncedSearch = useDebounce(
+    search,
+    useSubjectViewModelSearch_debounce_delay || 1500,
+  );
 
-  //  UPDATE URL
+  // Computed State for UI
+  const hasActiveFilters = Boolean(search || branchId || semesterId);
+
+  // --- 4. ACTIONS ---
   const setParam = (key: string, value: string | number | undefined) => {
     setSearchParams((prev) => {
       if (value) prev.set(key, value.toString());
@@ -30,15 +62,13 @@ export const useSubjectViewModel = () => {
   const setSearch = (s: string) => setParam("search", s);
   const setBranchId = (id: string | undefined) => setParam("branchId", id);
   const setSemesterId = (id: string | undefined) => setParam("semesterId", id);
+  const clearFilters = () => setSearchParams(new URLSearchParams());
 
-  //  Reset Pagination: If a user types a new search or changes a filter, go back to Page 1
+  // Reset Pagination on filter change
   useEffect(() => {
-    if (page !== 1) {
-      setPage(1);
-    }
+    if (page !== 1) setPage(1);
   }, [debouncedSearch, branchId, semesterId, limit]);
 
-  //  Group params to pass to API
   const queryParams = {
     page,
     limit,
@@ -47,13 +77,13 @@ export const useSubjectViewModel = () => {
     semesterId,
   };
 
-  //  Fetch Data via React Query
+  // --- 5. DATA FETCHING ---
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["subjects", queryParams],
     queryFn: () => fetchSubjects(queryParams),
   });
 
-  //  Return a clean object for the UI to consume
+  // --- 6. EXPOSE CLEAN INTERFACE TO VIEW ---
   return {
     // Data
     subjects: data?.items || [],
@@ -62,22 +92,26 @@ export const useSubjectViewModel = () => {
     isError,
     error,
 
-    // State Values (for inputs to read)
+    // UI Configuration
+    canManageGlobal,
+    branchOptions,
+    isBranchesLoading,
+    semesterOptions,
+    isSemestersLoading,
+    hasActiveFilters,
+
+    // State Values
     page,
     search,
     branchId,
     semesterId,
 
-    // Actions (for inputs to trigger)
+    // Actions
     setPage,
     setSearch,
     setBranchId,
     setSemesterId,
     setLimit,
-
-    // Helper Action
-    clearFilters: () => {
-      setSearchParams(new URLSearchParams());
-    },
+    clearFilters,
   };
 };

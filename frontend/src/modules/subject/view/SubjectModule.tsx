@@ -13,36 +13,12 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAppSelector } from "@/store/hook";
-import { ROLES } from "@/core/Constants/enums/role-enum-value";
-import { useBranchViewModel } from "@/modules/branch/viewModel/useBranchViewModel";
-import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
-import { EnumCategory } from "@/modules/enums/types/enum.schemas";
-import type {
-  BranchResponse,
-  SemesterResponse,
-} from "@/modules/subject/types/subject.schemas";
 import { ROUTENAME } from "@/core/Constants/RouteName";
 
 export const SubjectModule = () => {
   const navigate = useNavigate();
+
   const vm = useSubjectViewModel();
-
-  const { user } = useAppSelector((state) => state.auth);
-
-  const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
-  const { branches, isLoading: isBranchesLoading } = useBranchViewModel();
-  const { enums: semesters, isLoading: isSemestersLoading } = useEnumViewModel(
-    EnumCategory.SEMESTER,
-  );
-
-  const branchOptions =
-    branches?.map((b: BranchResponse) => ({ id: b.id, label: b.name })) || [];
-  const semesterOptions =
-    semesters?.map((s: SemesterResponse) => ({ id: s.id, label: s.value })) ||
-    [];
-
-  const hasActiveFilters = Boolean(vm.search || vm.branchId || vm.semesterId);
 
   return (
     <div className="w-full max-w-screen-2xl mx-auto">
@@ -54,7 +30,7 @@ export const SubjectModule = () => {
           </CardTitle>
           <CardDescription>
             Manage and view academic subjects
-            {isSuperAdmin ? "across all branches" : "for your branch"}.
+            {vm.canManageGlobal ? " across all branches" : " for your branch"}.
           </CardDescription>
         </CardHeader>
 
@@ -73,7 +49,8 @@ export const SubjectModule = () => {
             </div>
 
             <div className="flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end">
-              {isSuperAdmin && (
+              {/* PBAC Gate for Branch Selection */}
+              {vm.canManageGlobal && (
                 <div className="w-full sm:w-50">
                   <label className="text-xs font-semibold text-muted-foreground mb-1 block">
                     Branch
@@ -81,9 +58,9 @@ export const SubjectModule = () => {
                   <DynamicSelect
                     value={vm.branchId}
                     onChange={vm.setBranchId}
-                    options={branchOptions || []}
+                    options={vm.branchOptions}
                     placeholder="Branch"
-                    isLoading={isBranchesLoading}
+                    isLoading={vm.isBranchesLoading}
                   />
                 </div>
               )}
@@ -95,13 +72,13 @@ export const SubjectModule = () => {
                 <DynamicSelect
                   value={vm.semesterId}
                   onChange={vm.setSemesterId}
-                  options={semesterOptions || []}
+                  options={vm.semesterOptions}
                   placeholder="Semester"
-                  isLoading={isSemestersLoading}
+                  isLoading={vm.isSemestersLoading}
                 />
               </div>
 
-              {hasActiveFilters && (
+              {vm.hasActiveFilters && (
                 <Button
                   variant="ghost"
                   className="text-red-500 hover:text-red-600 hover:bg-red-50 px-3"
@@ -119,7 +96,7 @@ export const SubjectModule = () => {
             <SubjectTable
               subjects={vm.subjects}
               isLoading={vm.isLoading}
-              isSuperAdmin={isSuperAdmin}
+              showBranchColumn={vm.canManageGlobal}
               onRowClick={(id) =>
                 navigate(
                   ROUTENAME.SUBJECT_DETAILS.replace(":id", id.toString()),
