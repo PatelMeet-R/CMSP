@@ -11,7 +11,7 @@ import { FileRepository } from '../data/repository';
 import { FileCreateMapper } from '../data/mapper/file-create.mapper';
 import { FileResponseDto } from '../presentation/dto/response/file-response.dto';
 import { FileResponse } from '../data/mapper/file.response';
-import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
+import  { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 
 @Injectable()
 export class FileUploadService {

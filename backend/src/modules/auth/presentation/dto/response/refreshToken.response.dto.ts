@@ -1,4 +1,4 @@
-import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
+import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 
 export class RefreshTokenResponseDto {
   accessToken: string;

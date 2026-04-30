@@ -95,13 +95,6 @@ export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
       },
     ],
   },
-  //
-  // {
-  //   label: "Setting",
-  //   icon: "Settings",
-  //   link: ROUTENAME.SETTING,
-  //   permission: "setting:manage",
-  // },
   {
     label: "Settings",
     icon: "Settings",
@@ -114,9 +107,15 @@ export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
       },
       {
         label: "System Constants",
-        icon: "Database", // Fits the Enum/Database vibe perfectly
+        icon: "Database", 
         link: ROUTENAME.ENUMS,
         permission: "setting:manage",
+      },
+      {
+        label: "Role Management",
+        icon: "Shield", 
+        link: ROUTENAME.ROLE_MANAGEMENT, 
+        permission: "user:manage-role",
       },
     ],
   },

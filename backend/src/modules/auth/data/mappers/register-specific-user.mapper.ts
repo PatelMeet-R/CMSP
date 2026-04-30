@@ -4,7 +4,7 @@ import { User } from '../../domain/entities/user.entity';
 import { Branch } from 'src/modules/branch/domain/entities/branch.entity';
 import { PersonalInfo } from 'src/modules/users/domain/entities/personal-info.entity';
 import { StaffProfile } from 'src/modules/users/domain/entities/staff-profile.entity';
-import type { Role } from 'src/modules/rbac/domain/entities/role.entity';
+import { Role } from 'src/modules/rbac/domain/entities/role.entity';
 
 export class RegisterSpecificUserMapper {
   static toRegisterEntity(

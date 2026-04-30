@@ -7,6 +7,7 @@ import {
   Save,
   X,
   KeyRound,
+  History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -47,6 +48,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 // 🚨 V2: PBAC Hook
 import { usePermissions } from "@/hooks/usePermissions";
 import { useRoleViewModel } from "@/modules/roles/viewModel/useRoleViewModel";
+import PermissionAuditLogView from "@/modules/users/view/PermissionAuditLogView";
 
 export default function UserDetailsView() {
   const vm = useUserDetailsViewModel();
@@ -558,6 +560,12 @@ export default function UserDetailsView() {
               Permissions
             </TabsTrigger>
           )}
+          {canManagePermissions && (
+            <TabsTrigger value="audit" className="text-sm px-4 py-2">
+              <History className="w-4 h-4 mr-1.5" />
+              Audit Trail
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="details" className="mt-4">
@@ -585,6 +593,13 @@ export default function UserDetailsView() {
                 />
               </CardContent>
             </Card>
+          </TabsContent>
+        )}
+        {canManagePermissions && (
+          <TabsContent value="audit" className="mt-4">
+            <PermissionAuditLogView
+              targetUserId={profile.id?.toString() || ""}
+            />
           </TabsContent>
         )}
       </Tabs>

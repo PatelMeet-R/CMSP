@@ -24,6 +24,9 @@ import {
   KeyRound,
   MailCheck,
   Settings,
+  Database,
+  Sliders,
+  Shield,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -43,12 +46,13 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 
-// 🚨 V2: Import usePermissions instead of roles!
+//  V2: Import usePermissions instead of roles!
 import { usePermissions } from "@/hooks/usePermissions";
 
 const IconMap: Record<string, React.ElementType> = {
   BookOpen,
   Eye,
+  Sliders,
   FilePlusCorner,
   UserCog,
   List,
@@ -63,6 +67,8 @@ const IconMap: Record<string, React.ElementType> = {
   KeyRound,
   MailCheck,
   Settings,
+  Database,
+  Shield,
 };
 
 export const DashboardSideBarDetails = () => {

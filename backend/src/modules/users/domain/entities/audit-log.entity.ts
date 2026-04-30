@@ -1,9 +1,12 @@
+import { User } from 'src/modules/auth/domain/entities/user.entity';
 import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
   CreateDateColumn,
   Index,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 
 @Entity('audit_logs')
@@ -35,4 +38,8 @@ export class AuditLog {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'userId' })
+  user: User;
 }

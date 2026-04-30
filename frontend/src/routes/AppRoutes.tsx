@@ -177,7 +177,10 @@ import SystemSettingsView from "@/modules/settings/view/SystemSettingsView";
 
 import EnumManagementView from "@/modules/enums/view/EnumManagementView";
 
+// role management
+
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import RolesManagementView from "@/modules/roles/view/RolesManagementView";
 
 const AppRoutes = () => {
   return (
@@ -188,6 +191,11 @@ const AppRoutes = () => {
             <Route
               path={ROUTENAME.DASHBOARD}
               element={<div>Dashboard Page</div>}
+            />
+            {/* Role Routes */}
+            <Route
+              path={ROUTENAME.ROLE_MANAGEMENT}
+              element={<RolesManagementView />}
             />
 
             {/* Subject Routes */}

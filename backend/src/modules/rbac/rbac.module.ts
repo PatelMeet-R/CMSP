@@ -14,15 +14,28 @@ import { UserPermissionService } from 'src/modules/rbac/domain/services/user-per
 import { UserPermissionRepository } from 'src/modules/rbac/data/repository/user-permission.repository';
 import { RoleController } from 'src/modules/rbac/presentation/controller/role.controller';
 import { UserPermissionController } from 'src/modules/rbac/presentation/controller/user-permission.controller';
+import { PermissionAuditController } from 'src/modules/rbac/presentation/controller/audit-permission.controller';
+import { PermissionAuditService } from 'src/modules/rbac/domain/services/permission-audit.service';
+import { AuditLog } from 'src/modules/users/domain/entities/audit-log.entity';
 
 @Global()
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Permission, Role, UserPermission, User]),
+    TypeOrmModule.forFeature([
+      Permission,
+      Role,
+      UserPermission,
+      User,
+      AuditLog,
+    ]),
     DiscoveryModule,
     UsersModule,
   ],
-  controllers: [UserPermissionController, RoleController],
+  controllers: [
+    UserPermissionController,
+    RoleController,
+    PermissionAuditController,
+  ],
   providers: [
     RoleService,
     RoleRepository,
@@ -30,6 +43,7 @@ import { UserPermissionController } from 'src/modules/rbac/presentation/controll
     PermissionSyncService,
     UserPermissionRepository,
     UserPermissionService,
+    PermissionAuditService,
   ],
 
   exports: [PermissionComputeService, TypeOrmModule, RoleService],

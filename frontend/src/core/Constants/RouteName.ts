@@ -28,4 +28,5 @@ export const ROUTENAME = {
 
   SETTING: "/settings",
   ENUMS: "/settings/constants",
+  ROLE_MANAGEMENT: "/roles",
 } as const;

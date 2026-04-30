@@ -8,3 +8,22 @@ export const RoleSchema = z.object({
 });
 
 export type RoleResponse = z.infer<typeof RoleSchema>;
+
+export interface RolePermissionItem {
+  id: string;
+  slug: string;
+  resource: string;
+  action: string;
+  isGranted: boolean;
+}
+
+export interface RolePermissionMatrixResponse {
+  role: { id: string; name: string };
+  permissions: RolePermissionItem[];
+}
+export interface RoleListItem {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt?: string;
+}

@@ -13,7 +13,7 @@ import { EnumResponseDto } from './dto/enum.response.dto';
 import { Public } from 'src/core/decorators/public.decorator';
 import { Permissions } from 'src/core/decorators/permissions.decorator';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
-import type { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
+import  { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 
 @Controller('enums')
 export class EnumController {

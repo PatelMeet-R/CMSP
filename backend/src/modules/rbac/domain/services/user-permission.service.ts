@@ -3,7 +3,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { hasPermission, isSuperAdmin } from 'src/common/utils/permissions/permission.utils';
+import { hasPermission } from 'src/common/utils/permissions/permission.utils';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserPermissionRepository } from '../../data/repository/user-permission.repository';
