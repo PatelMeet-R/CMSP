@@ -22,6 +22,7 @@ import { UpdateSubjectMapper } from '../../data/mappers/subject-mapping/subject-
 import { FindSubjectMappingQueryDto } from 'src/common/pagination/dto/find-subject-mapping-query.dto';
 import { ProfessorMappingResponseMapper } from 'src/modules/subject/data/mappers/subject-mapping/subject-mapping-response';
 import { StaffProfileService } from 'src/modules/users/domain/services/staff-profile.service';
+import { PersonalInfoRepository } from 'src/modules/users/data/repository/personal-info-repository';
 import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 import { OnEvent } from '@nestjs/event-emitter';
 import { BulkCloneAssignmentsDto } from 'src/modules/subject/presentation/dto/request/bulk-clone.dto';
@@ -35,6 +36,7 @@ export class ProfessorSubMappingService {
     private readonly enumService: EnumService,
     private professorSubjectRepo: ProfessorSubMappingRepository,
     private readonly staffProfileService: StaffProfileService,
+    private readonly personalInfoRepo: PersonalInfoRepository,
   ) {}
   // ==================================
   async saveAssignedSubject(
@@ -274,10 +276,17 @@ export class ProfessorSubMappingService {
   // =======  GET PROFESSOR SUBJECT HISTORY =======
 
   async getProfessorSubjectHistory(
-    professorId: string,
+    personalInfoId: string,
     currentUser: UserResponseDto,
   ) {
-    if (currentUser.id !== professorId) {
+    const profile = await this.personalInfoRepo.findPersonalInfoById(personalInfoId);
+    if (!profile || !profile.user) {
+      return {};
+    }
+
+    const authUserId = profile.user.id;
+
+    if (currentUser.id !== authUserId) {
       const canReadOthers = hasPermission(
         currentUser.permissions,
         'assignment:read',
@@ -289,7 +298,7 @@ export class ProfessorSubMappingService {
     }
 
     const history =
-      await this.professorSubjectRepo.findHistoryByProfessorId(professorId);
+      await this.professorSubjectRepo.findHistoryByProfessorId(authUserId);
     return Object.groupBy(
       history,
       (curr) => curr.academicYear?.key || 'Unknown Year',
