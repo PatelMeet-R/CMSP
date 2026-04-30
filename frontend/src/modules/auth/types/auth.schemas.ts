@@ -61,8 +61,14 @@ export const UserSchema = z.object({
   permissions: z.array(z.string()), // V2: permission slugs ["assignment:create", ...]
   mustChangePassword: z.boolean(),
   status: z.string(), // V2: "ACTIVE", "INACTIVE", "BLOCKED", etc.
-});
 
+  //  NEWLY HYDRATED FIELDS FOR UI
+
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  fullName: z.string().optional(),
+  profileImageUrl: z.string().nullable().optional(),
+});
 export const LoginResponseSchema = z.object({
   message: z.string(),
   data: UserSchema, // V2: No accessToken/refreshToken in body — they're in HttpOnly cookies

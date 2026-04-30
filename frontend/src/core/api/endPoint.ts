@@ -1,8 +1,14 @@
 export const API_ENDPOINT = {
   INDEX: "/",
-  ROLES: `roles`,
+  ROLES: {
+    VIEW: `roles`,
+    GET_ROLES_PERMISSION: (roleId: string) => `/roles/${roleId}/permissions`,
+    UPDATE_ROLE_DEFAULT_PERMISSION: (roleId: string) =>
+      `/roles/${roleId}/permissions`,
+  },
   AUTH: {
     ME: "",
+    USER_BY_ID: (userId: string) => `/auth/users/${userId}`,
     LOGIN: "auth/login",
     LOGOUT: "auth/logout",
     REFRESH_TOKEN: "auth/refresh",
@@ -73,5 +79,7 @@ export const API_ENDPOINT = {
       `/user-permissions/matrix/${personalInfoId}`,
     SAVE_USER: (personalInfoId: string) =>
       `/user-permissions/bulk/${personalInfoId}`,
+    GET_AUDIT: (targetUserId: string) =>
+      `/permission-audit/user/${targetUserId}`,
   },
 } as const;

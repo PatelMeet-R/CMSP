@@ -45,8 +45,8 @@ export const updateProfileImage = async (
 // ============================
 
 export const fetchUserById = async (userId: string) => {
-  // Replace with your actual user fetch endpoint
-  const response = await axiosInstance.get(`/auth/users/${userId}`);
+  const response = await axiosInstance.get(
+    API_ENDPOINT.AUTH.USER_BY_ID(userId),
+  );
   return response.data.data;
 };
-

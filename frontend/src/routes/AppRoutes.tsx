@@ -181,6 +181,7 @@ import EnumManagementView from "@/modules/enums/view/EnumManagementView";
 
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import RolesManagementView from "@/modules/roles/view/RolesManagementView";
+import DashboardView from "@/modules/dashboard/view/DashboardView";
 
 const AppRoutes = () => {
   return (
@@ -188,10 +189,7 @@ const AppRoutes = () => {
       <Routes>
         <Route element={<AuthGuard />}>
           <Route path="/" element={<Layout />}>
-            <Route
-              path={ROUTENAME.DASHBOARD}
-              element={<div>Dashboard Page</div>}
-            />
+            <Route path={ROUTENAME.DASHBOARD} element={<DashboardView />} />
             {/* Role Routes */}
             <Route
               path={ROUTENAME.ROLE_MANAGEMENT}

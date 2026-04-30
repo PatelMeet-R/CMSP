@@ -24,6 +24,7 @@ import { StatusGuard } from 'src/core/guards/status.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from 'src/core/guards/jwt.auth.guard';
 import { PermissionsGuard } from 'src/core/guards/permissions.guard';
+import { DashboardModule } from 'src/modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { PermissionsGuard } from 'src/core/guards/permissions.guard';
         ttl: configService.get<number>('redis.ttl'), // milliseconds
       }),
     }),
+    DashboardModule,
     AuthModule,
     RbacModule,
     BranchModule,
