@@ -1,43 +1,77 @@
 import type { PaginationMeta } from "@/components/custom/dashboard/DataTablePagination";
 import { z } from "zod";
 
+// export interface ProfileResponse {
+//   id: string;
+//   personalInfoId?: string;
+//   fullName: string;
+//   firstName: string;
+//   lastName: string;
+//   enrollmentNumber: string;
+
+//   profileImageUrl: string | null;
+//   email?: string;
+
+//   gender: string | null;
+//   genderId?: string;
+
+//   branch: string | null;
+//   branchId?: string;
+
+//   joinedYear: string | null;
+//   joinedAcademicYearId?: string;
+
+//   gradYear: string | null;
+//   expectedGraduateYearId?: string;
+
+//   accountStatus: string | null;
+//   userAccountStatusId?: string;
+
+//   address: {
+//     city: string;
+//     state: string;
+//     country: string;
+//     postalCode?: string;
+//   };
+
+//   primaryMobileNumber?: string;
+//   secondaryMobileNumber?: string;
+
+//   createdAt: string;
+// }
 export interface ProfileResponse {
   id: string;
   personalInfoId?: string;
-  fullName: string;
   firstName: string;
   lastName: string;
+  fullName: string;
+  email: string;
   enrollmentNumber: string;
-
-  profileImageUrl: string | null;
-  email?: string;
-
-  gender: string | null;
+  primaryMobileNumber?: string;
+  secondaryMobileNumber?: string;
+  gender?: string;
   genderId?: string;
 
-  branch: string | null;
-  branchId?: string;
-
-  joinedYear: string | null;
-  joinedAcademicYearId?: string;
-
-  gradYear: string | null;
-  expectedGraduateYearId?: string;
-
-  accountStatus: string | null;
-  userAccountStatusId?: string;
-
-  address: {
-    city: string;
-    state: string;
-    country: string;
+  address?: {
+    city?: string;
+    state?: string;
+    country?: string;
     postalCode?: string;
   };
 
-  primaryMobileNumber?: string;
-  secondaryMobileNumber?: string;
+  branch?: string;
+  branchId?: string;
+  joinedYear?: string;
+  joinedAcademicYearId?: string;
+  gradYear?: string;
+  expectedGraduateYearId?: string;
 
-  createdAt: string;
+  accountStatus?: string | { key: string; value: string };
+  role?: string | { name: string; value?: string };
+  roleId?: string;
+
+  profileImageUrl?: string | null;
+  isEmailVerified?: boolean;
 }
 
 export interface FetchUsersQueryParams {

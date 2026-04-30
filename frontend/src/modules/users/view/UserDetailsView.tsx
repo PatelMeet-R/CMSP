@@ -32,8 +32,6 @@ import {
 
 // State & Logic
 import { useUserDetailsViewModel } from "../viewModel/useUserDetailsViewModel";
-import { useAppSelector } from "@/store/hook";
-import { ROLES } from "@/core/Constants/enums/role-enum-value";
 import { EnumCategory } from "@/modules/enums/types/enum.schemas";
 
 // Custom Components
@@ -45,16 +43,19 @@ import { ProfileRenderField } from "@/modules/users/profile/view/ProfileRenderFi
 import { StaffProfessionalDetails } from "@/modules/users/view/StaffProfessionalDetails";
 import UserPermissionMatrix from "@/modules/users/view/UserPermissionMatrix";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+// 🚨 V2: PBAC Hook
 import { usePermissions } from "@/hooks/usePermissions";
+import { useRoleViewModel } from "@/modules/roles/viewModel/useRoleViewModel";
 
 export default function UserDetailsView() {
   const vm = useUserDetailsViewModel();
-  const { user: currentUser } = useAppSelector((state) => state.auth);
 
-  const isSuperAdmin = currentUser?.role === ROLES.SUPER_ADMIN;
-  const isHOD = currentUser?.role === ROLES.HOD;
-  const isAdmin = isSuperAdmin || isHOD;
+  // 🚨 V2 PBAC: Capability Slugs
   const { hasPermission } = usePermissions();
+  const canManageGlobal = hasPermission("user:manage-global");
+  const canUpdateRestricted =
+    hasPermission("user:update-restricted") || canManageGlobal;
   const canManagePermissions = hasPermission("user:manage-permissions");
 
   const {
@@ -78,9 +79,7 @@ export default function UserDetailsView() {
 
   const { enums: accountStatuses, isLoading: isStatusLoading } =
     useEnumViewModel(EnumCategory.ACCOUNT_STATUS);
-  const { enums: roles, isLoading: isRolesLoading } = useEnumViewModel(
-    EnumCategory.USER_ROLE,
-  );
+  const { roles, isRolesLoading } = useRoleViewModel();
 
   const [actionModalOpen, setActionModalOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
@@ -90,11 +89,12 @@ export default function UserDetailsView() {
     typeof profile?.accountStatus === "string"
       ? profile.accountStatus
       : profile?.accountStatus?.key;
+
+  const profileRoleString =
+    typeof profile?.role === "string" ? profile.role : profile?.role?.name;
+
   const currentRoleMatch = roles?.find(
-    (r) =>
-      r.key === profile?.role ||
-      r.value === profile?.role ||
-      r.id === profile?.roleId,
+    (r) => r.name === profileRoleString || r.id === profile?.roleId,
   );
   const currentRoleId = currentRoleMatch?.id?.toString() || "";
 
@@ -139,13 +139,8 @@ export default function UserDetailsView() {
       </div>
     );
 
-  const isStudent =
-    profile.role === "STUDENT" || profile.role?.key === "STUDENT";
-  const isStaff =
-    profile.role === "PROFESSOR" ||
-    profile.role === "HOD" ||
-    profile.role?.key === "PROFESSOR" ||
-    profile.role?.key === "HOD";
+  const isStudent = profileRoleString === "STUDENT";
+  const isStaff = !isStudent;
 
   const breadcrumbLabel =
     isStudent && profile.enrollmentNumber !== "NOT_REQUIRED"
@@ -156,7 +151,7 @@ export default function UserDetailsView() {
     selectedStatus !== currentStatus || selectedRole !== currentRoleId;
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6">
+    <div className="w-full max-w-7xl mx-auto space-y-6 pb-12">
       {/* --- BREADCRUMB --- */}
       <PageBreadcrumb
         items={[
@@ -188,12 +183,12 @@ export default function UserDetailsView() {
               <span className="text-sm font-medium text-muted-foreground">
                 {isStudent && profile.enrollmentNumber !== "NOT_REQUIRED"
                   ? `${profile.enrollmentNumber}`
-                  : `Role: ${profile.role?.value || profile.role}`}
+                  : `Role: ${profileRoleString}`}
               </span>
             </div>
           </div>
 
-          {isAdmin && (
+          {canUpdateRestricted && (
             <div className="flex flex-row w-full sm:w-auto gap-2 justify-end">
               {/* ACTIONS MODAL */}
               <Dialog open={actionModalOpen} onOpenChange={setActionModalOpen}>
@@ -248,7 +243,7 @@ export default function UserDetailsView() {
                       </span>
                     </div>
 
-                    {isSuperAdmin && (
+                    {canManageGlobal && (
                       <div className="space-y-2.5">
                         <FieldLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                           SYSTEM ROLE
@@ -262,18 +257,20 @@ export default function UserDetailsView() {
                             <SelectValue placeholder="Select Role" />
                           </SelectTrigger>
                           <SelectContent>
+                            {/* 🚨 FIX: changed role.key to role.name */}
                             {roles?.map((role) => (
                               <SelectItem
                                 key={role.id}
                                 value={role.id.toString()}
                               >
-                                {role.key}
+                                {role.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                         <span className="text-[11px] text-muted-foreground">
-                          Controls data access and administrative privileges.
+                          Controls default base access and administrative
+                          privileges.
                         </span>
                       </div>
                     )}
@@ -290,7 +287,7 @@ export default function UserDetailsView() {
                       onClick={handleSaveSystemActions}
                       disabled={isUpdating || !hasPendingModalChanges}
                     >
-                      {isUpdating ? <SpinnerCustom /> : null}
+                      {isUpdating && <SpinnerCustom />}
                       Save Changes
                     </Button>
                   </div>
@@ -319,7 +316,7 @@ export default function UserDetailsView() {
                       setIsEditing(false);
                     }}
                   >
-                    <X className="w-4 h-4 sm:mr-1" />{" "}
+                    <X className="w-4 h-4 sm:mr-1" />
                     <span className="hidden sm:inline">Cancel</span>
                   </Button>
                   <Button
@@ -383,7 +380,7 @@ export default function UserDetailsView() {
                       variant="secondary"
                       className="text-[10px] sm:text-xs px-2 py-0"
                     >
-                      {profile.role?.value || profile.role || "Student"}
+                      {profileRoleString || "Student"}
                     </Badge>
                     {profile.branch && (
                       <Badge
@@ -402,13 +399,14 @@ export default function UserDetailsView() {
             <form className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-6">
                 <div className="grid grid-cols-2 gap-4 col-span-1 md:col-span-2 lg:col-span-1">
+                  {/* 🚨 FIX: Replaced isAdmin with canEditRestricted */}
                   <ProfileRenderField
                     name="firstName"
                     label="FIRST NAME"
                     isRestricted={true}
                     form={form}
                     isEditing={isEditing}
-                    isAdmin={isAdmin}
+                    canEditRestricted={canUpdateRestricted}
                   />
                   <ProfileRenderField
                     name="lastName"
@@ -416,7 +414,7 @@ export default function UserDetailsView() {
                     isRestricted={true}
                     form={form}
                     isEditing={isEditing}
-                    isAdmin={isAdmin}
+                    canEditRestricted={canUpdateRestricted}
                   />
                 </div>
 
@@ -426,10 +424,10 @@ export default function UserDetailsView() {
                   isRestricted={true}
                   form={form}
                   isEditing={isEditing}
-                  isAdmin={isAdmin}
+                  canEditRestricted={canUpdateRestricted}
                 />
 
-                {isSuperAdmin && (
+                {canManageGlobal && (
                   <div className="flex flex-col gap-1.5">
                     {!isEditing ? (
                       <>
@@ -444,7 +442,7 @@ export default function UserDetailsView() {
                       <BranchDropdownMenu
                         control={form.control}
                         name="branchId"
-                        disabled={!isAdmin}
+                        disabled={!canManageGlobal}
                       />
                     )}
                   </div>
@@ -486,7 +484,7 @@ export default function UserDetailsView() {
                         name="expectedGraduateYearId"
                         label="Graduation Year"
                         category={EnumCategory.ACADEMIC_YEAR}
-                        disabled={!isAdmin}
+                        disabled={!canUpdateRestricted}
                       />
                     )}
                   </div>
@@ -507,16 +505,16 @@ export default function UserDetailsView() {
                     label="PRIMARY MOBILE"
                     isRestricted={false}
                     form={form}
-                    isEditing={false}
-                    isAdmin={isAdmin}
+                    isEditing={isEditing}
+                    canEditRestricted={canUpdateRestricted}
                   />
                   <ProfileRenderField
                     name="secondaryMobileNumber"
                     label="SEC. MOBILE"
                     isRestricted={false}
                     form={form}
-                    isEditing={false}
-                    isAdmin={isAdmin}
+                    isEditing={isEditing}
+                    canEditRestricted={canUpdateRestricted}
                   />
                 </div>
 
@@ -526,20 +524,19 @@ export default function UserDetailsView() {
                     label="CITY"
                     isRestricted={false}
                     form={form}
-                    isEditing={false}
-                    isAdmin={isAdmin}
+                    isEditing={isEditing}
+                    canEditRestricted={canUpdateRestricted}
                   />
                   <ProfileRenderField
                     name="state"
                     label="STATE"
                     isRestricted={false}
                     form={form}
-                    isEditing={false}
-                    isAdmin={isAdmin}
+                    isEditing={isEditing}
+                    canEditRestricted={canUpdateRestricted}
                   />
                 </div>
               </div>
-              {/* ============= */}
             </form>
           </div>
         </CardContent>
@@ -547,7 +544,10 @@ export default function UserDetailsView() {
 
       {/* --- TABS: PROFESSIONAL INFO & PERMISSIONS --- */}
       <Tabs defaultValue="details" className="w-full">
-        <TabsList variant="line" className="w-full justify-start border-b px-0 gap-0">
+        <TabsList
+          variant="line"
+          className="w-full justify-start border-b px-0 gap-0"
+        >
           <TabsTrigger value="details" className="text-sm px-4 py-2">
             <UserPen className="w-4 h-4 mr-1.5" />
             Details
@@ -560,7 +560,6 @@ export default function UserDetailsView() {
           )}
         </TabsList>
 
-        {/* Tab 1: Staff Professional Details (existing) */}
         <TabsContent value="details" className="mt-4">
           {isStaff && (
             <StaffProfessionalDetails
@@ -577,11 +576,10 @@ export default function UserDetailsView() {
           )}
         </TabsContent>
 
-        {/* Tab 2: Permission Matrix */}
         {canManagePermissions && (
           <TabsContent value="permissions" className="mt-4">
-            <Card className="border-none shadow-md">
-              <CardContent className="p-4 sm:p-6">
+            <Card className="border-none shadow-md bg-transparent">
+              <CardContent className="p-0 sm:p-2">
                 <UserPermissionMatrix
                   personalInfoId={profile.id?.toString() || ""}
                 />

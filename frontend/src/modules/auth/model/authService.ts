@@ -82,3 +82,10 @@ export const verifyEmailToken = async (token: string) => {
   );
   return response.data;
 };
+
+export const fetchCurrentUser = async (): Promise<LoginResponse> => {
+  // Assuming API_ENDPOINT.AUTH.ME is something like "/auth/me"
+  // It should return the exact same user object structure as LOGIN
+  const response = await axiosInstance.get(API_ENDPOINT.AUTH.ME);
+  return response.data;
+};

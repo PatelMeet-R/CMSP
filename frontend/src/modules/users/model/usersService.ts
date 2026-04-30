@@ -5,8 +5,13 @@ import type {
   PermissionMatrixResponse,
 } from "@/modules/users/types/permission.interface";
 import type {
+  ProfessorSubjectHistoryMap,
+  StaffProfileResponse,
+} from "@/modules/users/types/staff.interface";
+import type {
   FetchUsersQueryParams,
   PaginatedUserResponse,
+  ProfileResponse,
   StaffRegisterFormValues,
   UpdateProfileFormValues,
 } from "@/modules/users/types/users.schemas";
@@ -19,7 +24,9 @@ export const fetchUsersList = async (
   });
   return response.data;
 };
-export const fetchUserProfile = async (id: string) => {
+export const fetchUserProfile = async (
+  id: string,
+): Promise<ProfileResponse> => {
   const response = await axiosInstance.get(
     API_ENDPOINT.PROFILE.VIEW_PROFILE(id),
   );
@@ -54,11 +61,15 @@ export const registerStaff = async (data: StaffRegisterFormValues) => {
   return response.data;
 };
 
-export const fetchStaffProfile = async (userId: string) => {
+export const fetchStaffProfile = async (
+  userId: string,
+): Promise<StaffProfileResponse> => {
   const response = await axiosInstance.get(API_ENDPOINT.STAFF.VIEW(userId));
   return response.data.data;
 };
-export const fetchProfessorHistory = async (userId: string) => {
+export const fetchProfessorSubjectHistory = async (
+  userId: string,
+): Promise<ProfessorSubjectHistoryMap> => {
   const response = await axiosInstance.get(
     API_ENDPOINT.STAFF.SUBJECT_HISTORY(userId),
   );

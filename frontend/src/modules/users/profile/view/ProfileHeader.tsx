@@ -19,6 +19,10 @@ export default function ProfileHeader({ user }: { user: ProfileResponse }) {
   const handleImageRemove = async () => {
     await removeAvatar();
   };
+  const displayStatus =
+    typeof user.accountStatus === "string"
+      ? user.accountStatus
+      : user.accountStatus?.value || "Unknown";
 
   return (
     <div className="flex items-center gap-6 p-6 border-b bg-card rounded-t-xl">
@@ -50,7 +54,7 @@ export default function ProfileHeader({ user }: { user: ProfileResponse }) {
           {user.enrollmentNumber || user.email}
         </p>
         <span className="mt-2 inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 w-fit">
-          {user.branch || "No Branch"} • {user.accountStatus}
+          {user.branch || "No Branch"} • {displayStatus}
         </span>
       </div>
     </div>

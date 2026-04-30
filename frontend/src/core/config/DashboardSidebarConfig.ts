@@ -96,12 +96,12 @@ export const DASHBOARD_SIDEBAR_CONFIG: SidebarItem[] = [
     ],
   },
   //
-  {
-    label: "Setting",
-    icon: "Settings",
-    link: ROUTENAME.SETTING,
-    permission: "setting:manage",
-  },
+  // {
+  //   label: "Setting",
+  //   icon: "Settings",
+  //   link: ROUTENAME.SETTING,
+  //   permission: "setting:manage",
+  // },
   {
     label: "Settings",
     icon: "Settings",

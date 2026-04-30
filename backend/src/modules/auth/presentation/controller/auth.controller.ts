@@ -42,6 +42,19 @@ export class AuthController {
       data: await this.authService.register(dto),
     };
   }
+  @Get('me')
+  @HttpCode(HttpStatus.OK)
+  async getCurrentUser(@CurrentUser() currentUser: any) {
+    // We only need the ID from the token payload to fetch the absolute latest data
+    const latestUserProfile = await this.authService.getHydratedUser(
+      currentUser.id,
+    );
+
+    return {
+      message: 'User profile retrieved successfully',
+      data: latestUserProfile,
+    };
+  }
 
   @Public()
   @Post('login')

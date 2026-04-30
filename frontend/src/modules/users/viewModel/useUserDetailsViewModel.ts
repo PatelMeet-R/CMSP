@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toastService } from "@/core/toast/toastService";
 import { getAxiosErrorMessage } from "@/core/helper/errorMessage";
 import {
-  fetchProfessorHistory,
+  fetchProfessorSubjectHistory,
   fetchStaffProfile,
   fetchUserProfile,
   updateAccountStatus,
@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   updateProfileSchema,
+  type ProfileResponse,
   type UpdateProfileFormValues,
 } from "@/modules/users/types/users.schemas";
 import { useEnumViewModel } from "@/modules/enums/viewModel/useEnumViewModel";
@@ -24,6 +25,10 @@ import { EnumCategory } from "@/modules/enums/types/enum.schemas";
 // V2 Imports
 import { usePermissions } from "@/hooks/usePermissions";
 import { ROLES } from "@/core/Constants/enums/role-enum-value";
+import type {
+  ProfessorSubjectHistoryMap,
+  StaffProfileResponse,
+} from "@/modules/users/types/staff.interface";
 
 export const useUserDetailsViewModel = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,7 +56,7 @@ export const useUserDetailsViewModel = () => {
     data: userProfile,
     isLoading,
     isError,
-  } = useQuery({
+  } = useQuery<ProfileResponse>({
     queryKey: ["user-details", userId],
     queryFn: () => fetchUserProfile(userId),
     enabled: !!userId,
@@ -59,26 +64,35 @@ export const useUserDetailsViewModel = () => {
 
   //  V2 Fix: userProfile.role is now a string like "PROFESSOR".
   // We check this because Staff/History tables are specifically for teaching staff, regardless of permissions.
-  const isTeachingStaff = [
+  const profileRoleString =
+    typeof userProfile?.role === "string"
+      ? userProfile.role
+      : userProfile?.role?.name || "";
+
+  const teachingRoles: string[] = [
     ROLES.PROFESSOR,
     ROLES.HOD,
     ROLES.SUPER_ADMIN,
-  ].includes(userProfile?.role || "");
+  ];
+
+  const isTeachingStaff = teachingRoles.includes(profileRoleString);
 
   // FETCH STAFF PROFILE
-  const { data: staffProfile, isLoading: isStaffLoading } = useQuery({
-    queryKey: ["staff-profile", userId],
-    queryFn: () => fetchStaffProfile(userId),
-    enabled: !!userId && isTeachingStaff,
-    retry: false,
-  });
+  const { data: staffProfile, isLoading: isStaffLoading } =
+    useQuery<StaffProfileResponse>({
+      queryKey: ["staff-profile", userId],
+      queryFn: () => fetchStaffProfile(userId),
+      enabled: !!userId && isTeachingStaff,
+      retry: false,
+    });
 
   // FETCH SUBJECT HISTORY
-  const { data: historyMap, isLoading: isHistoryLoading } = useQuery({
-    queryKey: ["professor-history", userId],
-    queryFn: () => fetchProfessorHistory(userId),
-    enabled: !!userId && isTeachingStaff,
-  });
+  const { data: historyMap, isLoading: isHistoryLoading } =
+    useQuery<ProfessorSubjectHistoryMap>({
+      queryKey: ["professor-history", userId],
+      queryFn: () => fetchProfessorSubjectHistory(userId),
+      enabled: !!userId && isTeachingStaff,
+    });
 
   // FETCH SETTINGS FOR AUTO-EXPAND
   const { enums: academicYears } = useEnumViewModel(EnumCategory.ACADEMIC_YEAR);

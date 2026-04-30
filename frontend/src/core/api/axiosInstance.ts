@@ -1,7 +1,8 @@
 import { ROUTENAME } from "@/core/Constants/RouteName";
 import { toastService } from "@/core/toast/toastService";
 import { store } from "@/store/store";
-import { logout } from "@/store/features/auth.slice";
+import { logout, setCredentials } from "@/store/features/auth.slice";
+import { fetchCurrentUser } from "@/modules/auth/model/authService";
 import axios from "axios";
 
 // =============================================
@@ -125,11 +126,28 @@ axiosInstance.interceptors.response.use(
           // BLOCKED / REJECTED
           window.location.href = ROUTENAME.SUSPENDED;
         }
+        window.location.href = ROUTENAME.SUSPENDED;
         return Promise.reject(error);
       }
 
-      // Regular permission denial (PermissionsGuard)
-      toastService.error("You do not have permission to perform this action.");
+      // // Regular permission denial (PermissionsGuard)
+      // toastService.error("You do not have permission to perform this action.");
+      // return Promise.reject(error);
+      if (!originalRequest.url?.includes("/auth/me")) {
+        try {
+          // Fetch the fresh user profile (which includes the updated permissions array)
+          const freshUserData = await fetchCurrentUser();
+          // Update Redux! The UI will instantly react (hiding/showing buttons).
+          store.dispatch(setCredentials(freshUserData.data));
+        } catch (syncError) {
+          console.error("Failed to sync updated permissions", syncError);
+        }
+      }
+
+      // Show the toast so the user knows why it failed
+      toastService.error(
+        message || "You do not have permission to perform this action.",
+      );
       return Promise.reject(error);
     }
 

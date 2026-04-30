@@ -80,10 +80,7 @@ export function HodProfileModal({
           <div className="flex flex-col items-center text-center space-y-4 py-4 animate-in fade-in zoom-in-95 duration-200">
             <Avatar className="h-24 w-24 border-2 border-primary shadow-sm">
               <AvatarImage
-                src={
-                  vm.hodDetails?.profileImageUrl ||
-                  vm.hodDetails?.profileImage?.url
-                }
+                src={vm.hodDetails.profileImageUrl || undefined}
                 alt="HOD Profile"
               />
               <AvatarFallback className="text-2xl bg-primary/10 text-primary">
@@ -120,8 +117,8 @@ export function HodProfileModal({
               <div className="flex items-center gap-3">
                 <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
                 <span>
-                  {vm.hodDetails.city
-                    ? `${vm.hodDetails.city}, ${vm.hodDetails.state}`
+                  {vm.hodDetails.address?.city
+                    ? `${vm.hodDetails.address.city}, ${vm.hodDetails.address.state}`
                     : "Location not provided"}
                 </span>
               </div>

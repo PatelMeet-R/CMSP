@@ -343,4 +343,46 @@ export class AuthService {
     }
   }
   // =====================================
+
+  async getHydratedUser(userId: string) {
+    // 1. Fetch the user with their base role and profile info
+    const user = await this.authRepository.findUserByIdWithRole(userId);
+
+    if (!user) {
+      throw new UnauthorizedException(
+        'User no longer exists or session is invalid.',
+      );
+    }
+
+    // 2.  CRITICAL: Fetch freshly computed permissions!
+    // Since the Matrix Save cleared the Redis cache, this will securely recalculate them.
+    const effectivePermissions =
+      await this.permissionComputeService.getEffectivePermissions(userId);
+
+    // 3. Map to match the EXACT structure of your frontend `LoginResponse.data`
+
+    console.log('===auth/me=== route is used and here are details ');
+    console.log(`effectivePermissions list ${effectivePermissions}`);
+    console.log(``);
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.personalInfo?.firstName,
+      lastName: user.personalInfo?.lastName,
+      fullName:
+        `${user.personalInfo?.firstName} ${user.personalInfo?.lastName}`.trim(),
+      profileImageUrl:
+        user.personalInfo?.profileImage?.url || user.personalInfo?.profileImage,
+      branchId: user.personalInfo?.branch?.id,
+
+      // Send role as a string (matching your V2 frontend refactor)
+      role: user.role?.name,
+
+      // Convert the Set<string> back to a standard string[] for JSON serialization
+      permissions: Array.from(effectivePermissions),
+
+      // Send the current account status so the frontend can react if they were suspended
+      status: user.personalInfo?.userAccountStatus?.key || 'ACTIVE',
+    };
+  }
 }

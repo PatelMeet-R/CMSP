@@ -1,5 +1,3 @@
-import { useState, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Shield,
   ShieldPlus,
@@ -12,8 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { usePermissions } from "@/hooks/usePermissions";
-import { fetchPermissionMatrix } from "@/modules/users/model/usersService";
+import { useUserPermissionMatrixViewModel } from "../viewModel/useUserPermissionMatrixViewModel";
 import type {
   LocalOverride,
   PermissionMatrixItem,
@@ -45,120 +42,10 @@ interface Props {
 }
 
 export default function UserPermissionMatrix({ personalInfoId }: Props) {
-  const { hasPermission } = usePermissions();
-  const canManage = hasPermission("user:manage-permissions");
-
-  const queryClient = useQueryClient();
-  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [localOverrides, setLocalOverrides] = useState<
-    Map<string, LocalOverride>
-  >(new Map());
-
-  const {
-    data: matrix,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ["permission-matrix", personalInfoId],
-    queryFn: () => fetchPermissionMatrix(personalInfoId),
-    enabled: !!personalInfoId && canManage,
-    staleTime: 30_000,
-  });
-
-  // Compute which items are "dirty" (changed from server state)
-  const dirtyCount = localOverrides.size;
-
-  // Filter items by search
-  const filterBySearch = (items: PermissionMatrixItem[]) => {
-    if (!searchQuery.trim()) return items;
-    const q = searchQuery.toLowerCase();
-    return items.filter((item) => item.slug.toLowerCase().includes(q));
-  };
-
-  const filteredBase = useMemo(
-    () =>
-      groupByResource(
-        filterBySearch(matrix?.section1_baseRolePermissions || []),
-      ),
-    [matrix?.section1_baseRolePermissions, searchQuery],
-  );
-
-  const filteredExtra = useMemo(
-    () =>
-      groupByResource(
-        filterBySearch(matrix?.section2_extraAssignablePermissions || []),
-      ),
-    [matrix?.section2_extraAssignablePermissions, searchQuery],
-  );
-
-  /**
-   * Resolves the effective checked state for a permission.
-   * Local overrides take precedence over server state.
-   */
-  function getEffectiveChecked(item: PermissionMatrixItem): boolean {
-    const override = localOverrides.get(item.slug);
-    if (!override) return item.isChecked;
-
-    if (override.state === "revoke") return false;
-    if (override.state === "grant") return true;
-    return item.isChecked; // "default" = server state
-  }
-
-  /**
-   * Handles toggling a permission switch.
-   * For base permissions: unchecking = revoke, checking = reset to default
-   * For extra permissions: checking = grant, unchecking = reset to default
-   */
-  function handleToggle(
-    item: PermissionMatrixItem,
-    isBaseSection: boolean,
-    newChecked: boolean,
-  ) {
-    setLocalOverrides((prev) => {
-      const next = new Map(prev);
-
-      if (isBaseSection) {
-        if (!newChecked) {
-          // Admin is revoking a base permission
-          next.set(item.slug, { slug: item.slug, state: "revoke" });
-        } else {
-          // Admin is restoring it — if it was originally checked, remove the override
-          if (item.isChecked) {
-            next.delete(item.slug);
-          } else {
-            next.set(item.slug, { slug: item.slug, state: "default" });
-          }
-        }
-      } else {
-        if (newChecked) {
-          // Admin is granting an extra permission
-          next.set(item.slug, { slug: item.slug, state: "grant" });
-        } else {
-          // Admin is removing the grant — if it was originally unchecked, remove the override
-          if (!item.isChecked) {
-            next.delete(item.slug);
-          } else {
-            next.set(item.slug, { slug: item.slug, state: "default" });
-          }
-        }
-      }
-
-      return next;
-    });
-  }
-
-  const handleSaveSuccess = () => {
-    setIsSaveDialogOpen(false);
-    setLocalOverrides(new Map());
-    queryClient.invalidateQueries({
-      queryKey: ["permission-matrix", personalInfoId],
-    });
-  };
+  const vm = useUserPermissionMatrixViewModel(personalInfoId);
 
   // ---- PERMISSION CHECK ----
-  if (!canManage) {
+  if (!vm.canManage) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
         <Shield className="w-10 h-10 opacity-40" />
@@ -170,7 +57,7 @@ export default function UserPermissionMatrix({ personalInfoId }: Props) {
   }
 
   // ---- LOADING ----
-  if (isLoading) {
+  if (vm.isLoading) {
     return (
       <div className="space-y-6 p-1">
         <Skeleton className="h-10 w-full rounded-lg" />
@@ -184,7 +71,7 @@ export default function UserPermissionMatrix({ personalInfoId }: Props) {
   }
 
   // ---- ERROR ----
-  if (isError || !matrix) {
+  if (vm.isError || !vm.matrix) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
         <AlertTriangle className="w-10 h-10 text-destructive/60" />
@@ -200,22 +87,22 @@ export default function UserPermissionMatrix({ personalInfoId }: Props) {
         <div className="flex items-center gap-2">
           <h3 className="text-base font-semibold text-foreground">
             Permissions for{" "}
-            <span className="text-primary">{matrix.targetUser.name}</span>
+            <span className="text-primary">{vm.matrix.targetUser.name}</span>
           </h3>
           <Badge variant="outline" className="text-xs uppercase tracking-wider">
-            {matrix.targetUser.role}
+            {vm.matrix.targetUser.role}
           </Badge>
         </div>
 
-        {dirtyCount > 0 && (
+        {vm.dirtyCount > 0 && (
           <div className="flex items-center gap-3">
             <Badge
               variant="secondary"
               className="text-xs bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
             >
-              {dirtyCount} unsaved {dirtyCount === 1 ? "change" : "changes"}
+              {vm.dirtyCount} unsaved {vm.dirtyCount === 1 ? "change" : "changes"}
             </Badge>
-            <Button size="sm" onClick={() => setIsSaveDialogOpen(true)}>
+            <Button size="sm" onClick={() => vm.setIsSaveDialogOpen(true)}>
               <Save className="w-4 h-4 mr-2" />
               Save Changes
             </Button>
@@ -229,8 +116,8 @@ export default function UserPermissionMatrix({ personalInfoId }: Props) {
         <input
           type="text"
           placeholder="Search permissions... (e.g. assignment:create)"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          value={vm.searchQuery}
+          onChange={(e) => vm.setSearchQuery(e.target.value)}
           className="w-full h-10 pl-10 pr-4 text-sm border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary/50 transition-colors"
         />
       </div>
@@ -238,13 +125,13 @@ export default function UserPermissionMatrix({ personalInfoId }: Props) {
       {/* ---- SECTION 1: BASE ROLE PERMISSIONS ---- */}
       <PermissionSection
         title="Inherited Permissions"
-        subtitle={`Comes from the ${matrix.targetUser.role} role. Toggling off will revoke this permission for this user only.`}
+        subtitle={`Comes from the ${vm.matrix.targetUser.role} role. Toggling off will revoke this permission for this user only.`}
         icon={<Shield className="w-4 h-4 text-blue-500" />}
-        groups={filteredBase}
+        groups={vm.filteredBase}
         isBaseSection={true}
-        getChecked={getEffectiveChecked}
-        onToggle={handleToggle}
-        localOverrides={localOverrides}
+        getChecked={vm.getEffectiveChecked}
+        onToggle={vm.handleToggle}
+        localOverrides={vm.localOverrides}
         accentColor="blue"
       />
 
@@ -253,21 +140,21 @@ export default function UserPermissionMatrix({ personalInfoId }: Props) {
         title="Extra Permissions"
         subtitle="Permissions you can grant to this user beyond their base role."
         icon={<ShieldPlus className="w-4 h-4 text-emerald-500" />}
-        groups={filteredExtra}
+        groups={vm.filteredExtra}
         isBaseSection={false}
-        getChecked={getEffectiveChecked}
-        onToggle={handleToggle}
-        localOverrides={localOverrides}
+        getChecked={vm.getEffectiveChecked}
+        onToggle={vm.handleToggle}
+        localOverrides={vm.localOverrides}
         accentColor="emerald"
       />
 
       {/* ---- SAVE DIALOG ---- */}
       <PermissionSaveDialog
-        isOpen={isSaveDialogOpen}
-        onClose={() => setIsSaveDialogOpen(false)}
+        isOpen={vm.isSaveDialogOpen}
+        onClose={() => vm.setIsSaveDialogOpen(false)}
         personalInfoId={personalInfoId}
-        localOverrides={localOverrides}
-        onSuccess={handleSaveSuccess}
+        localOverrides={vm.localOverrides}
+        onSuccess={vm.handleSaveSuccess}
       />
     </div>
   );

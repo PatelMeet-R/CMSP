@@ -18,6 +18,7 @@ import { PageBreadcrumb } from "@/components/custom/dashboard/PageBreadcrumb";
 import { DynamicSelect } from "@/components/custom/dashboard/DynamicSelect";
 import { useBranchViewModel } from "@/modules/branch/viewModel/useBranchViewModel";
 import { usePermissions } from "@/hooks/usePermissions";
+import { ROLES } from "@/core/Constants/enums/role-enum-value";
 
 export default function CreateStaffView() {
   const { form, onSubmit, isSubmitting, navigate, roles, isRolesLoading } =
@@ -32,12 +33,18 @@ export default function CreateStaffView() {
   const branchOptions =
     branches?.map((b) => ({ id: b.id, label: b.name })) || [];
 
-  // 🚨 PBAC Role Filtering
+  //  PBAC Role Filtering
   const availableRoles =
     roles
       ?.filter((r) => {
-        if (r.name === "SUPER_ADMIN" || r.name === "STUDENT") return false;
-        if (r.name === "HOD") return canAssignHOD;
+        if (
+          r.name === ROLES.SUPER_ADMIN ||
+          "SUPER_ADMIN" ||
+          r.name === ROLES.STUDENT ||
+          "STUDENT"
+        )
+          return false;
+        if (r.name === ROLES.HOD || "HOD") return canAssignHOD;
         return true; // Assume can assign PROFESSOR
       })
       .map((r) => ({ id: r.id, label: r.name.toUpperCase() })) || [];

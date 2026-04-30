@@ -2,6 +2,7 @@ export const API_ENDPOINT = {
   INDEX: "/",
   ROLES: `roles`,
   AUTH: {
+    ME: "",
     LOGIN: "auth/login",
     LOGOUT: "auth/logout",
     REFRESH_TOKEN: "auth/refresh",

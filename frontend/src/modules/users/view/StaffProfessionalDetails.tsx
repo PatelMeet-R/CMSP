@@ -2,8 +2,9 @@ import {
   Briefcase,
   Building,
   CalendarDays,
-  BookOpen,
   GraduationCap,
+  AlertCircle,
+  Clock,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,8 +16,10 @@ import {
 } from "@/components/ui/accordion";
 import type {
   StaffProfessionalDetailsProps,
-  SubjectAssignmentData,
+  // SubjectAssignmentData,
 } from "@/modules/users/types/staff.interface";
+import { Skeleton } from "@/components/ui/skeleton";
+import { format } from "date-fns";
 
 export function StaffProfessionalDetails({
   staffProfile,
@@ -24,6 +27,17 @@ export function StaffProfessionalDetails({
   expandedYearKey,
   setExpandedYearKey,
 }: StaffProfessionalDetailsProps) {
+  if (!staffProfile) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  const historyEntries = historyMap ? Object.entries(historyMap) : [];
+  const hasHistory = historyEntries.length > 0;
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
       {/* LEFT COLUMN: Professional Info Card */}
@@ -64,110 +78,95 @@ export function StaffProfessionalDetails({
       </div>
 
       {/* RIGHT COLUMN: Subject History Accordion */}
-      <div className="lg:col-span-2">
-        <Card className="shadow-sm h-full">
-          <CardHeader className="border-b pb-4">
-            <CardTitle className="text-xl flex items-center gap-2">
-              <BookOpen className="w-6 h-6 text-primary" />
-              Subject Allocation History
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            {/* Empty State */}
-            {!historyMap || Object.keys(historyMap).length === 0 ? (
-              <div className="text-center py-12 bg-muted/20 rounded-lg border border-dashed">
-                <BookOpen className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-                <h3 className="text-lg font-medium text-foreground">
-                  No Subjects Assigned
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  This professor has not been assigned to any subjects yet.
-                </p>
-              </div>
-            ) : (
-              /* The Interactive Accordion */
-              <Accordion
-                type="single"
-                collapsible
-                className="w-full"
-                value={expandedYearKey}
-                onValueChange={setExpandedYearKey}
-              >
-                {Object.entries(historyMap).map(
-                  ([yearKey, assignments]: [
-                    string,
-                    SubjectAssignmentData[],
-                  ]) => {
-                    const displayYear = yearKey
-                      .replace("AY_", "")
-                      .replace("_", " - ");
-                    const isCurrentYear = expandedYearKey === yearKey;
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <div className="bg-muted/30 px-5 py-4 border-b flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-semibold flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" /> Teaching History
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Subjects assigned to this professor across academic years.
+            </p>
+          </div>
+          <Badge variant="secondary" className="font-mono">
+            {hasHistory ? `${historyEntries.length} Years` : "No Records"}
+          </Badge>
+        </div>
 
-                    return (
-                      <AccordionItem
-                        value={yearKey}
-                        key={yearKey}
-                        className="border-b last:border-none"
-                      >
-                        <AccordionTrigger className="hover:no-underline hover:bg-muted/30 px-4 rounded-md transition-colors">
-                          <div className="flex items-center gap-3">
-                            <span className="font-semibold text-lg">
-                              {displayYear}
-                            </span>
-                            {isCurrentYear && (
-                              <Badge
-                                variant="default"
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                Active Year
-                              </Badge>
-                            )}
-                            <Badge variant="outline">
-                              {assignments.length} Subjects
+        <div className="p-2 sm:p-4">
+          {!hasHistory ? (
+            <div className="text-center py-10 flex flex-col items-center justify-center text-muted-foreground">
+              <AlertCircle className="w-8 h-8 opacity-20 mb-2" />
+              <p className="text-sm">No teaching history found.</p>
+            </div>
+          ) : (
+            <Accordion
+              type="single"
+              collapsible
+              value={expandedYearKey}
+              onValueChange={setExpandedYearKey}
+              className="w-full space-y-3"
+            >
+              {historyEntries.map(([yearKey, items]) => (
+                <AccordionItem
+                  key={yearKey}
+                  value={yearKey}
+                  className="border rounded-lg bg-card overflow-hidden shadow-sm"
+                >
+                  <AccordionTrigger className="px-4 py-3 hover:bg-muted/50 hover:no-underline transition-colors data-[state=open]:bg-muted/30 data-[state=open]:border-b">
+                    <div className="flex items-center justify-between w-full pr-4">
+                      <span className="font-semibold text-sm">
+                        Academic Year: {yearKey}
+                      </span>
+                      <Badge variant="outline" className="bg-background">
+                        {items.length} Subjects
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-2 pb-3 px-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                      {items.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex flex-col gap-1.5 p-3 rounded-lg border bg-muted/10 relative"
+                        >
+                          {item.deletedAt && (
+                            <Badge
+                              variant="destructive"
+                              className="absolute top-2 right-2 text-[9px] px-1.5 py-0"
+                            >
+                              Revoked
                             </Badge>
-                          </div>
-                        </AccordionTrigger>
+                          )}
 
-                        <AccordionContent className="pt-4 px-2 pb-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {assignments.map(
-                              (mapping: SubjectAssignmentData) => (
-                                <div
-                                  key={mapping.id}
-                                  className={`p-4 rounded-lg border ${mapping.deletedAt ? "bg-red-50/50 border-red-100 opacity-70" : "bg-card border-border shadow-sm"}`}
-                                >
-                                  <div className="flex justify-between items-start mb-2">
-                                    <h4
-                                      className="font-bold text-base line-clamp-1"
-                                      title={mapping.subject?.name}
-                                    >
-                                      {mapping.subject?.name}
-                                    </h4>
-                                    <Badge variant="secondary">
-                                      {mapping.subject?.code}
-                                    </Badge>
-                                  </div>
-                                  <div className="text-sm text-muted-foreground flex justify-between">
-                                    <span>Sem: {mapping.semester?.value}</span>
-                                    {mapping.deletedAt && (
-                                      <span className="text-red-500 font-medium text-xs">
-                                        Unassigned
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              ),
-                            )}
+                          <div className="flex items-center gap-2">
+                            <Badge className="text-[10px] font-mono bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+                              {item.subject?.code || "Unknown Code"}
+                            </Badge>
+                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                              Sem {item.semester?.value || "N/A"}
+                            </span>
                           </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    );
-                  },
-                )}
-              </Accordion>
-            )}
-          </CardContent>
-        </Card>
+
+                          <p
+                            className={`text-sm font-medium ${item.deletedAt ? "text-muted-foreground line-through decoration-destructive/50" : "text-foreground"}`}
+                          >
+                            {item.subject?.name || "Unknown Subject"}
+                          </p>
+
+                          <span className="text-[10px] text-muted-foreground mt-1">
+                            Assigned:{" "}
+                            {format(new Date(item.createdAt), "MMM dd, yyyy")}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          )}
+        </div>
       </div>
     </div>
   );

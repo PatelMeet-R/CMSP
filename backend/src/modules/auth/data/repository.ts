@@ -23,7 +23,17 @@ export class AuthRepository {
       ],
     });
   }
-
+  async findUserByIdWithRole(userId: string) {
+    return await this.repo
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('user.personalInfo', 'personalInfo')
+      .leftJoinAndSelect('personalInfo.branch', 'branch')
+      // Also grab the account status enum to hydrate the frontend status check
+      .leftJoinAndSelect('personalInfo.userAccountStatus', 'userAccountStatus')
+      .where('user.id = :userId', { userId })
+      .getOne();
+  }
   async findByEmailUsedAtLogin(email: string): Promise<User | null> {
     return this.repo
       .createQueryBuilder('user')
