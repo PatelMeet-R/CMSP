@@ -49,9 +49,23 @@ export class DashboardService {
         this.userRepo.count(),
         this.roleRepo.count(),
         this.auditRepo.find({
+          relations: ['actor', 'actor.personalInfo'],
           order: { createdAt: 'DESC' },
-          take: 5,
-          relations: ['user'],
+          take: 10,
+          select: {
+            id: true,
+            action: true,
+            details: true,
+            createdAt: true,
+            actor: {
+              id: true,
+              email: true,
+              personalInfo: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
         }),
 
         // Get a count of users grouped by their role using QueryBuilder
@@ -78,7 +92,7 @@ export class DashboardService {
       recentActivity: recentAudits.map((audit) => ({
         id: audit.id,
         action: audit.action,
-        user: audit.user?.email || 'System',
+        user: audit.actor?.email || 'System',
         date: audit.createdAt,
       })),
     };

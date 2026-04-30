@@ -40,6 +40,6 @@ export class AuditLog {
   createdAt: Date;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'userId' })
-  user: User;
+  @JoinColumn({ name: 'actorId' })
+  actor: User;
 }

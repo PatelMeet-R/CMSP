@@ -257,7 +257,7 @@ export class PersonalInfoRepository {
       .createQueryBuilder('profile')
       .leftJoinAndSelect('profile.user', 'user')
       .leftJoinAndSelect('user.role', 'role')
-      .where('role.key IN (:...roles)', { roles: ['PROFESSOR', 'HOD'] });
+      .where('role.name IN (:...roles)', { roles: ['PROFESSOR', 'HOD'] });
 
     if (branchId) {
       queryBuilder.andWhere('profile.branchId = :branchId', { branchId });
@@ -334,7 +334,7 @@ export class PersonalInfoRepository {
       .createQueryBuilder('pi')
       .leftJoinAndSelect('pi.userAccountStatus', 'status')
       .leftJoinAndSelect('pi.user', 'user')
-      .where('status.key = :activeKey', { activeKey: 'ACTIVE' }) 
+      .where('status.key = :activeKey', { activeKey: 'ACTIVE' })
       .andWhere('user.lastLoginAt < :thresholdDate', { thresholdDate }) // Logged in before the threshold
       .getMany();
   }
