@@ -39,12 +39,11 @@ export default function CreateStaffView() {
       ?.filter((r) => {
         if (
           r.name === ROLES.SUPER_ADMIN ||
-          "SUPER_ADMIN" ||
           r.name === ROLES.STUDENT ||
-          "STUDENT"
+          r.name === ROLES.PENDING_USER
         )
           return false;
-        if (r.name === ROLES.HOD || "HOD") return canAssignHOD;
+        if (r.name === ROLES.HOD) return canAssignHOD;
         return true; // Assume can assign PROFESSOR
       })
       .map((r) => ({ id: r.id, label: r.name.toUpperCase() })) || [];

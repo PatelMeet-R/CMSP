@@ -39,7 +39,7 @@ export const useUserManagementViewModel = () => {
   //  Reset Pagination: Go to Page 1 on filter change
   useEffect(() => {
     if (page !== 1) setPage(1);
-  }, [debouncedSearch, branchId, roleId, genderId, limit]);
+  }, [debouncedSearch, branchId, roleId, genderId]);
 
   //  Group params for API
   const queryParams = {
@@ -55,7 +55,7 @@ export const useUserManagementViewModel = () => {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["users", queryParams],
     queryFn: () => fetchUsersList(queryParams),
-    enabled: !!queryParams.roleId, // Only fetch if we have a role tab selected
+    // enabled: !!queryParams.roleId, // Only fetch if we have a role tab selected
   });
 
   return {

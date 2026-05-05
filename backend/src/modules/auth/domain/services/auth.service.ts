@@ -65,9 +65,8 @@ export class AuthService {
     if (existingUser) {
       throw new ConflictException(ERRORMESSAGE.EMAIL_ALREADY_EXISTS);
     }
-    const pendingRole = await this.roleService.findEntityByRoleName(
-      ENUM_VALUES.USER_ACC_STATUS.PENDING || 'PENDING_USER',
-    );
+    const pendingRole =
+      await this.roleService.findEntityByRoleName('PENDING_USER');
     if (!pendingRole) {
       throw new InternalServerErrorException(
         'Default registration role not found. Please run seeds.',

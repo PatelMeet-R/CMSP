@@ -148,6 +148,10 @@ axiosInstance.interceptors.response.use(
       toastService.error(
         message || "You do not have permission to perform this action.",
       );
+
+      if (!window.location.pathname.includes("/error")) {
+        window.location.href = `/error?status=403`;
+      }
       return Promise.reject(error);
     }
 
@@ -156,6 +160,9 @@ axiosInstance.interceptors.response.use(
     // -----------------------------------------------
     if (status === 500) {
       toastService.error("Internal server error. Please try again later.");
+      if (!window.location.pathname.includes("/error")) {
+        window.location.href = `/error?status=500`;
+      }
     } else if (status !== 401) {
       // 401 already handled above
       toastService.error(message);

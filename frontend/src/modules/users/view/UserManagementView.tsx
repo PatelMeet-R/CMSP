@@ -40,12 +40,27 @@ export default function UserManagementView() {
 
   //   PBAC: Check permissions instead of roles
   const { hasPermission } = usePermissions();
+
   const canFilterBranch =
     hasPermission("*:*") || hasPermission("user:filter-branch");
+
   const canManageStaff =
     hasPermission("*:*") || hasPermission("user:manage-staff");
+
   const canManageStudents =
     hasPermission("*:*") || hasPermission("user:manage-students");
+
+  const canViewStaff =
+    hasPermission("*:*") ||
+    hasPermission("user:read") ||
+    hasPermission("staff:read") ||
+    hasPermission("user:manage-staff");
+
+  const canViewStudents =
+    hasPermission("*:*") ||
+    hasPermission("student:read") ||
+    hasPermission("user:manage-students") ||
+    hasPermission("user:read");
 
   const { branches, isLoading: isBranchesLoading } = useBranchViewModel();
   const { enums: genders, isLoading: isGenderLoading } = useEnumViewModel(
@@ -60,10 +75,25 @@ export default function UserManagementView() {
     roles
       ?.filter((r) => {
         if (r.name === "SUPER_ADMIN") return false; // Hide from standard tables
-        if (r.name === "STUDENT") return canManageStudents;
-        return canManageStaff; // HOD, PROFESSOR, etc.
+        if (r.name === "LIBRARIAN") {
+          return hasPermission("*:*");
+        }
+        if (r.name === "HOD") {
+          return hasPermission("*:*") || hasPermission("user:manage-global");
+        }
+        if (r.name === "STUDENT") return canViewStudents;
+        return canViewStaff; // HOD, PROFESSOR, etc.
       })
       .map((r) => ({ id: r.id, key: r.name })) || [];
+
+  // const filteredTabs =
+  //   roles
+  //     ?.filter((r) => {
+  //       if (r.name === "SUPER_ADMIN") return false; // Hide from standard tables
+  //       if (r.name === "STUDENT") return canManageStudents;
+  //       return canManageStaff; // HOD, PROFESSOR, etc.
+  //     })
+  //     .map((r) => ({ id: r.id, key: r.name })) || [];
 
   // Extract the hodRoleId so we can pass it down to the Modal
   const hodRoleId = roles?.find((r) => r.name === "HOD")?.id;

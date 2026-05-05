@@ -20,6 +20,7 @@ import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { UserResponseDto } from 'src/modules/auth/presentation/dto/response/user.response.dto';
 import { FileResponse } from '../data/mapper/file.response';
 import { Permissions } from 'src/core/decorators/permissions.decorator';
+import { Public } from 'src/core/decorators/public.decorator';
 
 @Controller('file-upload')
 export class FileUploadController {
@@ -27,7 +28,7 @@ export class FileUploadController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @Permissions('file:upload')
+  @Permissions('file:upload', 'profile:update-image')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
     @UploadedFile(
@@ -51,6 +52,7 @@ export class FileUploadController {
       data: FileResponse.toResponseDto(res),
     };
   }
+
   @Get()
   @Permissions('file:read-all')
   async allFile() {
@@ -59,6 +61,7 @@ export class FileUploadController {
       data: res,
     };
   }
+
   @Delete(':id')
   @Permissions('file:delete')
   async remove(@Param('id') id: string, @CurrentUser() user: UserResponseDto) {

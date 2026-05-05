@@ -182,6 +182,7 @@ import EnumManagementView from "@/modules/enums/view/EnumManagementView";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import RolesManagementView from "@/modules/roles/view/RolesManagementView";
 import DashboardView from "@/modules/dashboard/view/DashboardView";
+import ErrorFallbackView from "@/core/views/ErrorFallbackView";
 
 const AppRoutes = () => {
   return (
@@ -269,6 +270,7 @@ const AppRoutes = () => {
         </Route>
 
         <Route path={ROUTENAME.SUSPENDED} element={<SuspendedPage />} />
+        <Route path="/error" element={<ErrorFallbackView />} />
 
         <Route element={<GuestGuard />}>
           <Route path={ROUTENAME.SIGNIN} element={<Signup />} />

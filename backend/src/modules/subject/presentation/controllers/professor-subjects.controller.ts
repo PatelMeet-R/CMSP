@@ -30,7 +30,7 @@ export class ProfessorSubMappingController {
 
   @Post('assign-subject')
   @HttpCode(HttpStatus.OK)
-  @Permissions('subject-mapping:create')
+  @Permissions('subject-mapping:create', 'subject_mapping:create')
   async saveAssignedSubjectToProfessor(
     @Body() dto: AssignSubjectDto,
     @CurrentUser() user: UserResponseDto,
@@ -147,8 +147,7 @@ export class ProfessorSubMappingController {
   // ===================
   @Post('bulk-clone')
   @HttpCode(HttpStatus.OK)
-  @Permissions('subject-mapping:create')
-  
+  @Permissions('subject-mapping:create', 'subject_mapping:create')
   async bulkCloneAssignments(
     @Body() dto: BulkCloneAssignmentsDto,
     @CurrentUser() user: UserResponseDto,

@@ -16,7 +16,15 @@ export class RoleController {
   constructor(private readonly roleService: RoleService) {}
 
   // Any admin who can create/manage users needs to see the roles list
-  @Permissions('user:create', 'user:manage-role')
+  // @Permissions('user:create', 'user:manage-role')
+  @Permissions(
+    'user:create',
+    'user:manage-role',
+    'user:read',
+    'staff:read',
+    'student:read',
+    'role:read',
+  )
   @Get()
   async getAllRoles() {
     const roles = await this.roleService.findAll();

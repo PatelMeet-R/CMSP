@@ -77,7 +77,7 @@ export class RoleService {
     if (!role) throw new NotFoundException('Role not found');
 
     // Protect SUPER_ADMIN from being accidentally locked out
-    if (role.name === ROLES.SUPER_ADMIN || 'SUPER_ADMIN') {
+    if (role.name === ROLES.SUPER_ADMIN) {
       throw new BadRequestException(
         'Super Admin permissions cannot be modified.',
       );

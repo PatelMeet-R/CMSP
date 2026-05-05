@@ -27,6 +27,7 @@ export const useCreateStaffViewModel = () => {
   const { isSuperAdmin, hasPermission } = usePermissions();
   const canCreateStaff = hasPermission("user:create");
   const { roles, isRolesLoading } = useRoleViewModel();
+  // console.log("Roles for staff creation:", roles);
 
   const currentUserBranchId = user?.branchId;
   const defaultBranchId = isSuperAdmin ? null : currentUserBranchId || null;

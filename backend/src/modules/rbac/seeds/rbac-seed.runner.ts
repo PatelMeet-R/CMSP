@@ -1,11 +1,16 @@
 import { DataSource } from 'typeorm';
 import { Permission } from '../domain/entities/permission.entity';
 import { Role } from '../domain/entities/role.entity';
+// import {
+//   PERMISSION_SEED,
+//   ROLE_PERMISSION_SEED,
+//   ROLE_DESCRIPTIONS,
+// } from './rbac-seed.data';
 import {
   PERMISSION_SEED,
   ROLE_PERMISSION_SEED,
   ROLE_DESCRIPTIONS,
-} from './rbac-seed.data';
+} from './new-rbac-seed.data';
 
 /**
  * Seeds permissions and roles into the database.
