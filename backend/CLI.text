@@ -7,3 +7,22 @@ npm i @nestjs/jwt passport passport-jwt bcrypt @types/passport-jwt @types/bcrypt
 
 npm install -D ts-node tsconfig-paths
 npm install handlebars //for the email templates
+
+
+//doctumention
+
+npm install --save @nestjs/swagger
+
+
+//upload feature 
+npm i @nestjs/platform-express cloudinary multer streamifier
+
+npm i cloudinary multer @nestjs/config
+npm install --save-dev @types/multer
+npm i @nestjs/platform-express
+
+
+
+
+docker compose -f docker-compose.redis.yml up -d
+"

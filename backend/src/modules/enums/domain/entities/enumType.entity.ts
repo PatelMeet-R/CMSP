@@ -1,10 +1,8 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { UuidBaseEntity } from 'src/core/base.entity';
+import { Column, Entity } from 'typeorm';
 
 @Entity('enum_types')
-export class EnumType {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class EnumType extends UuidBaseEntity {
   @Column({ unique: true })
   type: string;
 }

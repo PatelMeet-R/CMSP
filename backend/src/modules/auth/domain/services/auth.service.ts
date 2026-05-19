@@ -1,65 +1,115 @@
+import { InjectDataSource } from '@nestjs/typeorm';
 import {
   BadRequestException,
   ConflictException,
+  forwardRef,
+  Inject,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-// import * as crypto from 'crypto';
-import { User } from '../entities/user.entity';
 import { ERRORMESSAGE } from 'src/common/constants/error.message';
 import { SUCCESSMSG } from 'src/common/constants/success.message';
 import { MailService } from 'src/modules/mail/domain/mail.service';
-import { UserRepository } from '../../data/repository';
+import { AuthRepository } from '../../data/repository';
 import { ForgetPassMailReq } from '../../presentation/dto/request/forget-password.dto';
 import { LoginDto } from '../../presentation/dto/request/login.dto';
-import { RegisterDto } from '../../presentation/dto/request/register.dto';
+import { RegisterStudentDto } from '../../presentation/dto/request/register.dto';
 import { ResetPasswordDto } from '../../presentation/dto/request/reset-password.dto';
-
-import { AppConfigService } from '../../data/services/app-config.service';
 import { BcyptService } from '../../../../common/utils/bcypt/bcypt.service';
-import { EnumService } from 'src/modules/enums/domain/service/enums.service';
 import { JwtTokenService } from 'src/common/utils/jwt/jwt.service';
 import { MessageResponseDto } from '../../presentation/dto/response/verify-email-message.response.dto';
 import { RefreshTokenResponseDto } from '../../presentation/dto/response/refreshToken.response.dto';
 import { CryptoService } from 'src/common/utils/crypto/crypto.service';
 import { RESET_PASSWORD_TOKEN_EXPIRY } from 'src/common/constants/token.constants';
-import { UserMapper } from '../../data/mappers/user.mapper';
-import { AuthMapper } from '../../data/mappers/auth.mapper';
+import { UserMapper } from '../../data/mappers/user.response.mapper';
+import {
+  ENUM_TYPES,
+  ENUM_VALUES,
+} from 'src/common/constants/enum-types.constant';
+import { EnumService } from 'src/modules/enums/domain/enums.service';
+import { EmailedUserResponse } from '../../data/mappers/emailed-user.response.mapper';
+import { BranchService } from 'src/modules/branch/domain/branch.service';
+import { RegisterSpecificUserDto } from '../../presentation/dto/request/register-specific-user.request.dto';
+import { UserRegisterMapper } from '../../data/mappers/user-register.mapper';
+import { RegisterSpecificUserMapper } from '../../data/mappers/register-specific-user.mapper';
+import { type App } from 'src/config/app.config';
+import { PersonalInfoRepository } from 'src/modules/users/data/repository/personal-info-repository';
+import { DataSource } from 'typeorm';
+import { PermissionComputeService } from 'src/modules/rbac/domain/services/permission-compute.service';
+import { RoleService } from 'src/modules/rbac/domain/services/role.service';
 
 @Injectable()
 export class AuthService {
   constructor(
+    @Inject('APP_CONFIG') private readonly appConfig: App,
     private readonly cryptoService: CryptoService,
-    private readonly usersRepository: UserRepository,
+    private readonly authRepository: AuthRepository,
+    @Inject(forwardRef(() => PersonalInfoRepository))
+    private readonly personalInfoRespository: PersonalInfoRepository,
     private readonly mailService: MailService,
-    private readonly JwtTokenService: JwtTokenService,
-    private readonly appConfigService: AppConfigService,
+    private readonly jwtTokenService: JwtTokenService,
     private readonly bcryptService: BcyptService,
     private readonly enumService: EnumService,
+    private readonly branchService: BranchService,
+    private readonly permissionComputeService: PermissionComputeService,
+    private readonly roleService: RoleService,
+    @InjectDataSource()
+    private dataSource: DataSource,
   ) {}
+  // =====================================
 
-  async register(dto: RegisterDto) {
-    const existingUser = await this.usersRepository.findByEmail(dto.email);
+  async register(dto: RegisterStudentDto) {
+    const existingUser = await this.authRepository.findByEmail(dto.email);
     if (existingUser) {
       throw new ConflictException(ERRORMESSAGE.EMAIL_ALREADY_EXISTS);
     }
-    const hashedPassword = await this.bcryptService.hashPassword(dto.password);
-    const role = await this.enumService.getMeEnumValueIfExist(
-      'USER_ROLE',
-      'STUDENT',
-    );
-    const newlyCreatedUser = await this.usersRepository.createAndSave({
-      email: dto.email,
-      password: hashedPassword,
-      role: role,
-    });
+    const pendingRole =
+      await this.roleService.findEntityByRoleName('PENDING_USER');
+    if (!pendingRole) {
+      throw new InternalServerErrorException(
+        'Default registration role not found. Please run seeds.',
+      );
+    }
 
-    return UserMapper.toResponseDto(newlyCreatedUser);
+    const hashedPassword = await this.bcryptService.hashPassword(dto.password);
+    const userAccountStatus = await this.enumService.getMeEnumValueIfExist(
+      ENUM_TYPES.USER_ACC_STATUS,
+      ENUM_VALUES.USER_ACC_STATUS.PENDING,
+    );
+    if (!userAccountStatus) {
+      throw new NotFoundException(ERRORMESSAGE.DATA_NOT_FOUND('Enum Value'));
+    }
+    const branch = await this.branchService.getBranchEntityById(dto.branchId);
+    if (!branch) {
+      throw new NotFoundException(ERRORMESSAGE.DATA_NOT_FOUND('branch'));
+    }
+    const isEnrollmentNumbertaken =
+      await this.personalInfoRespository.isUserExistWithEnrollment(
+        dto.enrollmentNumber,
+      );
+
+    if (isEnrollmentNumbertaken) {
+      throw new ConflictException(ERRORMESSAGE.ENROLLMENT_TAKEN);
+    }
+    const entity = UserRegisterMapper.toRegisterStudentEntity(
+      dto,
+      hashedPassword,
+      pendingRole,
+      userAccountStatus,
+      branch,
+    );
+
+    const newlyCreatedUser = await this.authRepository.save(entity);
+    entity.createdBy = newlyCreatedUser.id;
+    const saved = await this.authRepository.save(entity);
+    return UserMapper.toResponseDto(saved);
   }
+  // =====================================
 
   async login(dto: LoginDto) {
-    const user = await this.usersRepository.findByEmail(dto.email);
+    const user = await this.authRepository.findByEmailUsedAtLogin(dto.email);
     if (
       !user ||
       !(await this.bcryptService.isPasswordValid(dto.password, user.password))
@@ -67,92 +117,146 @@ export class AuthService {
       throw new UnauthorizedException(ERRORMESSAGE.USERNOTEXIST);
     }
 
+    const effectivePermissions =
+      await this.permissionComputeService.getEffectivePermissions(user.id);
+    const permissionSlugs = Array.from(effectivePermissions);
+    const userResponse = UserMapper.toResponseDto(user, permissionSlugs);
+
+    user.lastLoginAt = new Date();
+    await this.authRepository.save(user);
+
     const { accessToken, refreshToken } =
-      this.JwtTokenService.generateToken(user);
+      this.jwtTokenService.generateToken(user);
 
-    return AuthMapper.toAuthResponse(user, accessToken, refreshToken);
+    return { user: userResponse, accessToken, refreshToken };
   }
+  // =====================================
 
-  async refreshToken(refreshToken: string) {
-    const payload = this.JwtTokenService.verifyRefreshToken(refreshToken);
-    const user = await this.usersRepository.findById(payload.sub);
+  async refreshToken(refreshToken: string): Promise<RefreshTokenResponseDto> {
+    const payload = this.jwtTokenService.verifyRefreshToken(refreshToken);
+    const user = await this.authRepository.findById(payload.sub);
     if (!user) {
       throw new UnauthorizedException(ERRORMESSAGE.INVALID_TOKEN);
     }
-    const accessToken = this.JwtTokenService.generateAccessToken(user);
+    const accessToken = this.jwtTokenService.generateAccessToken(user);
 
-    return new RefreshTokenResponseDto({ accessToken });
+    const newRefreshToken = this.jwtTokenService.generateRefreshToken(user);
+    return {
+      accessToken,
+      refreshToken: newRefreshToken,
+      user: UserMapper.toResponseDto(user),
+    };
   }
 
-  // find the current user by id
-  // only role extract perpose for jwt Strategy
-  async getUserById(userId: number) {
-    const user = await this.usersRepository.findById(userId);
+  // =====================================
+
+  async getUserByIdWithPersonalInfo(userId: string) {
+    const user =
+      await this.authRepository.findByIdWithPersonalInfoRelation(userId);
     if (!user) {
       throw new UnauthorizedException(ERRORMESSAGE.USERNOTEXIST);
     }
-    return UserMapper.toResponseDto(user);
+    return user;
+  }
+  // =====================================
+  // find the current user by id
+  // only role extract purpose for jwt Strategy
+  async findUserEntityById(userId: string) {
+    const user = await this.authRepository.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException(ERRORMESSAGE.USERNOTEXIST);
+    }
+    return user;
   }
   // send the mail with token for verify purpose
-  async sendVerifyEmailLink(user: User) {
+  // =====================================
+
+  async sendVerifyEmailLink(userId: string) {
     try {
-      const token = this.JwtTokenService.generateEmailVerificationToken(user);
+      const user = await this.authRepository.findById(userId);
 
-      const verifyUrl = `${this.appConfigService.appUrl}/auth/verify-email?token=${token}`;
+      if (!user) {
+        throw new UnauthorizedException(ERRORMESSAGE.USERNOTEXIST);
+      }
+      const token = this.jwtTokenService.generateEmailVerificationToken(user);
 
-      await this.mailService.sendVerficationEmail(user.email, verifyUrl);
-      return new MessageResponseDto(SUCCESSMSG.MAIL_SENT_SUCCESS);
+      const verifyUrl = `${this.appConfig.frontendUrl}/verify-email?token=${token}`;
+
+      await this.mailService.sendVerificationEmail(user.email, verifyUrl);
+      return new MessageResponseDto(SUCCESSMSG.AUTH.VERIFICATION_EMAIL_SENT);
     } catch (e) {
       throw new InternalServerErrorException(ERRORMESSAGE.MAIL_SERVER_ISSUE);
     }
   }
-  // validate the email user
+  // =====================================
+
   async verifyEmail(token: string) {
     try {
-      const payload = this.JwtTokenService.verifyEmailToken(token);
+      const payload = this.jwtTokenService.verifyEmailToken(token);
+      if (!payload)
+        throw new BadRequestException('Invalid or expired verification token.');
 
-      const user = await this.usersRepository.findById(payload.sub);
+      const user = await this.authRepository.findById(payload.sub);
       if (!user) {
         throw new BadRequestException(ERRORMESSAGE.INVALID_TOKEN);
       }
-      if (user.isEmailVerified) {
-        return new MessageResponseDto(SUCCESSMSG.VERIFIED_EMAIL);
-      }
+
       user.isEmailVerified = true;
-      await this.usersRepository.save(user);
-      return new MessageResponseDto(SUCCESSMSG.VERIFIEDSUCCESSEMAIL);
+
+      if (
+        user.personalInfo?.userAccountStatus?.key ===
+        ENUM_VALUES.USER_ACC_STATUS.INACTIVE
+      ) {
+        const activeStatus = await this.enumService.getMeEnumValueIfExist(
+          ENUM_TYPES.USER_ACC_STATUS,
+          ENUM_VALUES.USER_ACC_STATUS.ACTIVE,
+        );
+        if (activeStatus) {
+          user.personalInfo.userAccountStatus = activeStatus;
+        }
+      }
+
+      await this.authRepository.save(user);
+      await this.personalInfoRespository.clearSingleUserCache(user.id);
+
+      return new MessageResponseDto(SUCCESSMSG.AUTH.EMAIL_VERIFIED_SUCCESS);
     } catch (e) {
       throw new BadRequestException(ERRORMESSAGE.INVALID_TOKEN);
     }
   }
 
+  // =====================================
+
   async forgetPassword(dto: ForgetPassMailReq) {
     try {
-      const user = await this.usersRepository.findByEmail(dto.email);
+      const user = await this.authRepository.findByEmail(dto.email);
       if (user) {
         const { rawToken, tokenHash } = this.cryptoService.generateResetToken();
         user.resetPasswordToken = tokenHash;
         user.resetPasswordExpires = new Date(
           Date.now() + RESET_PASSWORD_TOKEN_EXPIRY,
         ); //15min
-        await this.usersRepository.save(user);
-        const resetUrl = `${this.appConfigService.appUrl}/auth/reset-password?token=${rawToken}`;
+        await this.authRepository.save(user);
+        const resetUrl = `${this.appConfig.frontendUrl}/reset-password?token=${rawToken}`;
         await this.mailService.sendResetPassword(user.email, resetUrl);
       }
-      return new MessageResponseDto(SUCCESSMSG.IFEXISTTHENSENDMAIL);
+      return new MessageResponseDto(
+        SUCCESSMSG.AUTH.RESET_LINK_IF_ACCOUNT_EXISTS,
+      );
     } catch (e) {
       console.error('Forget password error:', e);
       throw new InternalServerErrorException(ERRORMESSAGE.SERVER_ERROR);
     }
   }
+  // =====================================
 
   async resetPassword(token: string, dto: ResetPasswordDto) {
     if (dto.password !== dto.confirmPassword) {
-      throw new BadRequestException(ERRORMESSAGE.PASSWORD_NOT_MATCHS);
+      throw new BadRequestException(ERRORMESSAGE.PASSWORD_NOT_MATCHES);
     }
     const tokenHash = this.cryptoService.hashToken(token);
 
-    const user = await this.usersRepository.findValidResetToken(tokenHash);
+    const user = await this.authRepository.findValidResetToken(tokenHash);
     if (!user) {
       throw new BadRequestException(ERRORMESSAGE.INVALID_TOKEN);
     }
@@ -160,7 +264,124 @@ export class AuthService {
     user.password = newPasswordHash;
     user.resetPasswordExpires = null;
     user.resetPasswordToken = null;
-    await this.usersRepository.save(user);
-    return new MessageResponseDto(SUCCESSMSG.PASSWORD_RESET_SUCCESS);
+    await this.authRepository.save(user);
+    return new MessageResponseDto(SUCCESSMSG.AUTH.PASSWORD_RESET_SUCCESS);
+  }
+  // =====================================
+
+  async registerSpecificUser(dto: RegisterSpecificUserDto, creatorDto) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const existingUser = await this.authRepository.findByEmail(dto.email);
+      if (existingUser) {
+        throw new ConflictException(ERRORMESSAGE.EMAIL_ALREADY_EXISTS);
+      }
+      const creator =
+        await this.authRepository.findByIdWithPersonalInfoRelation(
+          creatorDto.id,
+        );
+
+      const branch = await this.branchService.getBranchEntityById(dto.branchId);
+
+      const roleToAssign = await this.roleService.findEntityByRoleId(
+        dto.roleId,
+      );
+
+      const userAccountStatus = await this.enumService.getMeEnumValueIfExist(
+        ENUM_TYPES.USER_ACC_STATUS,
+        ENUM_VALUES.USER_ACC_STATUS.ACTIVE,
+      );
+
+      if (!branch || !roleToAssign || !creator || !userAccountStatus)
+        throw new NotFoundException('Required data not found');
+
+      if (creator.personalInfo?.branch?.id) {
+        dto.branchId = String(creator.personalInfo.branch.id);
+      }
+
+      const password = this.cryptoService.generateRandomPassword();
+      const hashedPassword = await this.bcryptService.hashPassword(password);
+
+      const entity = RegisterSpecificUserMapper.toRegisterEntity(
+        dto,
+        hashedPassword,
+        roleToAssign,
+        userAccountStatus,
+        creator.id,
+        branch,
+      );
+      entity.mustChangePassword = true;
+
+      const newlyCreatedUser = await queryRunner.manager.save(entity);
+
+      const emailData = EmailedUserResponse.toResponseDto(
+        newlyCreatedUser,
+        password,
+        creator,
+      );
+
+      await this.mailService.sendRegisterUserInfo(
+        newlyCreatedUser.email,
+        emailData,
+      );
+      await queryRunner.commitTransaction();
+
+      return {
+        ...emailData,
+        id: newlyCreatedUser.id,
+      };
+    } catch (e) {
+      await queryRunner.rollbackTransaction();
+      // throw new BadRequestException(ERRORMESSAGE.INVALID_TOKEN);
+      throw e;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+  // =====================================
+
+  async getHydratedUser(userId: string) {
+    // 1. Fetch the user with their base role and profile info
+    const user = await this.authRepository.findUserByIdWithRole(userId);
+
+    if (!user) {
+      throw new UnauthorizedException(
+        'User no longer exists or session is invalid.',
+      );
+    }
+
+    // 2.  CRITICAL: Fetch freshly computed permissions!
+    // Since the Matrix Save cleared the Redis cache, this will securely recalculate them.
+    const effectivePermissions =
+      await this.permissionComputeService.getEffectivePermissions(userId);
+
+    // 3. Map to match the EXACT structure of your frontend `LoginResponse.data`
+
+    console.log('===auth/me=== route is used and here are details ');
+    console.log(`effectivePermissions list ${effectivePermissions}`);
+    console.log(``);
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.personalInfo?.firstName,
+      lastName: user.personalInfo?.lastName,
+      fullName:
+        `${user.personalInfo?.firstName} ${user.personalInfo?.lastName}`.trim(),
+      profileImageUrl:
+        user.personalInfo?.profileImage?.url || user.personalInfo?.profileImage,
+      branchId: user.personalInfo?.branch?.id,
+
+      // Send role as a string (matching your V2 frontend refactor)
+      role: user.role?.name,
+
+      // Convert the Set<string> back to a standard string[] for JSON serialization
+      permissions: Array.from(effectivePermissions),
+
+      // Send the current account status so the frontend can react if they were suspended
+      status: user.personalInfo?.userAccountStatus?.key || 'ACTIVE',
+    };
   }
 }

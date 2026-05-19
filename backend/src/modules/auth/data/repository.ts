@@ -4,17 +4,57 @@ import { User } from '../domain/entities/user.entity';
 import { MoreThan, Repository } from 'typeorm';
 
 @Injectable()
-export class UserRepository {
+export class AuthRepository {
   constructor(
     @InjectRepository(User)
     private readonly repo: Repository<User>,
   ) {}
   async findByEmail(email: string): Promise<User | null> {
-    return this.repo.findOne({ where: { email } });
+    return this.repo.findOne({
+      where: { email },
+      relations: [
+        'role',
+        'role.permissions',
+        'personalInfo',
+        'personalInfo.branch',
+        'personalInfo.userAccountStatus',
+        'userPermissions',
+        'userPermissions.permission',
+      ],
+    });
   }
-  async findById(id: number): Promise<User | null> {
+  async findUserByIdWithRole(userId: string) {
+    return await this.repo
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('user.personalInfo', 'personalInfo')
+      .leftJoinAndSelect('personalInfo.branch', 'branch')
+      // Also grab the account status enum to hydrate the frontend status check
+      .leftJoinAndSelect('personalInfo.userAccountStatus', 'userAccountStatus')
+      .where('user.id = :userId', { userId })
+      .getOne();
+  }
+  async findByEmailUsedAtLogin(email: string): Promise<User | null> {
+    return this.repo
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('role.permissions', 'permissions') // Forces the join we see in DBeaver
+      .leftJoinAndSelect('user.personalInfo', 'personalInfo')
+      .leftJoinAndSelect('personalInfo.branch', 'branch')
+      .leftJoinAndSelect('user.userPermissions', 'userPermissions')
+      .leftJoinAndSelect('userPermissions.permission', 'overridePermission')
+      .where('user.email = :email', { email })
+      .getOne();
+  }
+
+  async findById(id: string): Promise<User | null> {
     return this.repo.findOne({
       where: { id },
+      relations: [
+        'personalInfo',
+        'personalInfo.branch',
+        'personalInfo.userAccountStatus',
+      ],
     });
   }
 
@@ -32,5 +72,18 @@ export class UserRepository {
         resetPasswordExpires: MoreThan(new Date()), // used greater than because expiry must be in future
       },
     });
+  }
+  async findByIdWithPersonalInfoRelation(id: string) {
+    return this.repo.findOne({
+      where: { id: id },
+      relations: [
+        'personalInfo',
+        'personalInfo.branch',
+        'personalInfo.userAccountStatus',
+      ],
+    });
+  }
+  async update(id: string, partialEntity: Partial<User>) {
+    return this.repo.update(id, partialEntity);
   }
 }
