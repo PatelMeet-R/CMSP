@@ -6,6 +6,7 @@ import {
   Info,
   AlertTriangle,
   Save,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,9 +22,9 @@ import type { PermissionSectionProps } from "@/modules/users/types/permission.in
 import PermissionSaveDialog from "./PermissionSaveDialog";
 import { formatAction, formatResource } from "@/lib/permission.utils";
 
-// =============================================
-//  V2: Two-Tier Permission Matrix with Smart Search & Optimized Spacing
-// =============================================
+// ═════════════════════════════════════════════
+//  V2: Two-Tier Permission Matrix
+// ═════════════════════════════════════════════
 
 interface Props {
   personalInfoId: string;
@@ -63,107 +64,126 @@ export default function UserPermissionMatrix({ personalInfoId }: Props) {
     vm.filteredBase.size === 0 &&
     vm.filteredExtra.size === 0;
 
-  // ---- PERMISSION CHECK ----
+  // ── PERMISSION CHECK ──
   if (!vm.canManage) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
-        <Shield className="w-10 h-10 opacity-40" />
-        <p className="text-sm">
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
+        <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center">
+          <Shield className="w-7 h-7 opacity-40" />
+        </div>
+        <p className="text-sm font-medium">
           You don&apos;t have permission to manage user permissions.
         </p>
       </div>
     );
   }
 
-  // ---- LOADING ----
+  // ── LOADING ──
   if (vm.isLoading) {
     return (
-      <div className="space-y-5 p-1">
+      <div className="space-y-5">
         <Skeleton className="h-10 w-full rounded-lg" />
         <div className="space-y-3">
-          <Skeleton className="h-20 w-full rounded-lg" />
-          <Skeleton className="h-20 w-full rounded-lg" />
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <Skeleton className="h-24 w-full rounded-xl" />
         </div>
       </div>
     );
   }
 
-  // ---- ERROR ----
+  // ── ERROR ──
   if (vm.isError || !vm.matrix) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
-        <AlertTriangle className="w-10 h-10 text-destructive/60" />
-        <p className="text-sm">Failed to load permission matrix.</p>
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
+        <div className="h-16 w-16 rounded-full bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center">
+          <AlertTriangle className="w-7 h-7 text-destructive/60" />
+        </div>
+        <p className="text-sm font-medium">Failed to load permission matrix.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-5">
-      {" "}
-      {/* Tightened from space-y-6 */}
-      {/* ---- HEADER ---- */}
+      {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <h3 className="text-base font-semibold text-foreground">
             Permissions for{" "}
             <span className="text-primary">{vm.matrix.targetUser.name}</span>
           </h3>
-          <Badge variant="outline" className="text-xs uppercase tracking-wider">
+          <Badge
+            variant="outline"
+            className="text-[10px] uppercase tracking-wider font-semibold"
+          >
             {vm.matrix.targetUser.role}
           </Badge>
         </div>
 
         {vm.dirtyCount > 0 && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <Badge
               variant="secondary"
-              className="text-xs bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+              className="text-xs bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 font-medium"
             >
               {vm.dirtyCount} unsaved{" "}
               {vm.dirtyCount === 1 ? "change" : "changes"}
             </Badge>
-            <Button size="sm" onClick={() => vm.setIsSaveDialogOpen(true)}>
-              <Save className="w-4 h-4 mr-2" />
+            <Button
+              size="sm"
+              onClick={() => vm.setIsSaveDialogOpen(true)}
+              className="gap-1.5"
+            >
+              <Save className="w-3.5 h-3.5" />
               Save Changes
             </Button>
           </div>
         )}
       </div>
-      {/* ---- SEARCH ---- */}
+
+      {/* ── SEARCH ── */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Search permissions... (e.g. assignment:create)"
+          placeholder="Search permissions… (e.g. assignment:create)"
           value={vm.searchQuery}
           onChange={(e) => vm.setSearchQuery(e.target.value)}
-          className="w-full h-10 pl-10 pr-4 text-sm border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary/50 transition-colors"
+          className="w-full h-10 pl-10 pr-4 text-sm border border-border/60 rounded-xl bg-background placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary/50 transition-all"
         />
+        {vm.searchQuery && (
+          <button
+            onClick={() => vm.setSearchQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
-      {/* ---- MAIN CONTENT ---- */}
+
+      {/* ── MAIN CONTENT ── */}
       {isSearchEmpty ? (
-        <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed rounded-xl border-border bg-card/50 gap-4">
-          <div className="p-4 bg-muted rounded-full">
-            <Search className="w-8 h-8 text-muted-foreground opacity-50" />
+        <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed rounded-2xl border-border/50 bg-muted/10 gap-4">
+          <div className="p-4 bg-muted/40 rounded-full">
+            <Search className="w-7 h-7 text-muted-foreground opacity-50" />
           </div>
           <div className="text-center">
-            <p className="text-base font-semibold text-foreground">
+            <p className="text-sm font-semibold text-foreground">
               No permissions found
             </p>
-            <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-              We couldn't find any permission matching "
+            <p className="text-xs text-muted-foreground mt-1.5 max-w-sm">
+              No permission matching "
               <span className="text-foreground font-medium">
                 {vm.searchQuery}
               </span>
-              ".
+              " was found.
             </p>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => vm.setSearchQuery("")}
-            className="mt-2"
+            className="mt-1"
           >
             Clear Search
           </Button>
@@ -173,9 +193,9 @@ export default function UserPermissionMatrix({ personalInfoId }: Props) {
           type="multiple"
           value={accordionValue}
           onValueChange={setAccordionValue}
-          className="w-full space-y-4" // Tightened from space-y-6
+          className="w-full space-y-3"
         >
-          {/* ---- SECTION 1: BASE ROLE PERMISSIONS ---- */}
+          {/* ── SECTION 1: BASE ROLE PERMISSIONS ── */}
           <PermissionSection
             sectionId="base-section"
             title="Inherited Permissions"
@@ -189,7 +209,7 @@ export default function UserPermissionMatrix({ personalInfoId }: Props) {
             accentColor="blue"
           />
 
-          {/* ---- SECTION 2: EXTRA PERMISSIONS ---- */}
+          {/* ── SECTION 2: EXTRA PERMISSIONS ── */}
           <PermissionSection
             sectionId="extra-section"
             title="Extra Permissions"
@@ -204,7 +224,8 @@ export default function UserPermissionMatrix({ personalInfoId }: Props) {
           />
         </Accordion>
       )}
-      {/* ---- SAVE DIALOG ---- */}
+
+      {/* ── SAVE DIALOG ── */}
       <PermissionSaveDialog
         isOpen={vm.isSaveDialogOpen}
         onClose={() => vm.setIsSaveDialogOpen(false)}
@@ -216,9 +237,9 @@ export default function UserPermissionMatrix({ personalInfoId }: Props) {
   );
 }
 
-// =============================================
+// ═════════════════════════════════════════════
 //  Sub-Component: Permission Section
-// =============================================
+// ═════════════════════════════════════════════
 
 interface ExtendedPermissionSectionProps extends PermissionSectionProps {
   sectionId: string;
@@ -238,25 +259,23 @@ function PermissionSection({
 }: ExtendedPermissionSectionProps) {
   const borderColor =
     accentColor === "blue"
-      ? "border-blue-200 dark:border-blue-900/40"
-      : "border-emerald-200 dark:border-emerald-900/40";
+      ? "border-blue-200/60 dark:border-blue-900/40"
+      : "border-emerald-200/60 dark:border-emerald-900/40";
   const headerBg =
     accentColor === "blue"
-      ? "bg-blue-50/50 dark:bg-blue-950/20 hover:bg-blue-50 dark:hover:bg-blue-900/30"
-      : "bg-emerald-50/50 dark:bg-emerald-950/20 hover:bg-emerald-50 dark:hover:bg-emerald-900/30";
+      ? "bg-blue-50/40 dark:bg-blue-950/15 hover:bg-blue-50/70 dark:hover:bg-blue-900/25"
+      : "bg-emerald-50/40 dark:bg-emerald-950/15 hover:bg-emerald-50/70 dark:hover:bg-emerald-900/25";
 
   const totalCount = Array.from(groups.values()).flat().length;
 
   if (groups.size === 0) {
     return (
-      <div
-        className={`rounded-xl border ${borderColor} overflow-hidden bg-card`}
-      >
-        <div className={`px-4 py-3 ${headerBg} flex items-center gap-2`}>
+      <div className={`rounded-xl border ${borderColor} overflow-hidden bg-card`}>
+        <div className={`px-5 py-3.5 ${headerBg} flex items-center gap-2.5`}>
           {icon}
           <span className="text-sm font-semibold text-foreground">{title}</span>
         </div>
-        <div className="p-4 text-center text-sm text-muted-foreground">
+        <div className="p-5 text-center text-sm text-muted-foreground">
           No matching permissions in this section.
         </div>
       </div>
@@ -270,10 +289,10 @@ function PermissionSection({
   return (
     <AccordionItem
       value={sectionId}
-      className={`rounded-xl border ${borderColor} bg-card shadow-sm overflow-hidden`}
+      className={`rounded-xl border ${borderColor} bg-card shadow-sm overflow-hidden transition-shadow hover:shadow-md`}
     >
       <AccordionTrigger
-        className={`px-4 py-3 ${headerBg} hover:no-underline transition-colors`}
+        className={`px-5 py-3.5 ${headerBg} hover:no-underline transition-colors`}
       >
         <div className="flex flex-col items-start text-left w-full">
           <div className="flex items-center gap-2">
@@ -281,19 +300,19 @@ function PermissionSection({
             <span className="text-sm font-semibold text-foreground">
               {title}
             </span>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-muted-foreground font-medium">
               ({totalCount})
             </span>
             {sectionHasOverrides && (
               <span
-                className="w-2 h-2 rounded-full bg-amber-500 animate-pulse ml-2"
+                className="w-2 h-2 rounded-full bg-amber-500 animate-pulse ml-1.5"
                 title="Contains modified permissions"
               />
             )}
           </div>
           <div className="flex items-start gap-1.5 mt-1.5 ml-6">
             <Info className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
-            <p className="text-xs text-muted-foreground font-normal">
+            <p className="text-xs text-muted-foreground font-normal leading-relaxed">
               {subtitle}
             </p>
           </div>
@@ -301,17 +320,15 @@ function PermissionSection({
       </AccordionTrigger>
 
       {/* 🚨 FIX: Replaced 'p-5 space-y-8' with tightly controlled padding and gaps */}
-      <AccordionContent className="px-4 pb-5 pt-2 space-y-5">
+      <AccordionContent className="px-5 pb-5 pt-3 space-y-5">
         {Array.from(groups.entries()).map(([resource, items]) => (
-          <div key={resource} className="space-y-2">
-            {" "}
-            {/* Tightened from space-y-3 */}
-            <div className="border-b pb-1">
+          <div key={resource} className="space-y-2.5">
+            <div className="border-b border-border/40 pb-1.5">
               <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                 {formatResource(resource)}
               </span>
             </div>
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex flex-wrap gap-2">
               {items.map((item) => {
                 const checked = getChecked(item);
                 const isDirty = localOverrides.has(item.slug);
@@ -335,9 +352,9 @@ function PermissionSection({
   );
 }
 
-// =============================================
+// ═════════════════════════════════════════════
 //  Sub-Component: Clickable Permission Chip
-// =============================================
+// ═════════════════════════════════════════════
 
 function PermissionChip({
   item,
@@ -361,18 +378,18 @@ function PermissionChip({
   if (isBaseSection) {
     if (checked) {
       stateStyles =
-        "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700";
+        "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700/60";
     } else {
       stateStyles =
-        "bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/30";
+        "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30";
     }
   } else {
     if (!checked) {
       stateStyles =
-        "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700";
+        "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700/60";
     } else {
       stateStyles =
-        "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30";
+        "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30";
     }
   }
 
@@ -380,14 +397,11 @@ function PermissionChip({
     ? "ring-2 ring-amber-400 dark:ring-amber-500 ring-offset-1 dark:ring-offset-background"
     : "";
 
-  {
-    /*  FIX: Made chips slightly smaller and denser (px-3.5 py-1.5) to fix the honeycomb density */
-  }
   return (
     <button
       onClick={handleClick}
       title={item.slug}
-      className={`inline-flex items-center justify-center px-3.5 py-1.5 rounded-full text-[11px] font-semibold transition-all border select-none cursor-pointer ${stateStyles} ${dirtyStyles}`}
+      className={`inline-flex items-center justify-center px-3.5 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-150 border select-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${stateStyles} ${dirtyStyles}`}
     >
       {formatAction(item.slug)}
     </button>

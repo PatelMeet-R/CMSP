@@ -8,11 +8,19 @@ import {
   X,
   KeyRound,
   History,
+  Mail,
+  MapPin,
+  Phone,
+  CalendarDays,
+  GraduationCap,
+  Building2,
+  Fingerprint,
+
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -22,7 +30,6 @@ import {
 } from "@/components/ui/select";
 import { FieldLabel } from "@/components/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SpinnerCustom } from "@/components/ui/spinner";
 import {
   Dialog,
   DialogContent,
@@ -50,6 +57,53 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useRoleViewModel } from "@/modules/roles/viewModel/useRoleViewModel";
 import PermissionAuditLogView from "@/modules/users/view/PermissionAuditLogView";
 
+// ─────────────────────────────────────────────
+//  Status Badge Styling
+// ─────────────────────────────────────────────
+function getStatusStyles(status: string | undefined) {
+  switch (status) {
+    case "ACTIVE":
+      return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800";
+    case "BLOCKED":
+    case "SUSPENDED":
+      return "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800";
+    default:
+      return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800";
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Inline Detail Row (read-only view)
+// ─────────────────────────────────────────────
+function DetailRow({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string | undefined | null;
+}) {
+  return (
+    <div className="flex items-start gap-3 py-3">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted/60 dark:bg-muted/30">
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <div className="flex flex-col gap-0.5 min-w-0">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
+        <span className="text-sm font-medium text-foreground truncate">
+          {value || "—"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════
+//  MAIN COMPONENT
+// ═════════════════════════════════════════════
 export default function UserDetailsView() {
   const vm = useUserDetailsViewModel();
 
@@ -114,30 +168,38 @@ export default function UserDetailsView() {
     setActionModalOpen(false);
   };
 
-  // --- SKELETON LOADER ---
+  // ─────────────────────────────────────────
+  //  SKELETON LOADER
+  // ─────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="w-full max-w-7xl mx-auto space-y-6">
-        <div className="pt-4">
-          <Skeleton className="h-5 w-64 mb-2" />
+      <div className="w-full max-w-6xl mx-auto space-y-8 py-6">
+        <Skeleton className="h-5 w-56" />
+        <div className="rounded-2xl border bg-card p-8 space-y-6">
+          <div className="flex items-center gap-5">
+            <Skeleton className="h-16 w-16 rounded-full" />
+            <div className="space-y-2.5 flex-1">
+              <Skeleton className="h-6 w-52" />
+              <Skeleton className="h-4 w-36" />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <Skeleton className="h-20 rounded-xl" />
+            <Skeleton className="h-20 rounded-xl" />
+            <Skeleton className="h-20 rounded-xl" />
+          </div>
         </div>
-        <Card className="border-none shadow-md p-0">
-          <CardHeader className="flex flex-row items-center gap-4 pb-4">
-            <Skeleton className="h-8 w-8" />
-            <Skeleton className="h-8 w-64" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-100 w-full rounded-xl" />
-          </CardContent>
-        </Card>
+        <Skeleton className="h-10 w-full rounded-lg" />
+        <Skeleton className="h-64 w-full rounded-2xl" />
       </div>
     );
   }
 
   if (!profile)
     return (
-      <div className="text-center p-8 text-muted-foreground">
-        User not found.
+      <div className="flex flex-col items-center justify-center py-24 text-muted-foreground gap-3">
+        <Users className="h-12 w-12 opacity-30" />
+        <p className="text-sm font-medium">User not found.</p>
       </div>
     );
 
@@ -153,8 +215,8 @@ export default function UserDetailsView() {
     selectedStatus !== currentStatus || selectedRole !== currentRoleId;
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 pb-12">
-      {/* --- BREADCRUMB --- */}
+    <div className="w-full max-w-6xl mx-auto space-y-8 pb-16">
+      {/* ── BREADCRUMB ── */}
       <PageBreadcrumb
         items={[
           {
@@ -166,241 +228,302 @@ export default function UserDetailsView() {
         ]}
       />
 
-      <Card className="border-none shadow-md p-0">
-        {/* --- HEADER --- */}
-        <CardHeader className="flex flex-row flex-wrap items-center justify-between p-4 sm:p-6 gap-4 border-b">
-          <div className="flex flex-row gap-3 items-start min-w-50">
+      {/* ═══════════════════════════════════════
+          PROFILE HERO CARD
+          ═══════════════════════════════════════ */}
+      <div className="relative rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
+        {/* Decorative gradient bar */}
+        <div className="h-1.5 w-full bg-gradient-to-r from-primary via-primary/70 to-primary/40" />
+
+        <div className="p-6 sm:p-8">
+          {/* Top: Back button + Actions */}
+          <div className="flex items-center justify-between mb-8">
             <Button
               variant="ghost"
-              size="icon"
+              size="sm"
               onClick={() => navigate(-1)}
-              className="mt-0.5 h-8 w-8 shrink-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="gap-1.5 text-muted-foreground hover:text-foreground -ml-2"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Back</span>
             </Button>
-            <div className="flex flex-col gap-1">
-              <CardTitle className="text-2xl font-bold tracking-tight">
-                User Identity
-              </CardTitle>
-              <span className="text-sm font-medium text-muted-foreground">
-                {isStudent && profile.enrollmentNumber !== "NOT_REQUIRED"
-                  ? `${profile.enrollmentNumber}`
-                  : `Role: ${profileRoleString}`}
-              </span>
-            </div>
-          </div>
 
-          {canUpdateRestricted && (
-            <div className="flex flex-row w-full sm:w-auto gap-2 justify-end">
-              {/* ACTIONS MODAL */}
-              <Dialog open={actionModalOpen} onOpenChange={setActionModalOpen}>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 sm:flex-none h-9 border-primary/20 text-primary hover:bg-primary/5"
-                  >
-                    <ShieldCheck className="w-4 h-4 sm:mr-2" />
-                    <span className="truncate">System Actions</span>
-                  </Button>
-                </DialogTrigger>
+            {canUpdateRestricted && (
+              <div className="flex items-center gap-2">
+                {/* SYSTEM ACTIONS MODAL */}
+                <Dialog open={actionModalOpen} onOpenChange={setActionModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all"
+                    >
+                      <ShieldCheck className="h-4 w-4" />
+                      <span className="hidden sm:inline">System Actions</span>
+                    </Button>
+                  </DialogTrigger>
 
-                <DialogContent className="sm:max-w-106.25 p-0 overflow-hidden">
-                  <div className="px-6 pt-6 pb-4 border-b">
-                    <DialogTitle className="text-xl">
-                      System Actions
-                    </DialogTitle>
-                    <DialogDescription className="mt-1.5">
-                      Modify system access and account status for{" "}
-                      <span className="font-semibold text-foreground">
-                        {profile.fullName}
-                      </span>
-                      .
-                    </DialogDescription>
-                  </div>
-
-                  <div className="px-4 md:px-6 bg-muted/10 space-y-6">
-                    <div className="space-y-2.5">
-                      <FieldLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                        ACCOUNT STATUS
-                      </FieldLabel>
-                      <Select
-                        disabled={isUpdating || isStatusLoading}
-                        value={selectedStatus}
-                        onValueChange={setSelectedStatus}
-                      >
-                        <SelectTrigger className="h-10 bg-background shadow-sm">
-                          <SelectValue placeholder="Select Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {accountStatuses?.map((status) => (
-                            <SelectItem key={status.id} value={status.key}>
-                              {status.value}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <span className="text-[11px] text-muted-foreground">
-                        Determines if the user can log in to the platform.
-                      </span>
+                  <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-2xl">
+                    <div className="px-6 pt-6 pb-4 border-b bg-muted/30">
+                      <DialogTitle className="text-lg font-semibold">
+                        System Actions
+                      </DialogTitle>
+                      <DialogDescription className="mt-1 text-sm">
+                        Modify system access and account status for{" "}
+                        <span className="font-semibold text-foreground">
+                          {profile.fullName}
+                        </span>
+                        .
+                      </DialogDescription>
                     </div>
 
-                    {canManageGlobal && (
-                      <div className="space-y-2.5">
+                    <div className="px-6 py-5 space-y-5">
+                      <div className="space-y-2">
                         <FieldLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                          SYSTEM ROLE
+                          ACCOUNT STATUS
                         </FieldLabel>
                         <Select
-                          disabled={isUpdating || isRolesLoading}
-                          value={selectedRole}
-                          onValueChange={setSelectedRole}
+                          disabled={isUpdating || isStatusLoading}
+                          value={selectedStatus}
+                          onValueChange={setSelectedStatus}
                         >
-                          <SelectTrigger className="h-10 bg-background shadow-sm">
-                            <SelectValue placeholder="Select Role" />
+                          <SelectTrigger className="h-10 bg-background shadow-sm rounded-lg">
+                            <SelectValue placeholder="Select Status" />
                           </SelectTrigger>
                           <SelectContent>
-                            {/* 🚨 FIX: changed role.key to role.name */}
-                            {roles?.map((role) => (
-                              <SelectItem
-                                key={role.id}
-                                value={role.id.toString()}
-                              >
-                                {role.name}
+                            {accountStatuses?.map((status) => (
+                              <SelectItem key={status.id} value={status.key}>
+                                {status.value}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <span className="text-[11px] text-muted-foreground">
-                          Controls default base access and administrative
-                          privileges.
-                        </span>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                          Determines if the user can log in to the platform.
+                        </p>
                       </div>
-                    )}
-                  </div>
 
-                  <div className="px-6 py-4 border-t bg-muted/20 flex justify-end gap-2">
+                      {canManageGlobal && (
+                        <div className="space-y-2">
+                          <FieldLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                            SYSTEM ROLE
+                          </FieldLabel>
+                          <Select
+                            disabled={isUpdating || isRolesLoading}
+                            value={selectedRole}
+                            onValueChange={setSelectedRole}
+                          >
+                            <SelectTrigger className="h-10 bg-background shadow-sm rounded-lg">
+                              <SelectValue placeholder="Select Role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {/* 🚨 FIX: changed role.key to role.name */}
+                              {roles?.map((role) => (
+                                <SelectItem
+                                  key={role.id}
+                                  value={role.id.toString()}
+                                >
+                                  {role.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">
+                            Controls default base access and administrative
+                            privileges.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="px-6 py-4 border-t bg-muted/20 flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setActionModalOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleSaveSystemActions}
+                        disabled={isUpdating || !hasPendingModalChanges}
+                        className="gap-2"
+                      >
+                        {isUpdating && (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        )}
+                        Save Changes
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                {/* EDIT DETAILS BUTTONS */}
+                {!isEditing ? (
+                  <Button
+                    onClick={() => setIsEditing(true)}
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <UserPen className="h-4 w-4" />
+                    <span className="hidden sm:inline">Edit Details</span>
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
                     <Button
                       variant="outline"
-                      onClick={() => setActionModalOpen(false)}
+                      size="sm"
+                      disabled={isUpdatingDetails}
+                      onClick={() => {
+                        form.reset();
+                        setIsEditing(false);
+                      }}
+                      className="gap-1.5"
                     >
-                      Cancel
+                      <X className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Cancel</span>
                     </Button>
                     <Button
-                      onClick={handleSaveSystemActions}
-                      disabled={isUpdating || !hasPendingModalChanges}
+                      size="sm"
+                      onClick={onSubmitDetails}
+                      disabled={isUpdatingDetails || !isDirty}
+                      className="gap-1.5"
                     >
-                      {isUpdating && <SpinnerCustom />}
-                      Save Changes
+                      {isUpdatingDetails ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Save className="h-3.5 w-3.5" />
+                      )}
+                      <span>{isUpdatingDetails ? "Saving…" : "Save"}</span>
                     </Button>
                   </div>
-                </DialogContent>
-              </Dialog>
+                )}
+              </div>
+            )}
+          </div>
 
-              {/* EDIT DETAILS BUTTONS */}
-              {!isEditing ? (
-                <Button
-                  onClick={() => setIsEditing(true)}
-                  size="sm"
-                  className="flex-1 sm:flex-none h-9"
-                >
-                  <UserPen className="w-4 h-4 sm:mr-2" />
-                  <span className="truncate">Edit Details</span>
-                </Button>
-              ) : (
-                <div className="flex flex-row gap-2 w-full sm:w-auto">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 sm:flex-none h-9"
-                    disabled={isUpdatingDetails}
-                    onClick={() => {
-                      form.reset();
-                      setIsEditing(false);
-                    }}
-                  >
-                    <X className="w-4 h-4 sm:mr-1" />
-                    <span className="hidden sm:inline">Cancel</span>
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="flex-1 sm:flex-none h-9"
-                    onClick={onSubmitDetails}
-                    disabled={isUpdatingDetails || !isDirty}
-                  >
-                    {isUpdatingDetails ? (
-                      <SpinnerCustom />
-                    ) : (
-                      <Save className="w-4 h-4 sm:mr-1" />
-                    )}
-                    <span className="truncate">
-                      {isUpdatingDetails ? "Saving" : "Save"}
-                    </span>
-                  </Button>
+          {/* ── Profile Identity ── */}
+          <div className="flex flex-col sm:flex-row items-start gap-6">
+            <Avatar className="h-18 w-18 border-2 border-background shadow-md ring-2 ring-border/30 shrink-0">
+              <AvatarImage
+                src={profile.profileImageUrl || undefined}
+                className="object-cover"
+              />
+              <AvatarFallback className="text-xl font-bold bg-gradient-to-br from-primary/20 to-primary/5 text-primary">
+                {profile.firstName?.[0]}
+                {profile.lastName?.[0]}
+              </AvatarFallback>
+            </Avatar>
+
+            <div className="flex-1 min-w-0 space-y-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                    {profile.fullName}
+                  </h1>
+                  <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5" />
+                    {profile.email || "No email"}
+                  </p>
                 </div>
+
+                <Badge
+                  variant="outline"
+                  className={`shrink-0 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider transition-colors ${getStatusStyles(currentStatus)}`}
+                >
+                  {currentStatus || "Unknown"}
+                </Badge>
+              </div>
+
+              {/* Quick Badges */}
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge
+                  variant="secondary"
+                  className="text-xs font-medium px-2.5 py-0.5"
+                >
+                  {profileRoleString || "Student"}
+                </Badge>
+                {profile.branch && (
+                  <Badge
+                    variant="outline"
+                    className="text-xs bg-background px-2.5 py-0.5 font-medium"
+                  >
+                    <Building2 className="h-3 w-3 mr-1 opacity-60" />
+                    {profile.branch}
+                  </Badge>
+                )}
+                {isStudent &&
+                  profile.enrollmentNumber !== "NOT_REQUIRED" && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs bg-background font-mono px-2.5 py-0.5"
+                    >
+                      <Fingerprint className="h-3 w-3 mr-1 opacity-60" />
+                      {profile.enrollmentNumber}
+                    </Badge>
+                  )}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Quick Stats Row (Bento-style) ── */}
+          {!isEditing && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mt-8">
+              <DetailRow
+                icon={Phone}
+                label="Primary Mobile"
+                value={profile.primaryMobileNumber}
+              />
+              <DetailRow
+                icon={Phone}
+                label="Secondary Mobile"
+                value={profile.secondaryMobileNumber}
+              />
+              <DetailRow
+                icon={MapPin}
+                label="City"
+                value={profile.address?.city}
+              />
+              <DetailRow
+                icon={MapPin}
+                label="State"
+                value={profile.address?.state}
+              />
+              <DetailRow
+                icon={CalendarDays}
+                label="Joined Year"
+                value={profile.joinedYear}
+              />
+              <DetailRow
+                icon={GraduationCap}
+                label="Grad Year"
+                value={profile.gradYear}
+              />
+              <DetailRow
+                icon={Users}
+                label="Gender"
+                value={profile.gender?.toLowerCase()}
+              />
+              {canManageGlobal && (
+                <DetailRow
+                  icon={Building2}
+                  label="Assigned Branch"
+                  value={profile.branch}
+                />
               )}
             </div>
           )}
-        </CardHeader>
 
-        {/* --- MAIN CONTENT GRID --- */}
-        <CardContent className="p-4 sm:p-6">
-          <div className="bg-muted/10 p-5 md:p-6 rounded-xl border space-y-6">
-            {/* User Summary Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-border/50">
-              <div className="flex items-center gap-4 w-full">
-                <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border border-background shadow-sm shrink-0">
-                  <AvatarImage
-                    src={profile.profileImageUrl || undefined}
-                    className="object-cover"
-                  />
-                  <AvatarFallback className="text-lg bg-primary/10 text-primary font-semibold">
-                    {profile.firstName?.[0]}
-                    {profile.lastName?.[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col gap-1.5 w-full">
-                  <div className="flex items-start justify-between w-full">
-                    <span className="text-sm font-semibold text-foreground/90 uppercase tracking-wider truncate">
-                      {profile.fullName}
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className={`shrink-0 px-2 py-0.5 text-[10px] sm:text-xs uppercase tracking-wider ${
-                        currentStatus === "ACTIVE"
-                          ? "text-green-600 border-green-600 bg-green-50"
-                          : currentStatus === "BLOCKED" ||
-                              currentStatus === "SUSPENDED"
-                            ? "text-red-600 border-red-600 bg-red-50"
-                            : "text-orange-600 border-orange-600 bg-orange-50"
-                      }`}
-                    >
-                      {currentStatus || "Unknown"}
-                    </Badge>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge
-                      variant="secondary"
-                      className="text-[10px] sm:text-xs px-2 py-0"
-                    >
-                      {profileRoleString || "Student"}
-                    </Badge>
-                    {profile.branch && (
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] sm:text-xs bg-background px-2 py-0"
-                      >
-                        {profile.branch}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Semantic Form */}
-            <form className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-6">
-                <div className="grid grid-cols-2 gap-4 col-span-1 md:col-span-2 lg:col-span-1">
+          {/* ── Edit Mode Form ── */}
+          {isEditing && (
+            <form className="mt-8 space-y-6">
+              <div className="rounded-xl border border-border/50 bg-muted/20 p-5 sm:p-6">
+                <h3 className="text-sm font-semibold text-foreground mb-5 flex items-center gap-2">
+                  <UserPen className="h-4 w-4 text-primary" />
+                  Edit Profile Details
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
                   {/* 🚨 FIX: Replaced isAdmin with canEditRestricted */}
                   <ProfileRenderField
                     name="firstName"
@@ -418,90 +541,43 @@ export default function UserDetailsView() {
                     isEditing={isEditing}
                     canEditRestricted={canUpdateRestricted}
                   />
-                </div>
+                  <ProfileRenderField
+                    name="enrollmentNumber"
+                    label="ENROLLMENT NUMBER"
+                    isRestricted={true}
+                    form={form}
+                    isEditing={isEditing}
+                    canEditRestricted={canUpdateRestricted}
+                  />
 
-                <ProfileRenderField
-                  name="enrollmentNumber"
-                  label="ENROLLMENT NUMBER"
-                  isRestricted={true}
-                  form={form}
-                  isEditing={isEditing}
-                  canEditRestricted={canUpdateRestricted}
-                />
-
-                {canManageGlobal && (
-                  <div className="flex flex-col gap-1.5">
-                    {!isEditing ? (
-                      <>
-                        <FieldLabel className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                          ASSIGNED BRANCH
-                        </FieldLabel>
-                        <div className="h-9 py-1.5 text-sm font-semibold text-foreground">
-                          {profile?.branch || "—"}
-                        </div>
-                      </>
-                    ) : (
+                  {canManageGlobal && (
+                    <div className="flex flex-col gap-1.5">
                       <BranchDropdownMenu
                         control={form.control}
                         name="branchId"
                         disabled={!canManageGlobal}
                       />
-                    )}
-                  </div>
-                )}
+                    </div>
+                  )}
 
-                <div className="grid grid-cols-2 gap-4 col-span-1 md:col-span-2 lg:col-span-1">
                   <div className="flex flex-col gap-1.5">
-                    {!isEditing ? (
-                      <>
-                        <FieldLabel className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                          JOINED YEAR
-                        </FieldLabel>
-                        <div className="h-9 py-1.5 text-sm font-semibold text-foreground">
-                          {profile?.joinedYear || "—"}
-                        </div>
-                      </>
-                    ) : (
-                      <EnumDropdownMenu
-                        control={form.control}
-                        name="joinedAcademicYearId"
-                        label="Joined Year"
-                        category={EnumCategory.ACADEMIC_YEAR}
-                      />
-                    )}
+                    <EnumDropdownMenu
+                      control={form.control}
+                      name="joinedAcademicYearId"
+                      label="Joined Year"
+                      category={EnumCategory.ACADEMIC_YEAR}
+                    />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    {!isEditing ? (
-                      <>
-                        <FieldLabel className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                          GRAD. YEAR
-                        </FieldLabel>
-                        <div className="h-9 py-1.5 text-sm font-semibold text-foreground">
-                          {profile?.gradYear || "—"}
-                        </div>
-                      </>
-                    ) : (
-                      <EnumDropdownMenu
-                        control={form.control}
-                        name="expectedGraduateYearId"
-                        label="Graduation Year"
-                        category={EnumCategory.ACADEMIC_YEAR}
-                        disabled={!canUpdateRestricted}
-                      />
-                    )}
+                    <EnumDropdownMenu
+                      control={form.control}
+                      name="expectedGraduateYearId"
+                      label="Graduation Year"
+                      category={EnumCategory.ACADEMIC_YEAR}
+                      disabled={!canUpdateRestricted}
+                    />
                   </div>
-                </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <FieldLabel className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                    GENDER
-                  </FieldLabel>
-                  <div className="h-9 py-1.5 text-sm font-semibold text-foreground capitalize">
-                    {profile?.gender?.toLowerCase() || "—"}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 col-span-1 md:col-span-2 lg:col-span-1">
                   <ProfileRenderField
                     name="primaryMobileNumber"
                     label="PRIMARY MOBILE"
@@ -518,9 +594,6 @@ export default function UserDetailsView() {
                     isEditing={isEditing}
                     canEditRestricted={canUpdateRestricted}
                   />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 col-span-1 md:col-span-2 lg:col-span-1">
                   <ProfileRenderField
                     name="city"
                     label="CITY"
@@ -540,35 +613,46 @@ export default function UserDetailsView() {
                 </div>
               </div>
             </form>
-          </div>
-        </CardContent>
-      </Card>
+          )}
+        </div>
+      </div>
 
-      {/* --- TABS: PROFESSIONAL INFO & PERMISSIONS --- */}
+      {/* ═══════════════════════════════════════
+          TABBED CONTENT AREA
+          ═══════════════════════════════════════ */}
       <Tabs defaultValue="details" className="w-full">
         <TabsList
           variant="line"
-          className="w-full justify-start border-b px-0 gap-0"
+          className="w-full justify-start border-b px-0 gap-1"
         >
-          <TabsTrigger value="details" className="text-sm px-4 py-2">
-            <UserPen className="w-4 h-4 mr-1.5" />
+          <TabsTrigger
+            value="details"
+            className="text-sm px-4 py-2.5 gap-1.5 transition-colors"
+          >
+            <UserPen className="h-4 w-4" />
             Details
           </TabsTrigger>
           {canManagePermissions && (
-            <TabsTrigger value="permissions" className="text-sm px-4 py-2">
-              <KeyRound className="w-4 h-4 mr-1.5" />
+            <TabsTrigger
+              value="permissions"
+              className="text-sm px-4 py-2.5 gap-1.5 transition-colors"
+            >
+              <KeyRound className="h-4 w-4" />
               Permissions
             </TabsTrigger>
           )}
           {canManagePermissions && (
-            <TabsTrigger value="audit" className="text-sm px-4 py-2">
-              <History className="w-4 h-4 mr-1.5" />
+            <TabsTrigger
+              value="audit"
+              className="text-sm px-4 py-2.5 gap-1.5 transition-colors"
+            >
+              <History className="h-4 w-4" />
               Audit Trail
             </TabsTrigger>
           )}
         </TabsList>
 
-        <TabsContent value="details" className="mt-4">
+        <TabsContent value="details" className="mt-6">
           {isStaff && (
             <StaffProfessionalDetails
               staffProfile={staffProfile}
@@ -578,25 +662,26 @@ export default function UserDetailsView() {
             />
           )}
           {!isStaff && (
-            <div className="text-center py-12 text-muted-foreground text-sm">
-              No additional details available for this user type.
+            <div className="flex flex-col items-center justify-center py-16 rounded-2xl border border-dashed border-border/50 bg-muted/20">
+              <Users className="h-10 w-10 text-muted-foreground/30 mb-3" />
+              <p className="text-sm text-muted-foreground font-medium">
+                No additional details available for this user type.
+              </p>
             </div>
           )}
         </TabsContent>
 
         {canManagePermissions && (
-          <TabsContent value="permissions" className="mt-4">
-            <Card className="border-none shadow-md bg-transparent">
-              <CardContent className="p-0 sm:p-2">
-                <UserPermissionMatrix
-                  personalInfoId={profile.id?.toString() || ""}
-                />
-              </CardContent>
-            </Card>
+          <TabsContent value="permissions" className="mt-6">
+            <div className="rounded-2xl border border-border/50 bg-card p-5 sm:p-6">
+              <UserPermissionMatrix
+                personalInfoId={profile.id?.toString() || ""}
+              />
+            </div>
           </TabsContent>
         )}
         {canManagePermissions && (
-          <TabsContent value="audit" className="mt-4">
+          <TabsContent value="audit" className="mt-6">
             <PermissionAuditLogView
               targetUserId={profile.id?.toString() || ""}
             />

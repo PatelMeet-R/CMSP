@@ -4,13 +4,15 @@
     "GETAPPURL",
     "ILIKE",
     "Numbertaken",
+    "PBAC",
+    "persistor",
     "pinfo",
     "Respository",
+    "ROUTENAME",
     "Sems",
     "streamifier",
     "SUCCESSMSG",
     "USERNOTEXIST",
-    "ROUTENAME",
     "VIEWMODEL"
   ]
 }
